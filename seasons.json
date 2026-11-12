@@ -1,0 +1,9 @@
+{
+  "comment": "When each decoration goes up. Dates are MM-DD and a window may cross New Year. Outside every window the house wears 'grammis' (no decorations). Set 'pin' to a theme name to keep one up no matter the date, or leave it empty.",
+  "pin": "",
+  "default": "grammis",
+  "seasons": [
+    { "theme": "thanksgiving", "start": "10-15", "end": "11-30" },
+    { "theme": "christmas", "start": "12-01", "end": "01-06" }
+  ]
+}
