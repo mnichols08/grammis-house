@@ -1,0 +1,56 @@
+{
+  "label": "Family wall (the fridge)",
+  "extends": "grammis",
+  "colorScheme": "light",
+  "colors": {
+    "light": {
+      "page": "#eef0ec",
+      "outer": "#e3e6e1",
+      "surface": "#fbfcfa",
+      "surfaceRaised": "#f1f3ef",
+      "text": "#1f2522",
+      "muted": "#4a524d",
+      "subtle": "#4a524d",
+      "border": "#cfd5d0",
+      "accent": "#b3262f",
+      "accentSoft": "#b3262f",
+      "accentBorder": "#d98a90",
+      "accentContrast": "#ffffff",
+      "link": "#b3262f",
+      "glow": "#f6e3e4",
+      "codeBg": "#f1f3ef",
+      "codeText": "#1f2522",
+      "ink": "#1f2522"
+    },
+    "dark": {
+      "page": "#1b1f1d",
+      "outer": "#141716",
+      "surface": "#232826",
+      "surfaceRaised": "#2c322f",
+      "text": "#ecefec",
+      "muted": "#c2c8c4",
+      "subtle": "#c2c8c4",
+      "border": "#3b4440",
+      "accent": "#ff9c94",
+      "accentSoft": "#ff9c94",
+      "accentBorder": "#7a3b3f",
+      "accentContrast": "#1b1f1d",
+      "link": "#ff9c94",
+      "glow": "#3a2a2b",
+      "codeBg": "#2c322f",
+      "codeText": "#ecefec",
+      "ink": "#1b1f1d"
+    }
+  },
+  "tokens": {
+    "season": "\"Family wall\"",
+    "weather": "none",
+    "decorGarlandHeight": "56px",
+    "decorPatternSize": "120px 120px",
+    "decorGarland": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='466' height='56' viewBox='0 0 466 56'%3E%3Cg transform='translate%2812 31%29 rotate%28-7%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EL%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23d9293a'%3EL%3C/text%3E%3C/g%3E%3Cg transform='translate%2842 32%29 rotate%28-3%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EO%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%232f6fd0'%3EO%3C/text%3E%3C/g%3E%3Cg transform='translate%2872 34%29 rotate%28-12%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EV%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23f2b632'%3EV%3C/text%3E%3C/g%3E%3Cg transform='translate%28102 38%29 rotate%2812%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EE%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%232e9a52'%3EE%3C/text%3E%3C/g%3E%3Cg transform='translate%28150 32%29 rotate%287%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EY%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23f2742c'%3EY%3C/text%3E%3C/g%3E%3Cg transform='translate%28180 33%29 rotate%281%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EO%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23d9293a'%3EO%3C/text%3E%3C/g%3E%3Cg transform='translate%28210 31%29 rotate%28-9%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EU%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%232f6fd0'%3EU%3C/text%3E%3C/g%3E%3Cg transform='translate%28258 39%29 rotate%28-8%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EG%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%232e9a52'%3EG%3C/text%3E%3C/g%3E%3Cg transform='translate%28288 38%29 rotate%289%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3ER%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%239b4fd0'%3ER%3C/text%3E%3C/g%3E%3Cg transform='translate%28318 32%29 rotate%288%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EA%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23f2742c'%3EA%3C/text%3E%3C/g%3E%3Cg transform='translate%28348 36%29 rotate%28-5%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EM%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23d9293a'%3EM%3C/text%3E%3C/g%3E%3Cg transform='translate%28378 39%29 rotate%286%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EM%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%232f6fd0'%3EM%3C/text%3E%3C/g%3E%3Cg transform='translate%28408 31%29 rotate%2811%29'%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23000' opacity='.18' transform='translate%281.5 2%29'%3EI%3C/text%3E%3Ctext x='0' y='0' text-anchor='middle' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='30' fill='%23f2b632'%3EI%3C/text%3E%3C/g%3E%3C/svg%3E\")",
+    "decorPattern": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' fill='none'/%3E%3Cpath d='M0 0H120' stroke='%23000' stroke-opacity='.03'/%3E%3Cpath d='M20 0V120M70 0V120' stroke='%23fff' stroke-opacity='.35' stroke-width='8'/%3E%3C/svg%3E\")"
+  },
+  "stylesheets": [
+    "fridge.css"
+  ]
+}

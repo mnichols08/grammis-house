@@ -27,6 +27,7 @@ const css = `@layer theme, base, components, utilities;
     font-weight: 700;
     font-size: 1.55rem;
     line-height: 1.15;
+    text-align: center;
     box-shadow: 0 3px 0 color-mix(in srgb, var(--primary, #8e1b2c) 35%, transparent);
     rotate: -1.5deg;
   }
@@ -40,18 +41,60 @@ const css = `@layer theme, base, components, utilities;
   }
   .sign::before { left: 18%; rotate: 14deg; transform-origin: bottom; }
   .sign::after { right: 18%; rotate: -14deg; transform-origin: bottom; }
+  .count:not(:empty)::after { content: " "; }
+  .years, .note { display: block; font-size: 1.05rem; font-weight: 400; color: var(--foreground, #3a2418); }
+  .years:empty, .note:empty { display: none; }
+
+  /* A tear-off calendar page: the number big, the words under it. */
+  :scope:is([look="calendar"]) .sign {
+    display: grid;
+    min-width: 9.5rem;
+    padding: 0 0 0.6rem;
+    overflow: hidden;
+    border-width: 0;
+    border-radius: 10px;
+    background: var(--card, #fffaf0);
+    box-shadow: 0 1px 0 var(--border, #e0cdb0), 0 6px 14px -6px color-mix(in srgb, var(--foreground, #3a2418) 45%, transparent);
+    rotate: 2deg;
+  }
+  :scope:is([look="calendar"]) .sign::before {
+    content: "";
+    position: static;
+    width: auto;
+    height: 1.4rem;
+    rotate: none;
+    background: var(--primary, #8e1b2c) radial-gradient(circle at 25% 50%, var(--card, #fff) 0 3px, transparent 4px) 0 0 / 50% 100% repeat-x;
+  }
+  :scope:is([look="calendar"]) .sign::after { display: none; }
+  :scope:is([look="calendar"]) .count {
+    display: block;
+    padding: 0.3rem 1rem 0;
+    font-family: var(--ob-font-heading, serif);
+    font-size: 3.6rem;
+    line-height: 1;
+    color: var(--foreground, #3a2418);
+  }
+  :scope:is([look="calendar"]) .count:empty { display: none; }
+  :scope:is([look="calendar"]) .count::after { content: none; }
+  :scope:is([look="calendar"]) .words { padding: 0.2rem 1rem 0; font-size: 1.25rem; }
 }
 }
 `;
 
 export class HolidayCountdown extends HTMLElement {
   /** The attributes this element watches: attributeChangedCallback runs when one changes. */
-  static observedAttributes = ["holiday"];
+  static observedAttributes = ["holiday", "look", "event", "day", "note", "single", "noyears"];
   /** What framework adapters (@zubra/runtime/react, /vue) read to wrap this element. */
   static zubra = {
     tag,
     props: {
       holiday: { attribute: "holiday", default: "next", required: false },
+      look: { attribute: "look", default: "sign", required: false },
+      event: { attribute: "event", default: "", required: false },
+      day: { attribute: "day", default: "", required: false },
+      note: { attribute: "note", default: "", required: false },
+      single: { attribute: "single", default: false, required: false },
+      noyears: { attribute: "noyears", default: false, required: false },
     },
     events: [],
     slots: [],
@@ -63,7 +106,7 @@ export class HolidayCountdown extends HTMLElement {
   // ElementInternals: the element's form value and validity, and :state() for CSS.
   #internals = this.attachInternals();
   // The props, each starting at its default; #given has the ones set from outside.
-  #props = { holiday: "next" };
+  #props = { holiday: "next", look: "sign", event: "", day: "", note: "", single: false, noyears: false };
   #given = new Set();
   // What brings the DOM up to date: one function for each spot that changes.
   #updates = [];
@@ -76,7 +119,7 @@ export class HolidayCountdown extends HTMLElement {
     super();
     // A property set before this class was defined sits on the element itself, hiding the
     // accessor below: take it over.
-    for (const prop of ["holiday"]) {
+    for (const prop of ["holiday", "look", "event", "day", "note", "single", "noyears"]) {
       if (Object.hasOwn(this, prop)) {
         const value = this[prop];
         delete this[prop];
@@ -88,6 +131,7 @@ export class HolidayCountdown extends HTMLElement {
   // ---- props: properties, and attributes that set them
 
   get holiday() {
+    reads?.push(() => this.#props.holiday); // what reads it (a computed, an effect) depends on it
     return this.#props.holiday;
   }
   set holiday(value) {
@@ -97,11 +141,95 @@ export class HolidayCountdown extends HTMLElement {
     this.#requestUpdate();
   }
 
+  get look() {
+    reads?.push(() => this.#props.look); // what reads it (a computed, an effect) depends on it
+    return this.#props.look;
+  }
+  set look(value) {
+    this.#given.add("look");
+    if (Object.is(value, this.#props.look)) return;
+    this.#props.look = value;
+    this.#requestUpdate();
+  }
+
+  get event() {
+    reads?.push(() => this.#props.event); // what reads it (a computed, an effect) depends on it
+    return this.#props.event;
+  }
+  set event(value) {
+    this.#given.add("event");
+    if (Object.is(value, this.#props.event)) return;
+    this.#props.event = value;
+    this.#requestUpdate();
+  }
+
+  get day() {
+    reads?.push(() => this.#props.day); // what reads it (a computed, an effect) depends on it
+    return this.#props.day;
+  }
+  set day(value) {
+    this.#given.add("day");
+    if (Object.is(value, this.#props.day)) return;
+    this.#props.day = value;
+    this.#requestUpdate();
+  }
+
+  get note() {
+    reads?.push(() => this.#props.note); // what reads it (a computed, an effect) depends on it
+    return this.#props.note;
+  }
+  set note(value) {
+    this.#given.add("note");
+    if (Object.is(value, this.#props.note)) return;
+    this.#props.note = value;
+    this.#requestUpdate();
+  }
+
+  get single() {
+    reads?.push(() => this.#props.single); // what reads it (a computed, an effect) depends on it
+    return this.#props.single;
+  }
+  set single(value) {
+    this.#given.add("single");
+    if (Object.is(value, this.#props.single)) return;
+    this.#props.single = value;
+    this.#requestUpdate();
+  }
+
+  get noyears() {
+    reads?.push(() => this.#props.noyears); // what reads it (a computed, an effect) depends on it
+    return this.#props.noyears;
+  }
+  set noyears(value) {
+    this.#given.add("noyears");
+    if (Object.is(value, this.#props.noyears)) return;
+    this.#props.noyears = value;
+    this.#requestUpdate();
+  }
+
   attributeChangedCallback(name, previous, raw) {
     // raw is the attribute's text, or null once it's removed.
     switch (name) {
       case "holiday":
         this.holiday = raw ?? "next";
+        break;
+      case "look":
+        this.look = raw ?? "sign";
+        break;
+      case "event":
+        this.event = raw ?? "";
+        break;
+      case "day":
+        this.day = raw ?? "";
+        break;
+      case "note":
+        this.note = raw ?? "";
+        break;
+      case "single":
+        this.single = raw !== null;
+        break;
+      case "noyears":
+        this.noyears = raw !== null;
         break;
     }
   }
@@ -160,6 +288,7 @@ export class HolidayCountdown extends HTMLElement {
       this.#mounted.push(run);
     };
     const state = (initial) => createState(initial, () => this.#requestUpdate());
+    const computed = createComputed;
 
     // ---- <script>
     const names = {
@@ -175,12 +304,15 @@ export class HolidayCountdown extends HTMLElement {
       thanksgiving: 'Thanksgiving',
       christmas: 'Christmas',
     }
-    // "next" follows the calendar: whichever of these days comes soonest.
-    const name = state(names[element.holiday] ?? 'the next holiday')
 
-    // How many days are left is only known in the browser (today's date), so the server
-    // renders "Counting down to Christmas" and the element fills in the days when it starts.
-    const left = state(null)
+    const own = computed(() => (element.holiday === 'mine'))
+    const ownTitle = computed(() => ((element.event || '').trim() || 'the big day'))
+
+    // How many days are left is only known in the browser (today's date), so the server renders
+    // "Counting down to Christmas" and the element fills in the days when it starts.
+    const count = state('')
+    const words = state(own.value ? `Counting down to ${ownTitle.value}` : `Counting down to ${names[element.holiday] ?? 'the next holiday'}`)
+    const years = state('')
 
     // The nth weekday of a month (weekday 0 is Sunday): Mother's Day is the 2nd Sunday of May.
     const nth = (year, month, weekday, n) => {
@@ -214,26 +346,61 @@ export class HolidayCountdown extends HTMLElement {
       }
     }
 
+    const cap = (text) => text.charAt(0).toUpperCase() + text.slice(1)
+
+    const ordinal = (n) => {
+      const tens = n % 100
+      const suffix = tens >= 11 && tens <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th'
+      return `${n}${suffix}`
+    }
+
     onMount(() => {
       const now = new Date()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      const days = (a, b) => Math.round((b - a) / 86400000)
+
+      if (own.value) {
+        const [y, m, d] = String(element.day || '').split('-').map(Number)
+        if (!y || !m || !d) { words.value = `Counting down to ${ownTitle.value}`; return }
+        let target = new Date(y, m - 1, d)
+        if (element.single === undefined || element.single === null || element.single === false) {
+          target = new Date(today.getFullYear(), m - 1, d)
+          if (target < today) target = new Date(today.getFullYear() + 1, m - 1, d)
+          const n = target.getFullYear() - y
+          if (n >= 1 && (element.noyears === undefined || element.noyears === null || element.noyears === false)) years.value = `the ${ordinal(n)}!`
+        }
+        const left = days(today, target)
+        if (left < 0) { count.value = ''; words.value = `${cap(ownTitle.value)} was ${-left === 1 ? 'yesterday' : `${-left} days ago`}` }
+        else if (left === 0) { count.value = ''; words.value = `Today's the day: ${ownTitle.value}!` }
+        else { count.value = String(left); words.value = left === 1 ? `day until ${ownTitle.value}` : `days until ${ownTitle.value}` }
+        return
+      }
+
       const upcoming = (which) => {
-        const day = dayOf(today.getFullYear(), which)
-        return day < today ? dayOf(today.getFullYear() + 1, which) : day
+        const d = dayOf(today.getFullYear(), which)
+        return d < today ? dayOf(today.getFullYear() + 1, which) : d
       }
       let which = element.holiday
       if (!names[which]) which = Object.keys(names).reduce((a, b) => (upcoming(b) < upcoming(a) ? b : a))
-      name.value = names[which]
-      left.value = Math.round((upcoming(which) - today) / 86400000)
+      const name = names[which]
+      const left = days(today, upcoming(which))
+      if (left === 0) { count.value = ''; words.value = `${name === 'Christmas' ? 'Merry' : 'Happy'} ${name}!` }
+      else { count.value = String(left); words.value = left === 1 ? `day until ${name}` : `days until ${name}` }
     })
 
     // ---- the template: its nodes, and how each changing spot is kept up to date
     const content = clone(`
-  <p class="sign" role="status"></p>
+  <p class="sign" role="status"><span class="count"></span><span class="words"></span><span class="years"></span><span class="note"></span></p>
 `);
-    const sign = content.children[0];
+    const count2 = content.children[0].children[0];
+    const words2 = content.children[0].children[1];
+    const years2 = content.children[0].children[2];
+    const note2 = content.children[0].children[3];
     this.#updates = [
-      bind(() => (left.value === null ? `Counting down to ${name.value}` : left.value === 0 ? `${name.value === 'Christmas' ? 'Merry' : 'Happy'} ${name.value}!` : left.value === 1 ? `${name.value} is tomorrow!` : `${left.value} days until ${name.value}`) ?? "", (value) => (sign.textContent = value)),
+      bind(() => count.value ?? "", (value) => (count2.textContent = value)),
+      bind(() => words.value ?? "", (value) => (words2.textContent = value)),
+      bind(() => years.value ?? "", (value) => (years2.textContent = value)),
+      bind(() => (element.note || "") ?? "", (value) => (note2.textContent = value)),
     ];
     return content;
   }
@@ -342,6 +509,31 @@ function createState(initial, changed) {
     },
     set(next) {
       this.value = next;
+    },
+  };
+}
+
+/** A value derived from props and state, cached until something it read changes. */
+function createComputed(compute) {
+  let seen = null; // [read again, the value it gave]
+  let value;
+  return {
+    get value() {
+      if (!seen || !seen.every(([read, last]) => Object.is(read(), last))) {
+        const outer = reads;
+        const collected = (reads = []);
+        try {
+          value = compute();
+        } finally {
+          reads = outer;
+          seen = collected.map((read) => [read, read()]);
+        }
+      }
+      if (reads) for (const [read] of seen) reads.push(read); // what reads this depends on what it read
+      return value;
+    },
+    get() {
+      return this.value;
     },
   };
 }

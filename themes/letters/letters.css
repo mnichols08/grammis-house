@@ -1,0 +1,12 @@
+/* Letters to the grandkids: every post is a letter on lined stationery inside an airmail
+   envelope's striped border, signed in a flowing script. */
+main > .ob-container {
+  padding: 2.2rem 2.4rem;
+  border: 10px solid transparent;
+  border-image: repeating-linear-gradient(-45deg, #c8343a 0 12px, #fff 12px 24px, #2b4f8a 24px 36px, #fff 36px 48px) 10;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 1.9rem, rgb(43 79 138 / 0.14) 1.9rem calc(1.9rem + 1px)),
+    var(--ob-color-surface);
+}
+.ob-heading, .ob-post-title, .ob-title { font-weight: 700; font-size: 1.25em; }
+.ob-card { border-top: 0; border: 1px solid var(--ob-color-border); border-radius: 2px; box-shadow: 3px 3px 0 color-mix(in srgb, var(--ob-color-accent) 25%, transparent); }

@@ -36,7 +36,33 @@ then **Save** and **Publish**. The looks made for collections all start with "Se
 Family stories, Garden journal, Baking day, Letters to the grandkids, Sunday dinner).
 
 **The countdown sign** under the garland counts down to whichever holiday comes next, all year,
-by itself. To pin it to one holiday, open **Landing page**, then the sign, and pick **Which holiday**.
+by itself. Open **Landing page**, then the sign, to change it:
+- **Counting down to**: a holiday, or **A day of my own** for an anniversary, a birthday, a visit.
+  Then fill in **Your day's name** ("our anniversary") and **Its date** from the calendar. For a day
+  that comes every year, pick the very first one (the wedding day) and the sign says "the 41st!".
+- **It only happens once** for a one-time day; **A line under it** for anything you want to add.
+- **Looks like**: a hanging sign, or a calendar page with a big number.
+- Want two? **Add a section** and pick **Countdown sign** again.
+
+## For the family
+
+- **Birthdays.** Each person has a **Birthday card** on the Landing page: their name, their
+  birthday, their favorite dish and your recipe for it. It stays out of sight until a week before
+  ("3 days until Mikey's birthday!"), and on the day it's a party with candles and a **Make it**
+  button. Add someone with **Add a section → Birthday card**. Their recipes are in the **Birthday
+  Favorites** collection (drafts until you write them).
+- **The advent calendar** shows up on November 20: 24 doors, one to open each day from December 1.
+  Behind a door is your post for that day if you've written one (date it that day and give it the
+  tag `advent`), or something to do together ("Bake a batch of cookies and share half").
+- **Write to Grammi.** A postcard on the front page opens the family's email with a note to you
+  already addressed. Fill in **Your email address** on it (Landing page → Write to Grammi); it stays
+  hidden until you do. Put your favorite notes on **The Family Wall** page, the fridge: each note
+  is a quote (the **"** button in the editor), with who it's from on the last line.
+- **Quizzes.** "How well do you know Grammi's kitchen?" is a draft with three questions to fill
+  in. **Add knowledge check** in the editor makes more. Answers stay on the reader's own device.
+- **Notes on recipes** (comments) need two free accounts to hold what people send. Mikey runs
+  `bash scripts/setup-family-notes.sh` once; after that every recipe has notes at the bottom, and new
+  ones wait for you in **Moderation inbox** until you approve them.
 
 **Making a new look in your own words:** open **Design a theme** and describe it, like
 "Warm like my kitchen at Christmas, deep red and pine green, big easy-to-read writing", or tap
@@ -62,6 +88,8 @@ themes/
                   by one, a wreath, snow on the welcome card, a snowy village along the
                   bottom, and snowfall; a pine-night version in dark mode
   january/ ... october/   one for each month (below)
+  christmas-toyshelf/     another Christmas: felt, stitches and old-fashioned toys on the shelf
+  family-wall/    the fridge door, for the Family Wall page
   recipe-box/ family-stories/ garden-journal/ baking-day/ letters/ sunday-dinner/
                   looks for recipe collections (below)
 ```
@@ -76,6 +104,12 @@ holiday name (`season`), and five pictures from its `decor/` folder:
 | `corner` | on the welcome card's corner | pumpkins and gourds | wreath |
 | `mantel` | along the top of the footer | gourds and candles | village in the snow |
 | `pattern` | behind the page | plaid tablecloth | scattered snowflakes |
+
+Each month and collection also has its own stylesheet and lettering, so they don't look like one
+page in different colours: a frosted snow-day card in January, a doily in February, a tartan in March,
+a gingham picnic in June, an Americana poster in July, a sunburst in August, a chalkboard in
+September, a moonlit night in October; a typed index card for the recipe box, a black photo album
+for family stories, airmail stationery for letters, blue-willow china for Sunday dinner.
 
 The pictures are drawn in code by `scripts/draw_decorations.py` (Thanksgiving and Christmas) and
 `scripts/draw_themes.py` (every other month, and the collection looks), and

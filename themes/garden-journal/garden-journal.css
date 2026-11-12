@@ -1,0 +1,15 @@
+/* Garden journal: a kraft-paper notebook with a twine binding down the left side and notes
+   written in a quick, friendly hand. */
+body { background: #e9dfc7; }
+main > .ob-container {
+  padding: 2rem 2rem 2rem 3.2rem;
+  background:
+    radial-gradient(circle at 1.2rem 1.6rem, #e9dfc7 0 5px, transparent 6px) 0 0 / 100% 2.6rem repeat-y,
+    linear-gradient(90deg, transparent 2.3rem, rgb(63 107 46 / 0.35) 2.3rem 2.4rem, transparent 2.4rem),
+    #f6f0de;
+  border-radius: 4px 12px 12px 4px;
+  box-shadow: 0 12px 24px -18px rgb(60 50 20 / 0.7);
+}
+.ob-heading, .ob-post-title, .ob-title { font-weight: 700; }
+.ob-card { border-top: 0; border-left: 4px solid #8fb86a; border-radius: 2px 10px 10px 2px; }
+@media (prefers-color-scheme: dark) { body { background: var(--ob-color-page); } main > .ob-container { background: var(--ob-color-surface); } }

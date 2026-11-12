@@ -4,9 +4,12 @@
     python3 scripts/draw_themes.py          # every theme below
     python3 scripts/draw_themes.py july     # just one
 
-November and December are Thanksgiving and Christmas, drawn by draw_decorations.py.
+November and December are Thanksgiving and Christmas, drawn by draw_decorations.py; the toy-shelf
+Christmas here is another way to decorate December.
 Each theme here is a short description: its colours (light and dark), the pieces it hangs,
-and the weather on its home page. Colours are nudged until text reads at 7:1 and everything
+and the weather on its home page. What makes each one look like itself beyond that (its
+lettering, its welcome card, its tablecloth) is in the theme's own stylesheet and fonts, which
+this script leaves alone. Colours are nudged until text reads at 7:1 and everything
 else at 4.5:1, so a palette can be described loosely and still come out readable.
 Run scripts/decorate.py --all afterwards to turn the pictures into tokens.
 """
@@ -147,17 +150,35 @@ MONTHS = {
     ),
     "october": dict(
         label="October: pumpkin patch",
-        light=["#f6efe4", "#fffaf2", "#2b1d14", "#5c4535", "#e6d4bd", "#b4470f"],
-        dark=["#1a1410", "#241c16", "#f3e9dd", "#cfbda9", "#41342a", "#ffa865"],
+        scheme="dark",
+        # A night in the pumpkin patch in both modes: the moon only works in the dark.
+        light=["#1f1a2b", "#2a2338", "#f3ede4", "#d2c8da", "#453a57", "#ffa865"],
+        dark=["#17131f", "#211b2c", "#f3ede4", "#cfc5d8", "#3d3350", "#ffa865"],
         weather="leaves",
-        garland=R(items=[("candycorn", R()), ("bat", R()), ("leaf", R(c="#d9661c")), ("candycorn", R()), ("leaf", R(c="#a3232b"))],
-                  rope="#3b2a4a", seam=("bat", R()), seam_hang=("jack", R())),
-        banner=("HAPPY HALLOWEEN", ["#b4470f", "#3b2a4a", "#c48a12"], ("bat", R())),
+        garland=R(items=[("candycorn", R()), ("bat", R(c="#b3a6d4")), ("leaf", R(c="#d9661c")), ("candycorn", R()), ("leaf", R(c="#a3232b"))],
+                  rope="#8f7fb0", seam=("bat", R(c="#b3a6d4")), seam_hang=("jack", R())),
+        banner=("HAPPY HALLOWEEN", ["#b4470f", "#5a4a72", "#c48a12"], ("bat", R(c="#b3a6d4"))),
         corner=[("jack", R(), 150, 110, 4.2, 0), ("pumpkin", R(c="#f2a03a"), 90, 132, 2.6, -8), ("pumpkin", R(c="#efe6cf", side="#ddd2b5"), 195, 140, 2, 6),
                 ("bat", R(), 70, 50, 2, -10), ("bat", R(), 120, 30, 1.4, 15), ("candycorn", R(), 60, 150, 1.4, 20)],
-        mantel=[("pumpkin", R(), 40, 2.2), ("candycorn", R(), 100, 1.6), ("jack", R(), 180, 2.6), ("bowl", R(c="#3b2a4a"), 270, 2), ("pumpkin", R(c="#efe6cf", side="#ddd2b5"), 350, 1.8)],
-        plank="#3b2a4a",
-        pattern=("bat", R(c="#3b2a4a")),
+        mantel=[("pumpkin", R(), 40, 2.2), ("candycorn", R(), 100, 1.6), ("jack", R(), 180, 2.6), ("bowl", R(c="#6b5a8e"), 270, 2), ("pumpkin", R(c="#efe6cf", side="#ddd2b5"), 350, 1.8)],
+        plank="#5a4a72",
+        pattern=("bat", R(c="#d8cdf0")),
+    ),
+    "christmas-toyshelf": dict(
+        label="Christmas: Grammi's toy shelf",
+        light=["#f6efe6", "#fffaf3", "#2a1d1a", "#5e4a42", "#e6d3c3", "#b3192d"],
+        dark=["#1a1422", "#241c2e", "#f5ece2", "#d3c3bf", "#433650", "#ff8f9b"],
+        weather="snow",
+        garland=R(items=[("block", R(letter="N", c="#b3192d")), ("spinning_top", R()), ("block", R(letter="O", c="#2f6fd0")), ("drum", R(c="#2f8a4f")),
+                         ("block", R(letter="E", c="#2f8a4f")), ("spinning_top", R(c="#2f6fd0", band="#ffffff")), ("block", R(letter="L", c="#e0a12e"))],
+                  rope="#b3192d", twine="#ffffff", seam=("bow", R(c="#b3192d")), seam_hang=("drum", R())),
+        banner=("MERRY & BRIGHT", ["#b3192d", "#2f6fd0", "#2f8a4f", "#e0a12e"], ("spinning_top", R())),
+        corner=[("rocking_horse", R(), 140, 100, 4.2, 0), ("drum", R(c="#2f6fd0"), 70, 135, 2.4, -6), ("block", R(letter="J", c="#b3192d"), 190, 148, 1.8, 8),
+                ("block", R(letter="O", c="#2f8a4f"), 160, 152, 1.6, -10), ("block", R(letter="Y", c="#e0a12e"), 200, 125, 1.5, 14), ("spinning_top", R(), 55, 80, 1.8, 18)],
+        mantel=[("nutcracker", R(), 30, 2.4), ("teddy", R(), 95, 2.4), ("drum", R(), 160, 2.2), ("train_car", R(), 225, 2.2), ("train_car", R(c="#b3192d"), 280, 2.2),
+                ("rocking_horse", R(c="#2f6fd0"), 345, 2.4), ("spinning_top", R(c="#2f8a4f"), 400, 1.8)],
+        plank="#8a5a2e",
+        pattern=("spinning_top", R(c="#b3192d", band="#b3192d")),
     ),
 }
 
@@ -236,7 +257,7 @@ def write_theme(name, spec, pieces, tokens):
         (decor / f"{piece}.svg").write_text(text)
     path = folder / "theme.json"
     theme = json.loads(path.read_text()) if path.exists() else {}
-    theme.update({"label": spec["label"], "extends": "grammis", "colorScheme": "light", "colors": colors(spec["light"], spec["dark"])})
+    theme.update({"label": spec["label"], "extends": "grammis", "colorScheme": spec.get("scheme", "light"), "colors": colors(spec["light"], spec["dark"])})
     kept = {k: v for k, v in theme.get("tokens", {}).items() if not k.startswith("decor") and k not in ("season", "weather")}
     theme["tokens"] = {**kept, **tokens}
     path.write_text(json.dumps(theme, indent=2) + "\n")
@@ -254,7 +275,7 @@ def month(name, spec):
     }
     banner_w = len(words) * 40 + 20
     tokens = {
-        "season": json.dumps(spec["label"].split(":")[0]),
+        "season": json.dumps(spec["label"].split(":")[0]),  # "Christmas", "July"
         "weather": spec["weather"],
         "decorGarlandHeight": f"{g.get('H', 110)}px",
         "decorBannerSize": f"min(100%, {round(banner_w * 1.25)}px) auto",

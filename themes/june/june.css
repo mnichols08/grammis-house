@@ -1,0 +1,22 @@
+/* June: a picnic. A bold red gingham tablecloth under everything, the welcome card a paper
+   napkin with a stitched hem, and tall hand-drawn capitals. */
+body {
+  background:
+    linear-gradient(90deg, rgb(200 40 50 / 0.16) 50%, transparent 50%) 0 0 / 56px 56px,
+    linear-gradient(rgb(200 40 50 / 0.16) 50%, transparent 50%) 0 0 / 56px 56px,
+    #fffaf6;
+}
+.ob-home-welcome {
+  border: 0;
+  border-radius: 4px;
+  background: var(--ob-color-surface);
+  outline: 2px dashed color-mix(in srgb, var(--ob-color-accent) 55%, transparent);
+  outline-offset: -12px;
+  box-shadow: 0 16px 30px -18px rgb(120 20 30 / 0.55);
+  rotate: -0.6deg;
+}
+.ob-home-welcome .ob-title { font-size: clamp(3rem, 8vw, 5rem); line-height: 0.9; font-weight: 700; }
+.ob-heading { font-weight: 700; font-size: 1.35em; }
+.ob-home-button-primary { border-radius: 4px; box-shadow: 3px 3px 0 #4f8f3a; }
+.ob-card { border-top: 0; outline: 1.5px dashed var(--ob-color-border); outline-offset: -8px; }
+@media (prefers-color-scheme: dark) { body { background: linear-gradient(90deg, rgb(255 120 120 / 0.08) 50%, transparent 50%) 0 0 / 56px 56px, linear-gradient(rgb(255 120 120 / 0.08) 50%, transparent 50%) 0 0 / 56px 56px, var(--ob-color-page); } }

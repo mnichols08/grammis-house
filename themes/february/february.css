@@ -1,0 +1,18 @@
+/* February: Valentine's. The welcome card is a paper doily with a dotted lace edge, headings
+   in a swooping italic, and buttons tied with a ribbon. */
+body { background-color: var(--ob-color-page); }
+.ob-home-welcome {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 3px, color-mix(in srgb, var(--ob-color-accent) 14%, transparent) 3.5px 4.5px, transparent 5px) 0 0 / 22px 22px,
+    var(--ob-color-surface);
+  border: 0;
+  border-radius: 6px;
+  padding-inline: 2.4rem;
+  outline: 7px dotted color-mix(in srgb, var(--ob-color-accent) 45%, transparent);
+  outline-offset: 5px;
+  box-shadow: 0 0 0 12px var(--ob-color-surface), 0 14px 30px -12px rgb(176 35 63 / 0.35);
+}
+.ob-home-welcome .ob-title, .ob-heading { font-style: italic; }
+.ob-home-button-primary { border-radius: 4px 18px 4px 18px; }
+.ob-home-button-primary::before { content: "\2665\00a0"; }
+.ob-card { border-top: 0; border-left: 5px double var(--ob-color-accent); }

@@ -1,7 +1,16 @@
 <!--
-  A small sign that hangs under the garland: how many days until the holiday.
-  `holiday` is one of the days named below (Thanksgiving is the fourth Thursday of November),
-  or "next" for whichever comes soonest, so the sign keeps up with the year on its own.
+  A small sign that hangs under the garland: how many days until a day that matters.
+
+  holiday  one of the holidays named below, "next" for whichever comes soonest, or "mine" for a
+           day of her own, described by:
+  event    what it's counting to ("Grandpa and Grammi's anniversary", "Ava's birthday")
+  day      the day (YYYY-MM-DD). For a day that comes every year, its year is when it started,
+           so the sign can say "the 40th!" under it.
+  single   it happens just this once (a visit, a wedding): no years counted, nothing next year
+  noyears  don't count the years
+  note     a line of her own under the sign
+  look     "sign" (a hanging sign) or "calendar" (a tear-off calendar page with a big number)
+
   The text inside is what readers see before (or without) JavaScript.
 -->
 <script>
@@ -20,12 +29,15 @@
     thanksgiving: 'Thanksgiving',
     christmas: 'Christmas',
   }
-  // "next" follows the calendar: whichever of these days comes soonest.
-  let name = names[holiday] ?? 'the next holiday'
 
-  // How many days are left is only known in the browser (today's date), so the server
-  // renders "Counting down to Christmas" and the element fills in the days when it starts.
-  let left = null
+  const own = holiday === 'mine'
+  const ownTitle = (event || '').trim() || 'the big day'
+
+  // How many days are left is only known in the browser (today's date), so the server renders
+  // "Counting down to Christmas" and the element fills in the days when it starts.
+  let count = ''
+  let words = own ? `Counting down to ${ownTitle}` : `Counting down to ${names[holiday] ?? 'the next holiday'}`
+  let years = ''
 
   // The nth weekday of a month (weekday 0 is Sunday): Mother's Day is the 2nd Sunday of May.
   const nth = (year, month, weekday, n) => {
@@ -59,17 +71,46 @@
     }
   }
 
+  const cap = (text) => text.charAt(0).toUpperCase() + text.slice(1)
+
+  const ordinal = (n) => {
+    const tens = n % 100
+    const suffix = tens >= 11 && tens <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th'
+    return `${n}${suffix}`
+  }
+
   onMount(() => {
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const days = (a, b) => Math.round((b - a) / 86400000)
+
+    if (own) {
+      const [y, m, d] = String(day || '').split('-').map(Number)
+      if (!y || !m || !d) { words = `Counting down to ${ownTitle}`; return }
+      let target = new Date(y, m - 1, d)
+      if (single === undefined || single === null || single === false) {
+        target = new Date(today.getFullYear(), m - 1, d)
+        if (target < today) target = new Date(today.getFullYear() + 1, m - 1, d)
+        const n = target.getFullYear() - y
+        if (n >= 1 && (noyears === undefined || noyears === null || noyears === false)) years = `the ${ordinal(n)}!`
+      }
+      const left = days(today, target)
+      if (left < 0) { count = ''; words = `${cap(ownTitle)} was ${-left === 1 ? 'yesterday' : `${-left} days ago`}` }
+      else if (left === 0) { count = ''; words = `Today's the day: ${ownTitle}!` }
+      else { count = String(left); words = left === 1 ? `day until ${ownTitle}` : `days until ${ownTitle}` }
+      return
+    }
+
     const upcoming = (which) => {
-      const day = dayOf(today.getFullYear(), which)
-      return day < today ? dayOf(today.getFullYear() + 1, which) : day
+      const d = dayOf(today.getFullYear(), which)
+      return d < today ? dayOf(today.getFullYear() + 1, which) : d
     }
     let which = holiday
     if (!names[which]) which = Object.keys(names).reduce((a, b) => (upcoming(b) < upcoming(a) ? b : a))
-    name = names[which]
-    left = Math.round((upcoming(which) - today) / 86400000)
+    const name = names[which]
+    const left = days(today, upcoming(which))
+    if (left === 0) { count = ''; words = `${name === 'Christmas' ? 'Merry' : 'Happy'} ${name}!` }
+    else { count = String(left); words = left === 1 ? `day until ${name}` : `days until ${name}` }
   })
 </script>
 <style>
@@ -86,6 +127,7 @@
     font-weight: 700;
     font-size: 1.55rem;
     line-height: 1.15;
+    text-align: center;
     box-shadow: 0 3px 0 color-mix(in srgb, var(--primary, #8e1b2c) 35%, transparent);
     rotate: -1.5deg;
   }
@@ -99,7 +141,43 @@
   }
   .sign::before { left: 18%; rotate: 14deg; transform-origin: bottom; }
   .sign::after { right: 18%; rotate: -14deg; transform-origin: bottom; }
+  .count:not(:empty)::after { content: " "; }
+  .years, .note { display: block; font-size: 1.05rem; font-weight: 400; color: var(--foreground, #3a2418); }
+  .years:empty, .note:empty { display: none; }
+
+  /* A tear-off calendar page: the number big, the words under it. */
+  :host([look="calendar"]) .sign {
+    display: grid;
+    min-width: 9.5rem;
+    padding: 0 0 0.6rem;
+    overflow: hidden;
+    border-width: 0;
+    border-radius: 10px;
+    background: var(--card, #fffaf0);
+    box-shadow: 0 1px 0 var(--border, #e0cdb0), 0 6px 14px -6px color-mix(in srgb, var(--foreground, #3a2418) 45%, transparent);
+    rotate: 2deg;
+  }
+  :host([look="calendar"]) .sign::before {
+    content: "";
+    position: static;
+    width: auto;
+    height: 1.4rem;
+    rotate: none;
+    background: var(--primary, #8e1b2c) radial-gradient(circle at 25% 50%, var(--card, #fff) 0 3px, transparent 4px) 0 0 / 50% 100% repeat-x;
+  }
+  :host([look="calendar"]) .sign::after { display: none; }
+  :host([look="calendar"]) .count {
+    display: block;
+    padding: 0.3rem 1rem 0;
+    font-family: var(--ob-font-heading, serif);
+    font-size: 3.6rem;
+    line-height: 1;
+    color: var(--foreground, #3a2418);
+  }
+  :host([look="calendar"]) .count:empty { display: none; }
+  :host([look="calendar"]) .count::after { content: none; }
+  :host([look="calendar"]) .words { padding: 0.2rem 1rem 0; font-size: 1.25rem; }
 </style>
-<holiday-countdown holiday="next">
-  <p class="sign" role="status">{left === null ? `Counting down to ${name}` : left === 0 ? `${name === 'Christmas' ? 'Merry' : 'Happy'} ${name}!` : left === 1 ? `${name} is tomorrow!` : `${left} days until ${name}`}</p>
+<holiday-countdown holiday="next" look="sign" event="" day="" note="" single={false} noyears={false}>
+  <p class="sign" role="status"><span class="count">{count}</span><span class="words">{words}</span><span class="years">{years}</span><span class="note">{note || ''}</span></p>
 </holiday-countdown>

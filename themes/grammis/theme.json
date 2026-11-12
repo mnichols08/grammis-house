@@ -107,7 +107,10 @@
   "stylesheets": [
     "house.css",
     "zubra-bridge.css",
-    "components/holiday-countdown.css"
+    "components/holiday-countdown.css",
+    "components/family-birthday.css",
+    "components/advent-calendar.css",
+    "components/family-mailbox.css"
   ],
   "scripts": [
     "weather.js"
@@ -115,19 +118,23 @@
   "components": {
     "holiday-countdown": {
       "label": "Countdown sign",
-      "description": "A little hanging sign that counts the days until a holiday.",
+      "description": "A little sign that counts the days until a holiday, an anniversary, a birthday, or any day you choose.",
       "script": "components/holiday-countdown.js",
-      "fallback": "A countdown sign to the holiday hangs here.",
+      "fallback": "A countdown sign hangs here.",
       "props": [
         {
           "name": "holiday",
           "type": "choice",
-          "label": "Which holiday",
+          "label": "Counting down to",
           "default": "next",
           "choices": [
             {
               "value": "next",
               "label": "Whichever holiday comes next"
+            },
+            {
+              "value": "mine",
+              "label": "A day of my own (fill in below)"
             },
             {
               "value": "new-year",
@@ -174,10 +181,185 @@
               "label": "Christmas"
             }
           ],
-          "help": "The sign counts down to this day and says Happy \u2026 when it comes. \"Whichever holiday comes next\" keeps up with the calendar by itself."
+          "help": "Pick a holiday, or \"A day of my own\" for an anniversary, a birthday, or anything else."
+        },
+        {
+          "name": "event",
+          "type": "text",
+          "label": "Your day's name",
+          "maxLength": 60,
+          "help": "For a day of your own, the way you'd say it: \"our anniversary\", \"Ava's birthday\", \"the family reunion\"."
+        },
+        {
+          "name": "day",
+          "type": "date",
+          "label": "Its date",
+          "help": "For an anniversary or birthday, the very first one (the wedding day, the day they were born) so the sign can say \"the 40th!\"."
+        },
+        {
+          "name": "single",
+          "type": "toggle",
+          "label": "It only happens once",
+          "help": "Turn on for a one-time day, like a visit or a wedding. Leave off for a day that comes every year."
+        },
+        {
+          "name": "noyears",
+          "type": "toggle",
+          "label": "Don't count the years",
+          "help": "Turn on to leave off \"the 40th!\" under the sign."
+        },
+        {
+          "name": "note",
+          "type": "text",
+          "label": "A line under it",
+          "maxLength": 80,
+          "help": "Anything you'd like to add, like \"Cookies at my house!\""
+        },
+        {
+          "name": "look",
+          "type": "choice",
+          "label": "Looks like",
+          "default": "sign",
+          "choices": [
+            {
+              "value": "sign",
+              "label": "A hanging sign"
+            },
+            {
+              "value": "calendar",
+              "label": "A calendar page with a big number"
+            }
+          ]
         }
       ],
       "source": "components/holiday-countdown.zb"
+    },
+    "family-birthday": {
+      "label": "Birthday card",
+      "description": "Celebrates someone's birthday on the home page with their favorite dish. It shows up a few days before and stays out of sight the rest of the year.",
+      "script": "components/family-birthday.js",
+      "source": "components/family-birthday.zb",
+      "fallback": "A birthday card shows here around someone's birthday.",
+      "props": [
+        {
+          "name": "person",
+          "type": "text",
+          "label": "Whose birthday",
+          "required": true,
+          "maxLength": 40,
+          "help": "Their name the way the family says it: \"Mikey\", \"Grandpa\"."
+        },
+        {
+          "name": "day",
+          "type": "date",
+          "label": "Their birthday",
+          "required": true,
+          "help": "The day they were born. The year only matters if you turn on \"Say how old\"."
+        },
+        {
+          "name": "dish",
+          "type": "text",
+          "label": "Their favorite dish",
+          "maxLength": 60,
+          "help": "Like \"Meatloaf\" or \"Grown-up grilled cheese\"."
+        },
+        {
+          "name": "recipe",
+          "type": "post",
+          "label": "Your recipe for it",
+          "help": "Pick the recipe so the card can say \"Make it\". It shows once the recipe is published."
+        },
+        {
+          "name": "note",
+          "type": "text",
+          "label": "A line from you",
+          "maxLength": 80,
+          "help": "Like \"Come by for cake!\""
+        },
+        {
+          "name": "early",
+          "type": "number",
+          "label": "Start celebrating this many days before",
+          "default": 7,
+          "min": 0,
+          "max": 30
+        },
+        {
+          "name": "age",
+          "type": "toggle",
+          "label": "Say how old they're turning"
+        }
+      ]
+    },
+    "advent-calendar": {
+      "label": "Advent calendar",
+      "description": "Twenty-four doors to open, one each day from December 1. Behind each is your post for that day (tag it \"advent\"), or something fun to do together.",
+      "script": "components/advent-calendar.js",
+      "source": "components/advent-calendar.zb",
+      "fallback": "An advent calendar opens here in December.",
+      "props": [
+        {
+          "name": "tag",
+          "type": "text",
+          "label": "Posts with this tag go behind the doors",
+          "default": "advent",
+          "maxLength": 40,
+          "help": "Write a post dated that day in December and give it this tag; it goes behind that day's door."
+        },
+        {
+          "name": "shows",
+          "type": "choice",
+          "label": "When it shows",
+          "default": "season",
+          "choices": [
+            {
+              "value": "season",
+              "label": "From November 20 to January 6"
+            },
+            {
+              "value": "always",
+              "label": "All year (for trying it out)"
+            }
+          ]
+        }
+      ]
+    },
+    "family-mailbox": {
+      "label": "Write to Grammi",
+      "description": "A postcard asking the family to write in. Its button opens their email with a note to you already addressed.",
+      "script": "components/family-mailbox.js",
+      "source": "components/family-mailbox.zb",
+      "fallback": "Send Grammi a note by email.",
+      "props": [
+        {
+          "name": "email",
+          "type": "text",
+          "label": "Your email address",
+          "maxLength": 120,
+          "help": "Where the family's notes go. The card stays hidden until this is filled in."
+        },
+        {
+          "name": "prompt",
+          "type": "text",
+          "label": "What the card says",
+          "default": "Made one of my recipes? Tell me how it turned out, and send a picture!",
+          "maxLength": 140
+        },
+        {
+          "name": "button",
+          "type": "text",
+          "label": "The button",
+          "default": "Write to Grammi",
+          "maxLength": 30
+        },
+        {
+          "name": "subject",
+          "type": "text",
+          "label": "The email's subject",
+          "default": "A note for Grammi",
+          "maxLength": 80
+        }
+      ]
     }
   }
 }

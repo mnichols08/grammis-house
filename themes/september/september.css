@@ -1,0 +1,22 @@
+/* September: apple picking and back to school. Orchard-crate slats behind the page, and the
+   welcome card is a chalkboard with a wooden frame and chalky writing. */
+body {
+  background:
+    var(--ob-decor-pattern) 0 0 / var(--ob-decor-pattern-size),
+    repeating-linear-gradient(to bottom, rgb(150 100 50 / 0.07) 0 60px, rgb(90 55 25 / 0.12) 60px 63px),
+    var(--ob-color-page);
+}
+.ob-home-welcome {
+  border: 14px solid #8a5a2e;
+  border-radius: 6px;
+  background:
+    radial-gradient(60rem 20rem at 30% 20%, rgb(255 255 255 / 0.06), transparent 70%),
+    #2f4a3a;
+  color: #f1efe6;
+  box-shadow: inset 0 0 40px rgb(0 0 0 / 0.35), 0 12px 24px -16px #000;
+}
+.ob-home-welcome .ob-title, .ob-home-welcome .ob-home-lede { color: #f7f4ea; text-shadow: 0 0 1px rgb(255 255 255 / 0.6); }
+.ob-home-welcome .ob-title { font-weight: 400; font-size: clamp(2.4rem, 6vw, 3.8rem); }
+.ob-heading { font-weight: 400; }
+.ob-home-welcome .ob-home-button-primary { background: #f2e9c8; color: #2f4a3a; border-radius: 3px; box-shadow: 0 3px 0 #c9b98a; }
+.ob-card { border-top: 0; border-left: 8px solid #a3232b; border-radius: 3px; }

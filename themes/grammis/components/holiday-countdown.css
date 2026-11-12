@@ -15,6 +15,7 @@
     font-weight: 700;
     font-size: 1.55rem;
     line-height: 1.15;
+    text-align: center;
     box-shadow: 0 3px 0 color-mix(in srgb, var(--primary, #8e1b2c) 35%, transparent);
     rotate: -1.5deg;
   }
@@ -28,5 +29,41 @@
   }
   .sign::before { left: 18%; rotate: 14deg; transform-origin: bottom; }
   .sign::after { right: 18%; rotate: -14deg; transform-origin: bottom; }
+  .count:not(:empty)::after { content: " "; }
+  .years, .note { display: block; font-size: 1.05rem; font-weight: 400; color: var(--foreground, #3a2418); }
+  .years:empty, .note:empty { display: none; }
+
+  /* A tear-off calendar page: the number big, the words under it. */
+  :scope:is([look="calendar"]) .sign {
+    display: grid;
+    min-width: 9.5rem;
+    padding: 0 0 0.6rem;
+    overflow: hidden;
+    border-width: 0;
+    border-radius: 10px;
+    background: var(--card, #fffaf0);
+    box-shadow: 0 1px 0 var(--border, #e0cdb0), 0 6px 14px -6px color-mix(in srgb, var(--foreground, #3a2418) 45%, transparent);
+    rotate: 2deg;
+  }
+  :scope:is([look="calendar"]) .sign::before {
+    content: "";
+    position: static;
+    width: auto;
+    height: 1.4rem;
+    rotate: none;
+    background: var(--primary, #8e1b2c) radial-gradient(circle at 25% 50%, var(--card, #fff) 0 3px, transparent 4px) 0 0 / 50% 100% repeat-x;
+  }
+  :scope:is([look="calendar"]) .sign::after { display: none; }
+  :scope:is([look="calendar"]) .count {
+    display: block;
+    padding: 0.3rem 1rem 0;
+    font-family: var(--ob-font-heading, serif);
+    font-size: 3.6rem;
+    line-height: 1;
+    color: var(--foreground, #3a2418);
+  }
+  :scope:is([look="calendar"]) .count:empty { display: none; }
+  :scope:is([look="calendar"]) .count::after { content: none; }
+  :scope:is([look="calendar"]) .words { padding: 0.2rem 1rem 0; font-size: 1.25rem; }
 }
 }

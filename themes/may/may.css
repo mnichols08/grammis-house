@@ -1,0 +1,22 @@
+/* May: pressed flowers for Mom. The welcome card is deckle-edged watercolor paper with a
+   blush wash in its corner, and headings set in a delicate italic. */
+body {
+  background:
+    radial-gradient(40rem 26rem at 8% 12%, rgb(246 184 200 / 0.28), transparent 70%) fixed,
+    radial-gradient(36rem 24rem at 92% 80%, rgb(201 182 234 / 0.25), transparent 70%) fixed,
+    var(--ob-decor-pattern) 0 0 / var(--ob-decor-pattern-size),
+    var(--ob-color-page);
+}
+.ob-home-welcome {
+  border: 0;
+  border-radius: 3% 4% 2% 5% / 5% 3% 6% 2%;
+  background:
+    radial-gradient(22rem 14rem at 100% 0, rgb(232 87 122 / 0.12), transparent 70%),
+    radial-gradient(18rem 12rem at 0 100%, rgb(111 154 74 / 0.10), transparent 70%),
+    var(--ob-color-surface);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.06), 0 14px 30px -20px rgb(110 50 60 / 0.5);
+}
+.ob-home-welcome .ob-title { font-style: italic; font-weight: 600; font-size: clamp(2.6rem, 6vw, 4.2rem); line-height: 0.95; }
+.ob-heading { font-style: italic; font-weight: 600; }
+.ob-home-button-primary { border-radius: 2px; letter-spacing: 0.04em; }
+.ob-card { border-top: 0; border-radius: 2px; background-image: none; border-left: 1px solid var(--ob-color-border); box-shadow: 4px 4px 0 rgb(246 184 200 / 0.35); }

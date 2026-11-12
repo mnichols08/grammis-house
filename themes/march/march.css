@@ -1,0 +1,22 @@
+/* March: lucky. A soft green tartan on the table, a welcome card with an old-world double
+   border and corner knots, and uncial lettering. */
+body {
+  background:
+    var(--ob-decor-pattern) 0 0 / var(--ob-decor-pattern-size),
+    repeating-linear-gradient(90deg, rgb(31 122 62 / 0.06) 0 18px, transparent 18px 36px, rgb(232 184 48 / 0.08) 36px 40px, transparent 40px 72px),
+    repeating-linear-gradient(0deg, rgb(31 122 62 / 0.06) 0 18px, transparent 18px 36px, rgb(232 184 48 / 0.08) 36px 40px, transparent 40px 72px),
+    var(--ob-color-page);
+}
+.ob-home-welcome {
+  border: 3px double var(--ob-color-accent);
+  outline: 1px solid color-mix(in srgb, var(--ob-color-accent) 40%, transparent);
+  outline-offset: 6px;
+  border-radius: 2px;
+  background:
+    radial-gradient(circle at 0 0, var(--ob-color-accent) 0 7px, transparent 8px),
+    radial-gradient(circle at 100% 100%, var(--ob-color-accent) 0 7px, transparent 8px),
+    var(--ob-color-surface);
+}
+.ob-home-welcome .ob-title, .ob-heading { letter-spacing: 0.01em; font-weight: 400; }
+.ob-home-button-primary { border-radius: 0; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%); padding-inline: 1.5rem; }
+.ob-card { border-top: 0; border: 1px solid var(--ob-color-border); box-shadow: inset 0 0 0 4px var(--ob-color-surface), inset 0 0 0 5px color-mix(in srgb, var(--ob-color-accent) 45%, transparent); }

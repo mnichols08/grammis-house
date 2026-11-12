@@ -1,0 +1,20 @@
+/* Family stories: an old photo album. Black album pages behind, story text on cream paper held
+   with photo corners, and an italic serif like handwriting on the back of a photograph. */
+body { background: #2a2420; }
+main {
+  max-width: min(100% - 2rem, 52rem);
+  margin-inline: auto;
+  padding: 2rem clamp(1rem, 4vw, 3rem);
+  background:
+    linear-gradient(135deg, #1d1814 0 18px, transparent 18px) top left / 50% 50% no-repeat,
+    linear-gradient(225deg, #1d1814 0 18px, transparent 18px) top right / 50% 50% no-repeat,
+    linear-gradient(45deg, #1d1814 0 18px, transparent 18px) bottom left / 50% 50% no-repeat,
+    linear-gradient(315deg, #1d1814 0 18px, transparent 18px) bottom right / 50% 50% no-repeat,
+    #f4ead8;
+  box-shadow: 0 20px 40px -20px #000;
+}
+.ob-heading, .ob-post-title, .ob-title { font-style: italic; font-weight: 600; }
+.ob-header a, .ob-header .ob-brand-name, .ob-header .ob-nav-link, .ob-header .ob-icon-button, .ob-footer, .ob-footer a { color: #f4ead8; }
+.ob-header .ob-nav-link[aria-current] { color: #f2c58a; text-decoration: underline; text-underline-offset: 6px; }
+.ob-card { border-top: 0; background: #fffaf0; padding: 0.8rem 0.8rem 1.6rem; box-shadow: 0 6px 14px -8px rgb(0 0 0 / 0.5); rotate: -0.5deg; }
+.ob-card:nth-child(even) { rotate: 0.7deg; }

@@ -116,3 +116,11 @@ becomes, and a cache miss quietly installs a newer engine than the key says. It 
 - Parent scripts are inherited, so one `weather.js` in the house serves every month, switched by a
   token. Reading a token from a script is just `getComputedStyle(...).getPropertyValue("--ob-weather")`,
   which is worth a line in the themes doc: it's how a theme gives its scripts settings.
+- A season whose theme exists but can't be resolved was reported as "there is no
+  themes/<name>/theme.json" (a component setting named `once` tripped the `on…` rule, and every
+  season extends the house). Fixed in #655: the message now gives the theme's own problem.
+- Component settings had no date or post types, so an anniversary countdown or a birthday card
+  linking to a recipe meant typing `1986-06-14` and a post address by hand. Added `date` (#654) and
+  `post` (#655).
+- Zubra refuses `data:` URLs in `src` (a sensible guard), so a component's little pictures go in its
+  stylesheet as CSS backgrounds instead.

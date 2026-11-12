@@ -24,10 +24,13 @@ permissions:
 
 # The open.blog engine this site was tested with. Grammi's site is a real reader-facing
 # site, so it upgrades on purpose: change this, build locally, then push.
-# This is the commit of journey-to-code-org/open.blog#653 (design a theme from words), stacked
-# on #652, #651 and #649. Once they're merged, point this at the merge commit on main.
+# This is the commit of journey-to-code-org/open.blog#655 (a component setting that picks a post),
+# stacked on #654, #653, #652, #651 and #649. Once they're merged, point this at the merge commit on main.
 env:
-  OPENBLOG_REV: 9a42655787e98c041c5e12305e8f7f6b9f1bcad7
+  OPENBLOG_REV: 3eec442502e1ae9a20730366d499096b36623411
+  # Notes on recipes (hosted comments) run on Netlify. They're off until scripts/setup-family-notes.sh
+  # has been run: it sets the repository variable NETLIFY_SITE_ID and the secret NETLIFY_AUTH_TOKEN.
+  NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
 
 concurrency:
   group: pages
@@ -59,6 +62,18 @@ jobs:
         run: npm install --global @zubra/compiler@5.8.0
       - name: Build the site
         run: openblog build
+      - name: Deploy the family notes service to Netlify
+        # Off until NETLIFY_SITE_ID is set. The function is open.blog's own (netlify/functions), at the
+        # same commit as the engine; Netlify also keeps a copy of the site, which nobody needs to visit.
+        if: env.NETLIFY_SITE_ID != ''
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          git clone -q https://github.com/journey-to-code-org/open.blog "$RUNNER_TEMP/openblog"
+          git -C "$RUNNER_TEMP/openblog" checkout -q "$OPENBLOG_REV"
+          cd "$RUNNER_TEMP/openblog"
+          npx -y netlify-cli@17 deploy --prod --no-build --dir "$GITHUB_WORKSPACE/dist" \
+            --functions netlify/functions --site "$NETLIFY_SITE_ID"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

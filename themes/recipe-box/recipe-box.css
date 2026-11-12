@@ -1,0 +1,14 @@
+/* Recipe box: every card and every recipe is an index card from a tin box, typed on Grammi's
+   old typewriter, with the red rule along the top. */
+main > .ob-container {
+  padding: 2rem 2rem 2.5rem;
+  background:
+    linear-gradient(to bottom, transparent 3.2rem, #d9534f 3.2rem, #d9534f 3.35rem, transparent 3.35rem),
+    repeating-linear-gradient(to bottom, transparent 0 1.75rem, rgb(80 130 200 / 0.22) 1.75rem calc(1.75rem + 1px)) 0 3.4rem,
+    var(--ob-color-surface);
+  border: 1px solid var(--ob-color-border);
+  border-radius: 3px;
+  box-shadow: 0 10px 22px -16px rgb(60 40 20 / 0.6);
+}
+.ob-heading, .ob-post-title, .ob-title { font-weight: 400; letter-spacing: 0.01em; }
+.ob-card { border-top: 0; border-radius: 2px; box-shadow: 0 2px 0 var(--ob-color-border); }

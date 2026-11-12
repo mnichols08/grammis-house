@@ -1,0 +1,124 @@
+<!--
+  A birthday card for one person in the family. It stays out of sight most of the year, comes
+  out a few days before their birthday ("3 days until Mikey's birthday!"), and on the day it's a
+  party: "Happy birthday, Mikey!" with their favorite dish and a link to Grammi's recipe for it.
+  Grammi adds one for each person on the Landing page.
+
+  person   their name, the way the family says it ("Mikey", "Grandpa")
+  day      their birthday; the year they were born, if she wants "Turning 41!"
+  dish     their favorite dish ("Grown-up grilled cheese")
+  recipe   the post with her recipe for it (open.blog gives the element its address)
+  age      say how old they're turning
+  early    how many days before to start celebrating
+  note     a line of her own ("Come by for cake!")
+
+  Whether it shows is decided in the browser (today's date), so the server renders it hidden.
+-->
+<script>
+  import { onMount } from '@zubra/runtime'
+
+  const name = (person || '').trim() || 'someone special'
+  let state = 'hidden'
+  let headline = ''
+  let turning = ''
+
+  const ordinal = (n) => {
+    const tens = n % 100
+    const suffix = tens >= 11 && tens <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th'
+    return `${n}${suffix}`
+  }
+
+  onMount(() => {
+    const [y, m, d] = String(day || '').split('-').map(Number)
+    if (!m || !d) return
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    let next = new Date(today.getFullYear(), m - 1, d)
+    if (next < today) next = new Date(today.getFullYear() + 1, m - 1, d)
+    const left = Math.round((next - today) / 86400000)
+    const lead = Number.isFinite(Number(early)) ? Number(early) : 7
+    const years = next.getFullYear() - y
+    if (age !== undefined && age !== null && age !== false && y && years > 0) turning = `Turning ${years}!`
+    if (left === 0) {
+      state = 'party'
+      headline = `Happy birthday, ${name}!`
+      if (turning) turning = `${name} is ${years} today. Happy ${ordinal(years)}!`
+    } else if (left <= lead) {
+      state = 'soon'
+      headline = left === 1 ? `${name}'s birthday is tomorrow!` : `${left} days until ${name}'s birthday!`
+    }
+  })
+</script>
+<style>
+  :host { display: block; }
+  .card { display: none; }
+  .card[data-state="soon"], .card[data-state="party"] { display: grid; }
+  .card {
+    position: relative;
+    max-width: 34rem;
+    margin: 1.2rem auto;
+    padding: 1.4rem 1.6rem 1.3rem;
+    gap: 0.35rem;
+    border-radius: 14px;
+    background:
+      radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--primary, #a3172b) 22%, transparent) 0 3px, transparent 4px) 0 0 / 46px 46px,
+      radial-gradient(circle at 70% 60%, color-mix(in srgb, #e8b830 40%, transparent) 0 2px, transparent 3px) 0 0 / 38px 38px,
+      var(--card, #fffaf0);
+    border: 2px dashed color-mix(in srgb, var(--primary, #a3172b) 55%, transparent);
+    color: var(--foreground, #3a2418);
+    text-align: center;
+  }
+  .cake {
+    justify-self: center;
+    width: 4.2rem;
+    height: 3.6rem;
+    margin-bottom: 0.2rem;
+  }
+  .card[data-state="soon"] .cake { width: 3rem; height: 2.6rem; }
+  .card[data-state="party"] { border-style: solid; box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--primary, #a3172b) 80%, transparent); }
+  .card[data-state="party"] .flame { animation: flicker 0.9s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+  @keyframes flicker { from { transform: scale(0.85) rotate(-4deg); } to { transform: scale(1.1) rotate(4deg); } }
+  @media (prefers-reduced-motion: reduce) { .card .flame { animation: none; } }
+  .headline {
+    margin: 0;
+    font-family: var(--ob-font-hand, cursive);
+    font-size: 2rem;
+    line-height: 1.1;
+    color: var(--primary, #a3172b);
+  }
+  .card[data-state="soon"] .headline { font-size: 1.6rem; }
+  .turning:empty, .note:empty, .favorite[data-empty="true"] { display: none; }
+  .turning, .note { margin: 0; font-size: 1.05rem; }
+  .favorite { margin: 0.3rem 0 0; font-size: 1.1rem; }
+  .favorite a {
+    display: inline-block;
+    margin-left: 0.3rem;
+    padding: 0.15rem 0.7rem;
+    border-radius: 999px;
+    background: var(--primary, #a3172b);
+    color: var(--primary-foreground, #fff);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .favorite a:focus-visible { outline: 3px solid var(--ring, #e8b830); outline-offset: 2px; }
+</style>
+<family-birthday person="" day="" dish="" recipe="" note="" early={7} age={false}>
+  <div class="card" data-state={state} role="status">
+    <svg class="cake" viewBox="0 0 64 56" aria-hidden="true">
+      <rect x="8" y="26" width="48" height="24" rx="4" fill="#f6b8c8" />
+      <path d="M8 30h48v4c-4 3-8-3-12 0s-8-3-12 0-8-3-12 0-8-3-12 0z" fill="#fff8ec" />
+      <rect x="8" y="42" width="48" height="3" fill="#e0567a" opacity=".5" />
+      <ellipse cx="32" cy="52" rx="30" ry="3.5" fill="#d6ccb8" />
+      <rect x="20" y="12" width="4" height="15" rx="1" fill="#8fc7c0" />
+      <rect x="30" y="10" width="4" height="17" rx="1" fill="#f2c14e" />
+      <rect x="40" y="12" width="4" height="15" rx="1" fill="#b9a4e0" />
+      <path class="flame" d="M22 11c-3-3 0-7 0-9 0 2 3 6 0 9z" fill="#f2913d" />
+      <path class="flame" d="M32 9c-3-3 0-7 0-9 0 2 3 6 0 9z" fill="#f2913d" />
+      <path class="flame" d="M42 11c-3-3 0-7 0-9 0 2 3 6 0 9z" fill="#f2913d" />
+    </svg>
+    <p class="headline">{headline}</p>
+    <p class="turning">{turning}</p>
+    <p class="favorite" data-empty={dish ? 'false' : 'true'}>{dish ? `${name}'s favorite: ${dish}` : ''}<a href={recipe || '#'} hidden={!recipe}>Make it</a></p>
+    <p class="note">{note || ''}</p>
+  </div>
+</family-birthday>

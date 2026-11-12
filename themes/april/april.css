@@ -1,0 +1,20 @@
+/* April: Easter. Pastel gingham on the table, a welcome card shaped like the top of an
+   egg, with a dotted ribbon along its bottom, and round, cheerful headings. */
+body {
+  background:
+    var(--ob-decor-pattern) 0 0 / var(--ob-decor-pattern-size),
+    linear-gradient(90deg, rgb(185 164 224 / 0.12) 50%, transparent 50%) 0 0 / 40px 40px,
+    linear-gradient(rgb(159 216 203 / 0.14) 50%, transparent 50%) 0 0 / 40px 40px,
+    var(--ob-color-page);
+}
+.ob-home-welcome {
+  border: 0;
+  border-radius: 40px 40px 0 0;
+  padding-bottom: 3rem;
+  background: var(--ob-color-surface);
+  border-bottom: 12px dotted #f7d774;
+  box-shadow: 0 6px 0 -2px #b9a4e0;
+}
+.ob-home-welcome .ob-title, .ob-heading { font-weight: 800; letter-spacing: -0.01em; }
+.ob-home-button-primary { border-radius: 50% 50% 46% 46% / 60% 60% 40% 40%; padding: 0.7rem 1.6rem; }
+.ob-card { border-radius: 26px; border-top: 0; border: 3px dashed color-mix(in srgb, var(--ob-color-accent) 35%, transparent); }

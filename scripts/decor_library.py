@@ -335,7 +335,7 @@ def bunting(words, colors, gap_motif=None, letter="#fffaf0"):
         col = col[0] if isinstance(col, tuple) else col
         out.append(f"<g transform='translate({f(x)} {f(y)}) rotate({f(a * .6)})'><path d='M-15 0H15L0 34Z' fill='{col}'/>"
                    f"<path d='M-15 0H15V3H-15Z' fill='#000' opacity='.15'/>"
-                   f"<text x='0' y='17' text-anchor='middle' font-family='Georgia,serif' font-weight='700' font-size='15' fill='{ink}'>{ch}</text></g>")
+                   f"<text x='0' y='17' text-anchor='middle' font-family='Georgia,serif' font-weight='700' font-size='15' fill='{ink}'>{ch.replace('&', '&amp;')}</text></g>")
     return svg(W, 70, "".join(out))
 
 
@@ -419,3 +419,55 @@ def scheme(page, surface, text, muted, border, accent):
            "codeBg": raised, "codeText": text, "ink": text}
     assert contrast(out["text"], page) >= 7 - 1e-6 and contrast(out["accent"], page) >= 4.5 - 1e-6, out
     return out
+
+
+# ----------------------------------------------------------------------------- old-fashioned toys
+
+def spinning_top(c="#c8243c", band="#f2c14e", **_):
+    return (f"<path d='M-10-2C-10-8 10-8 10-2L0 11Z' fill='{c}'/><path d='M-10-2H10L7 2H-7Z' fill='{band}'/>"
+            "<rect x='-1.2' y='-12' width='2.4' height='6' rx='1' fill='#8a5a2e'/><path d='M-6-5Q0-7 6-5' stroke='#fff' stroke-opacity='.45' fill='none'/>")
+
+
+def drum(c="#c8243c", rim="#f2c14e", **_):
+    zig = "".join(f"<path d='M{x} -5L{x + 3} 5' stroke='#fff' stroke-width='1.2'/><path d='M{x + 3} 5L{x + 6} -5' stroke='#fff' stroke-width='1.2'/>" for x in (-9, -3, 3))
+    return (f"<rect x='-10' y='-6' width='20' height='12' fill='{c}'/>{zig}<ellipse cy='-6' rx='10' ry='3' fill='#f7efe0' stroke='{rim}' stroke-width='1.6'/>"
+            f"<path d='M-10 6A10 3 0 0 0 10 6' stroke='{rim}' stroke-width='1.6' fill='none'/><path d='M-4-12L2-7M6-12L0-7' stroke='#8a5a2e' stroke-width='1.4' stroke-linecap='round'/>")
+
+
+def block(letter="A", c="#2f6fd0", **_):
+    return (f"<rect x='-8' y='-8' width='16' height='16' rx='1.5' fill='#f2d9a8'/><rect x='-6' y='-6' width='12' height='12' rx='1' fill='{c}'/>"
+            f"<text y='4.2' text-anchor='middle' font-family='Georgia,serif' font-weight='700' font-size='11' fill='#fff'>{letter}</text>")
+
+
+def rocking_horse(c="#c8243c", **_):
+    return ("<path d='M-14 10Q0 16 14 10' stroke='#8a5a2e' stroke-width='2.4' fill='none' stroke-linecap='round'/>"
+            "<path d='M-8 9L-6 2M6 2L8 9' stroke='#8a5a2e' stroke-width='2'/>"
+            f"<path d='M-9 2C-10-3-6-4 2-4L6-4 7-10C8-12 12-12 13-9L12-6 9-5 9 1C9 3 7 3 6 3H-7C-9 3-9 3-9 2Z' fill='{c}'/>"
+            "<path d='M7-10C5-12 3-10 4-6' stroke='#f2c14e' stroke-width='2' fill='none'/><path d='M-9 -1L-13 3' stroke='#f2c14e' stroke-width='2' stroke-linecap='round'/>"
+            "<circle cx='10.5' cy='-8.5' r='.8' fill='#2a1a0e'/><rect x='-3' y='-5' width='6' height='3' rx='1' fill='#2f6fd0'/>")
+
+
+def nutcracker(**_):
+    return ("<rect x='-4' y='-15' width='8' height='6' rx='1' fill='#2a2a3a'/><rect x='-4.5' y='-10' width='9' height='1.4' fill='#f2c14e'/>"
+            "<rect x='-3.5' y='-8.6' width='7' height='6' fill='#f3d2b0'/><path d='M-3.5-4H3.5V-2.6H-3.5Z' fill='#fff'/>"
+            "<circle cx='-1.5' cy='-6.5' r='.6' fill='#222'/><circle cx='1.5' cy='-6.5' r='.6' fill='#222'/>"
+            "<rect x='-5' y='-2.6' width='10' height='8' rx='1' fill='#c8243c'/><path d='M0-2.6V5.4' stroke='#f2c14e' stroke-width='1'/>"
+            "<rect x='-4' y='5.4' width='3.4' height='7' fill='#2f3f7a'/><rect x='.6' y='5.4' width='3.4' height='7' fill='#2f3f7a'/>"
+            "<rect x='-4.5' y='11' width='4.4' height='2' fill='#111'/><rect x='.1' y='11' width='4.4' height='2' fill='#111'/>")
+
+
+def teddy(c="#b07a45", **_):
+    return (f"<circle cx='-5' cy='-9' r='3' fill='{c}'/><circle cx='5' cy='-9' r='3' fill='{c}'/><circle cy='-4' r='6.5' fill='{c}'/>"
+            f"<ellipse cy='6' rx='7' ry='7.5' fill='{c}'/><ellipse cy='-2' rx='3' ry='2.2' fill='#e8c9a0'/><circle cy='-3' r='.9' fill='#2a1a0e'/>"
+            "<circle cx='-2.4' cy='-6' r='.8' fill='#2a1a0e'/><circle cx='2.4' cy='-6' r='.8' fill='#2a1a0e'/>"
+            "<path d='M-4 1L0 3 4 1 2 4H-2Z' fill='#c8243c'/><ellipse cy='7' rx='3.6' ry='4' fill='#e8c9a0'/>")
+
+
+def train_car(c="#2f6fd0", **_):
+    return (f"<rect x='-11' y='-6' width='22' height='10' rx='1.5' fill='{c}'/><rect x='-8' y='-4' width='6' height='5' fill='#fff8ec'/><rect x='2' y='-4' width='6' height='5' fill='#fff8ec'/>"
+            "<circle cx='-6' cy='6' r='3' fill='#2a2a2a'/><circle cx='6' cy='6' r='3' fill='#2a2a2a'/><circle cx='-6' cy='6' r='1' fill='#f2c14e'/><circle cx='6' cy='6' r='1' fill='#f2c14e'/>"
+            "<rect x='-12' y='-7.5' width='24' height='2' rx='1' fill='#f2c14e'/>")
+
+
+MOTIFS.update({"spinning_top": spinning_top, "drum": drum, "block": block, "rocking_horse": rocking_horse,
+               "nutcracker": nutcracker, "teddy": teddy, "train_car": train_car})

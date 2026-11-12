@@ -22,6 +22,48 @@
       }
     },
     {
+      "id": "birthday-mikey",
+      "type": "component",
+      "tag": "family-birthday",
+      "props": {
+        "person": "Mikey",
+        "day": "2026-10-04",
+        "dish": "Grown-up grilled cheese",
+        "recipe": "grown-up-grilled-cheese"
+      }
+    },
+    {
+      "id": "birthday-dad",
+      "type": "component",
+      "tag": "family-birthday",
+      "props": {
+        "person": "Dad",
+        "day": "2026-04-09",
+        "dish": "Meatloaf",
+        "recipe": "dads-meatloaf"
+      }
+    },
+    {
+      "id": "birthday-brother",
+      "type": "component",
+      "tag": "family-birthday",
+      "props": {
+        "person": "TODO brother's name",
+        "day": "2026-04-11",
+        "dish": "Stuffed peppers",
+        "recipe": "stuffed-peppers"
+      }
+    },
+    {
+      "id": "advent",
+      "type": "component",
+      "tag": "advent-calendar",
+      "props": {
+        "tag": "advent",
+        "shows": "season"
+      }
+    },
+    {
       "id": "this-season",
       "type": "rich-text",
       "markdown": "## This season: Thanksgiving\n\nEverybody's spread out now, so Grammi wrote it all down. Find the turkey, the sides, and the pie, and cook them wherever you are this year. Then send her a picture."
@@ -37,6 +79,14 @@
       "id": "collections",
       "type": "series",
       "heading": "Holiday collections"
+    },
+    {
+      "id": "write-to-grammi",
+      "type": "component",
+      "tag": "family-mailbox",
+      "props": {
+        "email": ""
+      }
     }
   ]
 }

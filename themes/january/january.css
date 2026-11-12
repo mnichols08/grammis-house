@@ -1,0 +1,26 @@
+/* January: a snow day. A sky that pales toward the snowy hills at the bottom of the window, a
+   frosted-glass welcome card with snow piled on its top edge, and soft rounded letters. */
+body {
+  background:
+    radial-gradient(120% 40% at 20% 108%, #ffffff 0 48%, transparent 49%) fixed,
+    radial-gradient(110% 38% at 85% 112%, #f4f8fc 0 50%, transparent 51%) fixed,
+    var(--ob-decor-pattern) 0 0 / var(--ob-decor-pattern-size),
+    linear-gradient(to bottom, #d7e6f2, #eef4f9 60%, #f7fafc) fixed;
+}
+.ob-home-welcome {
+  background: color-mix(in srgb, var(--ob-color-surface) 72%, transparent);
+  backdrop-filter: blur(6px) saturate(1.2);
+  border: 1px solid rgb(255 255 255 / 0.9);
+  border-radius: 28px;
+  box-shadow: 0 18px 40px -24px #2f5f8a, inset 0 1px 0 #fff;
+  /* snow piled along the top edge */
+  border-top: 14px solid #fff;
+  border-image: none;
+}
+.ob-home-welcome .ob-title { font-weight: 700; letter-spacing: -0.01em; }
+.ob-home-button-primary { border-radius: 999px; box-shadow: 0 4px 0 color-mix(in srgb, var(--ob-color-accent) 60%, #000); }
+.ob-card { border-radius: 20px; border-top: 0; box-shadow: inset 0 6px 0 #fff, 0 10px 24px -18px #2f5f8a; }
+@media (prefers-color-scheme: dark) {
+  body { background: radial-gradient(120% 40% at 20% 108%, #26323e 0 48%, transparent 49%) fixed, var(--ob-decor-pattern) 0 0 / var(--ob-decor-pattern-size), linear-gradient(#0f1820, #182430) fixed; }
+  .ob-home-welcome { border-color: rgb(255 255 255 / 0.15); border-top-color: #dfe8f0; }
+}

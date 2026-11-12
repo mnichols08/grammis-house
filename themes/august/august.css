@@ -1,0 +1,22 @@
+/* August: sunny days. A sunburst behind the page, a chunky retro welcome card with a hard
+   offset shadow, and a looping script for headings. */
+body {
+  background:
+    repeating-conic-gradient(from 0deg at 50% -10%, rgb(246 194 24 / 0.13) 0 6deg, transparent 6deg 12deg) fixed,
+    var(--ob-decor-pattern) 0 0 / var(--ob-decor-pattern-size),
+    linear-gradient(#fdebc8, var(--ob-color-page) 50%) fixed;
+}
+.ob-home-welcome {
+  border: 3px solid #5a3518;
+  border-radius: 22px;
+  background: var(--ob-color-surface);
+  box-shadow: 9px 9px 0 #e8913a;
+}
+.ob-home-welcome .ob-title { font-weight: 400; line-height: 1.15; font-size: clamp(2.4rem, 6vw, 3.8rem); }
+.ob-heading { font-weight: 400; }
+.ob-home-button-primary { border: 3px solid #5a3518; border-radius: 999px; box-shadow: 4px 4px 0 #5a3518; }
+.ob-card { border: 2px solid #5a3518; border-radius: 16px; box-shadow: 5px 5px 0 #f6c218; }
+@media (prefers-color-scheme: dark) {
+  body { background: repeating-conic-gradient(from 0deg at 50% -10%, rgb(246 194 24 / 0.06) 0 6deg, transparent 6deg 12deg) fixed, var(--ob-color-page); }
+  .ob-home-welcome, .ob-card, .ob-home-button-primary { border-color: #f6c25a; }
+}

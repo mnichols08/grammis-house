@@ -1,0 +1,57 @@
+/* family-birthday */
+@layer theme, base, components, utilities;
+@layer components {
+@scope (family-birthday) to ([data-zb-slotted="family-birthday"]) {
+  :scope { display: block; }
+  .card { display: none; }
+  .card[data-state="soon"], .card[data-state="party"] { display: grid; }
+  .card {
+    position: relative;
+    max-width: 34rem;
+    margin: 1.2rem auto;
+    padding: 1.4rem 1.6rem 1.3rem;
+    gap: 0.35rem;
+    border-radius: 14px;
+    background:
+      radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--primary, #a3172b) 22%, transparent) 0 3px, transparent 4px) 0 0 / 46px 46px,
+      radial-gradient(circle at 70% 60%, color-mix(in srgb, #e8b830 40%, transparent) 0 2px, transparent 3px) 0 0 / 38px 38px,
+      var(--card, #fffaf0);
+    border: 2px dashed color-mix(in srgb, var(--primary, #a3172b) 55%, transparent);
+    color: var(--foreground, #3a2418);
+    text-align: center;
+  }
+  .cake {
+    justify-self: center;
+    width: 4.2rem;
+    height: 3.6rem;
+    margin-bottom: 0.2rem;
+  }
+  .card[data-state="soon"] .cake { width: 3rem; height: 2.6rem; }
+  .card[data-state="party"] { border-style: solid; box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--primary, #a3172b) 80%, transparent); }
+  .card[data-state="party"] .flame { animation: flicker 0.9s ease-in-out infinite alternate; transform-origin: 50% 100%; }
+  @keyframes flicker { from { transform: scale(0.85) rotate(-4deg); } to { transform: scale(1.1) rotate(4deg); } }
+  @media (prefers-reduced-motion: reduce) { .card .flame { animation: none; } }
+  .headline {
+    margin: 0;
+    font-family: var(--ob-font-hand, cursive);
+    font-size: 2rem;
+    line-height: 1.1;
+    color: var(--primary, #a3172b);
+  }
+  .card[data-state="soon"] .headline { font-size: 1.6rem; }
+  .turning:empty, .note:empty, .favorite[data-empty="true"] { display: none; }
+  .turning, .note { margin: 0; font-size: 1.05rem; }
+  .favorite { margin: 0.3rem 0 0; font-size: 1.1rem; }
+  .favorite a {
+    display: inline-block;
+    margin-left: 0.3rem;
+    padding: 0.15rem 0.7rem;
+    border-radius: 999px;
+    background: var(--primary, #a3172b);
+    color: var(--primary-foreground, #fff);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .favorite a:focus-visible { outline: 3px solid var(--ring, #e8b830); outline-offset: 2px; }
+}
+}

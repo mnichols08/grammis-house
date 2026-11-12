@@ -1,0 +1,23 @@
+/* July: the Fourth. A navy header with white stars, a welcome card with a red-and-white
+   striped edge like bunting, and heavy slab capitals like an old fair poster. */
+.ob-header {
+  background:
+    radial-gradient(circle, #fff 0 1.5px, transparent 2px) 0 0 / 26px 22px,
+    radial-gradient(circle, #fff 0 1.5px, transparent 2px) 13px 11px / 26px 22px,
+    #1f2f63;
+  color: #fff;
+}
+.ob-header a, .ob-header .ob-brand-name, .ob-header .ob-nav-link, .ob-header .ob-icon-button { color: #fff; }
+.ob-header .ob-nav-link[aria-current] { text-decoration: underline 3px #e8384d; text-underline-offset: 6px; }
+.ob-home-welcome {
+  border: 0;
+  border-left: 18px solid transparent;
+  border-image: repeating-linear-gradient(to bottom, #b22234 0 16px, #fff 16px 32px) 18;
+  border-radius: 0;
+  background: var(--ob-color-surface);
+  box-shadow: 0 0 0 1px var(--ob-color-border), 8px 8px 0 #1f2f63;
+}
+.ob-home-welcome .ob-title, .ob-heading { text-transform: uppercase; letter-spacing: 0.02em; font-weight: 400; }
+.ob-home-welcome .ob-title { font-size: clamp(2.2rem, 6vw, 3.8rem); line-height: 1; }
+.ob-home-button-primary { border-radius: 0; text-transform: uppercase; letter-spacing: 0.08em; box-shadow: 4px 4px 0 #1f2f63; }
+.ob-card { border-top: 6px solid transparent; border-image: repeating-linear-gradient(90deg, #b22234 0 12px, #fff 12px 24px, #1f2f63 24px 36px) 6; }

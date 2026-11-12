@@ -1,0 +1,82 @@
+/* advent-calendar */
+@layer theme, base, components, utilities;
+@layer components {
+@scope (advent-calendar) to ([data-zb-slotted="advent-calendar"]) {
+  :scope { display: block; }
+  .calendar { display: none; }
+  .calendar[data-state="shown"] { display: block; }
+  .calendar {
+    max-width: 46rem;
+    margin: 1.5rem auto;
+    padding: 1.2rem;
+    border-radius: 16px;
+    background:
+      repeating-linear-gradient(45deg, transparent 0 14px, color-mix(in srgb, var(--primary, #a3172b) 7%, transparent) 14px 28px),
+      color-mix(in srgb, var(--card, #fffaf0) 92%, var(--primary, #a3172b));
+    border: 3px solid var(--primary, #a3172b);
+    box-shadow: inset 0 0 0 6px var(--card, #fffaf0), inset 0 0 0 8px #d9a93a;
+  }
+  .caption { margin: 0 0 0.9rem; text-align: center; font-family: var(--ob-font-hand, cursive); font-size: 1.5rem; color: var(--primary, #a3172b); }
+  .doors { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.55rem; margin: 0; padding: 0; list-style: none; }
+  @media (max-width: 34rem) { .doors { grid-template-columns: repeat(4, 1fr); } }
+  .door {
+    position: relative;
+    aspect-ratio: 1;
+    perspective: 400px;
+  }
+  .door button, .door .inside {
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+  }
+  .door .inside {
+    display: grid;
+    place-items: center;
+    padding: 0.3rem;
+    background: var(--card, #fffaf0);
+    border: 1px solid var(--border, #e0cdb0);
+    font-size: 0.72rem;
+    line-height: 1.2;
+    text-align: center;
+    overflow: hidden;
+  }
+  /* The little pictures behind the doors. */
+  .pic { width: 1.8rem; height: 1.8rem; background: center / contain no-repeat; }
+  .pic[data-pic="star"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Cpath d=%27M0-10 2.9-4 9.5-3.1 4.8 1.5 5.9 8.1 0 5-5.9 8.1-4.8 1.5-9.5-3.1-2.9-4Z%27 fill=%27%23f2c14e%27/%3E%3C/svg%3E"); }
+  .pic[data-pic="mitten"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Cpath d=%27M-5 6V-4C-5-9 5-9 5-4V2L8-1C10-3 12-1 10 1L5 6Z%27 fill=%27%23c8364a%27/%3E%3Crect x=%27-6%27 y=%275%27 width=%2712%27 height=%275%27 rx=%271.5%27 fill=%27%23fff%27 stroke=%27%23ddd%27/%3E%3C/svg%3E"); }
+  .pic[data-pic="cookie"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Ccircle r=%279%27 fill=%27%23c98a4b%27/%3E%3Ccircle cx=%27-3%27 cy=%27-3%27 r=%271.4%27 fill=%27%235a3518%27/%3E%3Ccircle cx=%273%27 cy=%271%27 r=%271.4%27 fill=%27%235a3518%27/%3E%3Ccircle cx=%27-1%27 cy=%274%27 r=%271.2%27 fill=%27%235a3518%27/%3E%3C/svg%3E"); }
+  .pic[data-pic="snowflake"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Cg stroke=%27%235d89b0%27 stroke-width=%271.6%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M0-10V10M-8.7-5 8.7 5M-8.7 5 8.7-5%27/%3E%3C/g%3E%3C/svg%3E"); }
+  .pic[data-pic="cocoa"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Cpath d=%27M-8-4H6V4C6 8 3 10 -1 10S-8 8-8 4Z%27 fill=%27%23c8364a%27/%3E%3Cpath d=%27M6-2C10-2 10 4 6 4%27 stroke=%27%23c8364a%27 stroke-width=%272%27 fill=%27none%27/%3E%3Ccircle cx=%27-4%27 cy=%27-5%27 r=%272.2%27 fill=%27%23fff%27/%3E%3Ccircle cx=%271%27 cy=%27-5%27 r=%272.2%27 fill=%27%23fff%27/%3E%3C/svg%3E"); }
+  .pic[data-pic="gift"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Crect x=%27-8%27 y=%27-4%27 width=%2716%27 height=%2713%27 fill=%27%232f6b3f%27/%3E%3Crect x=%27-9%27 y=%27-7%27 width=%2718%27 height=%274%27 fill=%27%233f8a52%27/%3E%3Crect x=%27-1.5%27 y=%27-7%27 width=%273%27 height=%2716%27 fill=%27%23f2c14e%27/%3E%3Cpath d=%27M0-7C-6-12-8-6 0-7 8-6 6-12 0-7Z%27 fill=%27%23f2c14e%27/%3E%3C/svg%3E"); }
+  .pic[data-pic="tree"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Cpath d=%27M0-11 8 3H-8Z%27 fill=%27%232f6b3f%27/%3E%3Cpath d=%27M0-5 9 8H-9Z%27 fill=%27%233f8a52%27/%3E%3Crect x=%27-1.5%27 y=%278%27 width=%273%27 height=%273%27 fill=%27%237a4a26%27/%3E%3Ccircle cx=%27-3%27 cy=%272%27 r=%271.2%27 fill=%27%23c8364a%27/%3E%3Ccircle cx=%273%27 cy=%275%27 r=%271.2%27 fill=%27%23f2c14e%27/%3E%3C/svg%3E"); }
+  .pic[data-pic="bell"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Cpath d=%27M0-9C-6-9-6-2-6 2L-8 6H8L6 2C6-2 6-9 0-9Z%27 fill=%27%23e0a12e%27/%3E%3Ccircle cy=%278%27 r=%272%27 fill=%27%23b8862a%27/%3E%3Cpath d=%27M-3-10C0-12 3-10 3-10%27 stroke=%27%23c8364a%27 stroke-width=%272%27 fill=%27none%27/%3E%3C/svg%3E"); }
+  .pic[data-pic="candle"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Crect x=%27-3%27 y=%27-3%27 width=%276%27 height=%2713%27 rx=%271%27 fill=%27%23fff%27 stroke=%27%23e0cdb0%27/%3E%3Cpath d=%27M0-4C-3-7 0-11 0-11 0-11 3-7 0-4Z%27 fill=%27%23f2913d%27/%3E%3C/svg%3E"); }
+  .pic[data-pic="card"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Crect x=%27-10%27 y=%27-7%27 width=%2720%27 height=%2714%27 rx=%271.5%27 fill=%27%23fff%27 stroke=%27%23c8364a%27/%3E%3Cpath d=%27M-10-6 0 2 10-6%27 fill=%27none%27 stroke=%27%23c8364a%27/%3E%3C/svg%3E"); }
+  .inside a { color: var(--primary, #a3172b); font-weight: 700; }
+  .door button {
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    border: 0;
+    background:
+      linear-gradient(135deg, transparent 0 46%, rgb(255 255 255 / 0.18) 50%, transparent 54%),
+      var(--primary, #a3172b);
+    color: var(--primary-foreground, #fff);
+    font-family: var(--ob-font-heading, serif);
+    font-size: 1.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    transform-origin: left center;
+    transition: transform 0.6s ease;
+    box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.35);
+  }
+  .door:nth-child(3n + 2) button { background-color: #2f6b3f; }
+  .door:nth-child(4n + 3) button { background-color: #b8862a; }
+  .door button:disabled { cursor: not-allowed; filter: saturate(0.7); }
+  .door button:disabled::after { content: ""; position: absolute; right: 0.4rem; bottom: 0.4rem; width: 0.6rem; height: 0.6rem; border-radius: 50%; background: #f2c14e; box-shadow: 0 0 0 2px rgb(0 0 0 / 0.15); }
+  .door button:focus-visible { outline: 3px solid var(--ring, #f2c14e); outline-offset: 2px; }
+  .door[data-open="true"] button { transform: rotateY(-105deg); pointer-events: none; }
+  .door[data-open="false"] .inside { visibility: hidden; }
+  @media (prefers-reduced-motion: reduce) { .door button { transition: none; } }
+}
+}

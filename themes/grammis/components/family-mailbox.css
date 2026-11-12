@@ -1,0 +1,63 @@
+/* family-mailbox */
+@layer theme, base, components, utilities;
+@layer components {
+@scope (family-mailbox) to ([data-zb-slotted="family-mailbox"]) {
+  :scope { display: block; }
+  .postcard {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.4rem 1.2rem;
+    align-items: center;
+    max-width: 38rem;
+    margin: 1.5rem auto;
+    padding: 1.3rem 1.5rem 1.3rem 1.6rem;
+    background:
+      repeating-linear-gradient(-45deg, #c8343a 0 10px, #ffffff 10px 20px, #2b4f8a 20px 30px, #ffffff 30px 40px) border-box;
+    border: 7px solid transparent;
+    border-radius: 6px;
+    box-shadow: 0 8px 18px -12px rgb(0 0 0 / 0.5);
+    rotate: -0.6deg;
+  }
+  .postcard::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background:
+      repeating-linear-gradient(to bottom, transparent 0 1.9rem, color-mix(in srgb, var(--border, #d9d6cc) 70%, transparent) 1.9rem calc(1.9rem + 1px)),
+      var(--card, #fffdf8);
+  }
+  .postcard > * { position: relative; z-index: 1; }
+  .prompt {
+    margin: 0;
+    font-family: var(--ob-font-hand, cursive);
+    font-size: 1.55rem;
+    line-height: 1.25;
+    color: var(--foreground, #1f2633);
+  }
+  .stamp {
+    grid-row: span 2;
+    width: 4.2rem;
+    height: 5rem;
+    padding: 0.35rem;
+    background: var(--card, #fff);
+    border: 2px dotted color-mix(in srgb, var(--primary, #a3172b) 60%, transparent);
+    rotate: 4deg;
+  }
+  .stamp svg { width: 100%; height: 100%; display: block; }
+  .send {
+    justify-self: start;
+    display: inline-block;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    background: var(--primary, #a3172b);
+    color: var(--primary-foreground, #fff);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .send:focus-visible { outline: 3px solid var(--ring, #f2c14e); outline-offset: 2px; }
+  .send[hidden], .postcard[hidden] { display: none; }
+  @media (max-width: 30rem) { .postcard { grid-template-columns: 1fr; } .stamp { display: none; } }
+}
+}
