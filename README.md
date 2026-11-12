@@ -93,8 +93,24 @@ December, the Thanksgiving recipes still have their autumn look while the rest o
 ## Components (Zubra)
 
 `components/` holds web components written in [Zubra](https://github.com/journey-to-code-org/zubra).
-They are compiled to plain custom elements (no runtime, nothing to install) and shipped as
-ordinary theme scripts, so open.blog needs no changes to use them.
+They are compiled to plain custom elements (no runtime, nothing to install) into the `grammis`
+theme, which declares each one under `components` in its `theme.json`
+([open.blog#651](https://github.com/journey-to-code-org/open.blog/pull/651)). Every season extends
+`grammis`, so every season offers them.
+
+**Grammi places them herself.** On **Landing page → Add a section**, the theme's components are
+listed after the built-in sections ("Countdown sign: a little hanging sign that counts the days until
+the holiday"). The form comes from the settings the theme declares (for the sign, **Which holiday**:
+Thanksgiving or Christmas). She can move, hide or delete it like any other section. The preview
+shows the component's one-line fallback, because Admin's preview runs no scripts.
+
+To add a component:
+
+1. Write `components/<name>.zb` and compile it (below) into `themes/grammis/components/`.
+2. Declare it in `themes/grammis/theme.json` under `components`: a `label` and `description` in
+   plain words, the `script`, a one-line `fallback`, and its settings (`text`, `choice`, `number`
+   or `toggle`, each with a `label`).
+3. `openblog check`. It now shows up in Admin's **Add a section**.
 
 ```sh
 npx -p @zubra/compiler@5.8.0 zubra compile components/holiday-countdown.zb \

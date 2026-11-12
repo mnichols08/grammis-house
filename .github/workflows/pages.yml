@@ -24,10 +24,10 @@ permissions:
 
 # The open.blog engine this site was tested with. Grammi's site is a real reader-facing
 # site, so it upgrades on purpose: change this, build locally, then push.
-# This is the commit of journey-to-code-org/open.blog#649 (Seasons). Once it is merged,
-# point this at the merge commit on main.
+# This is the commit of journey-to-code-org/open.blog#651 (theme components), which is
+# stacked on #649 (Seasons). Once both are merged, point this at the merge commit on main.
 env:
-  OPENBLOG_REV: 5ef15454677910ce4c1b92794ca65c53f80634ff
+  OPENBLOG_REV: c53e4f7ece20f388f4cb5751d23844d839aa62a5
 
 concurrency:
   group: pages

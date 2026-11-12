@@ -1,13 +1,25 @@
 {
   "format": "openblog-landing",
-  "version": 1,
+  "version": 4,
   "sections": [
     {
       "id": "welcome",
       "type": "welcome",
       "heading": "Welcome to Grammi's House",
       "subheading": "Come on in. The kitchen's warm and the recipes are on the counter.",
-      "button": { "label": "Thanksgiving recipes", "href": "/series/thanksgiving/", "style": "primary" }
+      "button": {
+        "label": "Thanksgiving recipes",
+        "href": "/series/thanksgiving/",
+        "style": "primary"
+      }
+    },
+    {
+      "id": "countdown",
+      "type": "component",
+      "tag": "holiday-countdown",
+      "props": {
+        "holiday": "thanksgiving"
+      }
     },
     {
       "id": "this-season",

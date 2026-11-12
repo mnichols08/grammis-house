@@ -107,7 +107,32 @@
     "house.css",
     "zubra-bridge.css"
   ],
-  "scripts": [
-    "decorations.js"
-  ]
+  "scripts": [],
+  "components": {
+    "holiday-countdown": {
+      "label": "Countdown sign",
+      "description": "A little hanging sign that counts the days until the holiday.",
+      "script": "components/holiday-countdown.js",
+      "fallback": "A countdown sign to the holiday hangs here.",
+      "props": [
+        {
+          "name": "holiday",
+          "type": "choice",
+          "label": "Which holiday",
+          "default": "thanksgiving",
+          "choices": [
+            {
+              "value": "thanksgiving",
+              "label": "Thanksgiving"
+            },
+            {
+              "value": "christmas",
+              "label": "Christmas"
+            }
+          ],
+          "help": "The sign counts down to this day, and says Happy Thanksgiving or Merry Christmas when it comes."
+        }
+      ]
+    }
+  }
 }
