@@ -1,0 +1,166 @@
+{
+  "title": "Grammi's House",
+  "description": "Grammi's kitchen, open all year: her famous holiday recipes and family stories, decorated for every season.",
+  "url": "https://mnichols08.github.io/grammis-house",
+  "language": "en",
+  "author": {
+    "name": "Grammi",
+    "url": "/about/",
+    "email": "",
+    "sameAs": []
+  },
+  "contributors": {},
+  "logo": "",
+  "favicon": "/favicon.svg",
+  "ogImage": "",
+  "theme": "thanksgiving",
+  "colorSchemeToggle": null,
+  "postPath": "/posts/{slug}/",
+  "postsPerPage": 10,
+  "latestPostsPerPage": 0,
+  "seriesPerPage": 0,
+  "nav": [
+    {
+      "label": "Home",
+      "href": "/"
+    },
+    {
+      "label": "Thanksgiving",
+      "href": "/series/thanksgiving/"
+    },
+    {
+      "label": "Search",
+      "href": "/search/"
+    }
+  ],
+  "social": [],
+  "footer": "\u00a9 {year} {author}",
+  "poweredBy": true,
+  "home": {
+    "heading": "From Grammi's kitchen",
+    "intro": "",
+    "showSeries": true
+  },
+  "share": {
+    "enabled": true,
+    "networks": [
+      "facebook",
+      "pinterest",
+      "email"
+    ]
+  },
+  "analytics": {
+    "builtin": true,
+    "showViews": true,
+    "retentionDays": 400,
+    "endpoint": "",
+    "branch": "analytics",
+    "bakeCounts": true
+  },
+  "engagement": {
+    "enabled": false,
+    "comments": true,
+    "analytics": true,
+    "endpoint": "",
+    "feedback": false,
+    "feedbackContact": ""
+  },
+  "snippets": {
+    "head": "",
+    "postFooter": "",
+    "bodyEnd": ""
+  },
+  "relatedPosts": 3,
+  "cdn": {
+    "url": "",
+    "paths": [
+      "/assets/",
+      "/themes/",
+      "/images/"
+    ],
+    "version": "",
+    "maxAge": 86400
+  },
+  "feeds": {
+    "rss": true,
+    "json": true,
+    "sitemap": true,
+    "llms": true,
+    "portfolioSnapshot": false,
+    "limit": 20,
+    "fullContent": true
+  },
+  "seo": {
+    "aiSearch": true,
+    "aiTraining": false
+  },
+  "markdown": {
+    "smartPunctuation": false,
+    "headingAnchors": true,
+    "embeds": true,
+    "tocDepth": 3,
+    "tocMinHeadings": 3
+  },
+  "code": {
+    "highlight": null,
+    "lineNumbers": null,
+    "copyButton": true,
+    "playgroundLink": true
+  },
+  "codeRunner": {
+    "endpoint": "",
+    "languages": []
+  },
+  "webSandbox": {
+    "libraries": {}
+  },
+  "recipes": {
+    "scaling": true,
+    "checklists": true,
+    "timers": true,
+    "cookMode": true,
+    "print": true,
+    "jumpLink": true,
+    "listing": true
+  },
+  "knowledgeChecks": {
+    "provider": "custom-https",
+    "generationEndpoint": "",
+    "model": ""
+  },
+  "paths": {
+    "content": "content",
+    "static": "static",
+    "output": "dist",
+    "themes": "themes",
+    "web": "web"
+  },
+  "admin": {
+    "usersFile": ".openblog/users.json",
+    "sessionHours": 12,
+    "secureCookies": false,
+    "maxUploadMb": 10,
+    "trustedProxies": []
+  },
+  "publish": {
+    "remote": "origin",
+    "branch": "main",
+    "auto": false,
+    "includeDrafts": false,
+    "paths": [
+      "content",
+      "static",
+      "openblog.json",
+      "themes",
+      ".github"
+    ],
+    "pullFirst": true
+  },
+  "syndication": {
+    "stateFile": ".openblog/syndication.json",
+    "targets": {},
+    "requireApproval": false,
+    "approvalFile": ".openblog/distribution-approvals.json"
+  },
+  "redirectsFile": false
+}
