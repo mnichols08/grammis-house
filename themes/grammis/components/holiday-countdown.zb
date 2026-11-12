@@ -4,25 +4,28 @@
   The text inside is what readers see before (or without) JavaScript.
 -->
 <script>
-  const names = { thanksgiving: 'Thanksgiving', christmas: 'Christmas' }
+  import { onMount } from '@zubra/runtime'
 
-  function dayOf(year) {
+  const names = { thanksgiving: 'Thanksgiving', christmas: 'Christmas' }
+  const name = names[holiday] ?? 'the holiday'
+
+  // How many days are left is only known in the browser (today's date), so the server
+  // renders "Counting down to Christmas" and the element fills in the days when it starts.
+  let left = null
+
+  const dayOf = (year) => {
     if (holiday === 'christmas') return new Date(year, 11, 25)
     const first = new Date(year, 10, 1).getDay()
     return new Date(year, 10, 1 + ((4 - first + 7) % 7) + 21)
   }
 
-  function daysLeft() {
+  onMount(() => {
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     let day = dayOf(today.getFullYear())
     if (day < today) day = dayOf(today.getFullYear() + 1)
-    return Math.round((day - today) / 86400000)
-  }
-
-  const name = names[holiday] ?? 'the holiday'
-  const left = daysLeft()
-  const message = left === 0 ? `Happy ${name}!` : left === 1 ? `${name} is tomorrow!` : `${left} days until ${name}`
+    left = Math.round((day - today) / 86400000)
+  })
 </script>
 <style>
   :host { display: flex; justify-content: center; position: relative; z-index: 4; margin-top: calc(var(--ob-decor-garland-height, 0px) * -0.12); }
@@ -53,5 +56,5 @@
   .sign::after { right: 18%; rotate: -14deg; transform-origin: bottom; }
 </style>
 <holiday-countdown holiday="thanksgiving">
-  <p class="sign" role="status">{message}</p>
+  <p class="sign" role="status">{left === null ? `Counting down to ${name}` : left === 0 ? `Happy ${name}!` : left === 1 ? `${name} is tomorrow!` : `${left} days until ${name}`}</p>
 </holiday-countdown>

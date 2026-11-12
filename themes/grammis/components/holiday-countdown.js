@@ -69,6 +69,8 @@ export class HolidayCountdown extends HTMLElement {
   #updates = [];
   #pending = null;
   #started = false;
+  #mounted = [];
+  #cleanups = [];
 
   constructor() {
     super();
@@ -119,6 +121,19 @@ export class HolidayCountdown extends HTMLElement {
     }
     if (!this.#started) this.#start();
     this.#update();
+    this.#runMounted();
+  }
+
+  disconnectedCallback() {
+    // What onMount() returned: undone each time the element leaves the page.
+    for (const cleanup of this.#cleanups.splice(0)) cleanup();
+  }
+
+  #runMounted() {
+    for (const run of this.#mounted) {
+      const cleanup = run();
+      if (typeof cleanup === "function") this.#cleanups.push(cleanup);
+    }
   }
 
   #start() {
@@ -142,28 +157,33 @@ export class HolidayCountdown extends HTMLElement {
   #setup() {
     const element = this;
     // The hooks the script uses (from @zubra/runtime in the source), made for this element.
+    const onMount = (run) => {
+      this.#mounted.push(run);
+    };
+    const state = (initial) => createState(initial, () => this.#requestUpdate());
     const computed = createComputed;
 
     // ---- <script>
     const names = { thanksgiving: 'Thanksgiving', christmas: 'Christmas' }
+    const name = computed(() => (names[element.holiday] ?? 'the holiday'))
 
-    function dayOf(year) {
+    // How many days are left is only known in the browser (today's date), so the server
+    // renders "Counting down to Christmas" and the element fills in the days when it starts.
+    const left = state(null)
+
+    const dayOf = (year) => {
       if (element.holiday === 'christmas') return new Date(year, 11, 25)
       const first = new Date(year, 10, 1).getDay()
       return new Date(year, 10, 1 + ((4 - first + 7) % 7) + 21)
     }
 
-    function daysLeft() {
+    onMount(() => {
       const now = new Date()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       let day = dayOf(today.getFullYear())
       if (day < today) day = dayOf(today.getFullYear() + 1)
-      return Math.round((day - today) / 86400000)
-    }
-
-    const name = computed(() => (names[element.holiday] ?? 'the holiday'))
-    const left = daysLeft()
-    const message = computed(() => (left === 0 ? `Happy ${name.value}!` : left === 1 ? `${name.value} is tomorrow!` : `${left} days until ${name.value}`))
+      left.value = Math.round((day - today) / 86400000)
+    })
 
     // ---- the template: its nodes, and how each changing spot is kept up to date
     const content = clone(`
@@ -171,7 +191,7 @@ export class HolidayCountdown extends HTMLElement {
 `);
     const sign = content.children[0];
     this.#updates = [
-      bind(() => message.value ?? "", (value) => (sign.textContent = value)),
+      bind(() => (left.value === null ? `Counting down to ${name.value}` : left.value === 0 ? `Happy ${name.value}!` : left.value === 1 ? `${name.value} is tomorrow!` : `${left.value} days until ${name.value}`) ?? "", (value) => (sign.textContent = value)),
     ];
     return content;
   }
@@ -228,6 +248,61 @@ function clone(markup) {
 // While a computed() or an effect runs: what it reads. Each entry reads the same value again, so
 // it can tell later whether anything it depends on has changed.
 let reads = null;
+
+/**
+ * State: a value that updates the element when it's set, or (an array or plain object) changed
+ * in place: push, splice and nested writes count. `.value` reads and sets it; so do `.get()` and
+ * `.set()`.
+ */
+function createState(initial, changed) {
+  let version = 0;
+  const proxies = new WeakMap(); // this state's own, so the same object in two states tells each
+  const bump = () => {
+    version++;
+    changed();
+  };
+  const deep = (value) => {
+    if (!value || typeof value !== "object" || !(Array.isArray(value) || Object.getPrototypeOf(value) === Object.prototype)) return value;
+    let proxy = proxies.get(value);
+    if (!proxy) {
+      proxy = new Proxy(value, {
+        get: (target, key, receiver) => deep(Reflect.get(target, key, receiver)),
+        set: (target, key, next, receiver) => {
+          const same = Object.is(target[key], next);
+          const done = Reflect.set(target, key, next, receiver);
+          if (!same) bump();
+          return done;
+        },
+        deleteProperty: (target, key) => {
+          const done = Reflect.deleteProperty(target, key);
+          bump();
+          return done;
+        },
+      });
+      proxies.set(value, proxy);
+    }
+    return proxy;
+  };
+  let value = deep(initial);
+  const read = () => version;
+  return {
+    get value() {
+      reads?.push(read);
+      return value;
+    },
+    set value(next) {
+      if (Object.is(next, value)) return;
+      value = deep(next);
+      bump();
+    },
+    get() {
+      return this.value;
+    },
+    set(next) {
+      this.value = next;
+    },
+  };
+}
 
 /** A value derived from props and state, cached until something it read changes. */
 function createComputed(compute) {

@@ -105,7 +105,8 @@
   },
   "stylesheets": [
     "house.css",
-    "zubra-bridge.css"
+    "zubra-bridge.css",
+    "components/holiday-countdown.css"
   ],
   "scripts": [],
   "components": {
@@ -132,7 +133,8 @@
           ],
           "help": "The sign counts down to this day, and says Happy Thanksgiving or Merry Christmas when it comes."
         }
-      ]
+      ],
+      "source": "components/holiday-countdown.zb"
     }
   }
 }

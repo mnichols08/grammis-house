@@ -88,7 +88,7 @@ December, the Thanksgiving recipes still have their autumn look while the rest o
    the five; leave one out and it isn't hung), then run `python3 scripts/decorate.py <season>`.
 2. Add it on the **Seasons** screen (or as a window under `seasons` in `openblog.json`).
 3. Add `content/series/<season>.md` with `theme: <season>` for that holiday's recipes.
-4. To get a countdown sign for it, teach `components/holiday-countdown.zb` the date (see below).
+4. To get a countdown sign for it, teach `themes/grammis/components/holiday-countdown.zb` its date and add it to the sign's **Which holiday** choices in `theme.json` (see below).
 
 ## Components (Zubra)
 
@@ -106,16 +106,27 @@ shows the component's one-line fallback, because Admin's preview runs no scripts
 
 To add a component:
 
-1. Write `components/<name>.zb` and compile it (below) into `themes/grammis/components/`.
+1. Write `themes/grammis/components/<name>.zb`, then compile its script and its styles:
+
+   ```sh
+   npx -p @zubra/compiler@5.8.0 zubra compile themes/grammis/components/<name>.zb \
+     --emit element --output themes/grammis/components/<name>.js
+   npx -p @zubra/compiler@5.8.0 zubra compile themes/grammis/components/<name>.zb \
+     --emit css > themes/grammis/components/<name>.css
+   ```
 2. Declare it in `themes/grammis/theme.json` under `components`: a `label` and `description` in
-   plain words, the `script`, a one-line `fallback`, and its settings (`text`, `choice`, `number`
-   or `toggle`, each with a `label`).
+   plain words, the `script`, the `source` (the `.zb`), a one-line `fallback`, and its settings
+   (`text`, `choice`, `number` or `toggle`, each with a `label`). Add the `.css` to `stylesheets`.
 3. `openblog check`. It now shows up in Admin's **Add a section**.
 
-```sh
-npx -p @zubra/compiler@5.8.0 zubra compile components/holiday-countdown.zb \
-  --emit element --output themes/grammis/components/holiday-countdown.js
-```
+**Rendered ahead** ([open.blog#652](https://github.com/journey-to-code-org/open.blog/pull/652)): when the
+`zubra` command is installed, `openblog build` puts each component's HTML into the page, so the sign is
+there before its script runs, for readers without JavaScript, and in Admin's preview. The deploy workflow
+installs it. Locally, run `npm i -g @zubra/compiler@5.8.0`, or set
+`OPENBLOG_ZUBRA="npx -y @zubra/compiler@5.8.0"`. Without it, the sign still appears once its script runs.
+
+Anything only the browser knows (like today's date) is left for the script. That's why the sign says
+"Counting down to Christmas" first and then fills in the number of days.
 
 `themes/grammis/zubra-bridge.css` maps open.blog's `--ob-*` tokens to the shadcn/ui variables
 that [Zubra UI](https://github.com/journey-to-code-org/zubra-ui) components read. That means any Zubra UI

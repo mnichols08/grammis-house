@@ -1,0 +1,32 @@
+/* holiday-countdown */
+@layer theme, base, components, utilities;
+@layer components {
+@scope (holiday-countdown) to ([data-zb-slotted="holiday-countdown"]) {
+  :scope { display: flex; justify-content: center; position: relative; z-index: 4; margin-top: calc(var(--ob-decor-garland-height, 0px) * -0.12); }
+  .sign {
+    position: relative;
+    margin: 1.4rem 0 0;
+    padding: 0.3rem 1.3rem 0.45rem;
+    border-radius: 6px;
+    background: var(--card, #fffaf0);
+    border: 2px solid var(--primary, #8e1b2c);
+    color: var(--primary, #8e1b2c);
+    font-family: var(--ob-font-hand, cursive);
+    font-weight: 700;
+    font-size: 1.55rem;
+    line-height: 1.15;
+    box-shadow: 0 3px 0 color-mix(in srgb, var(--primary, #8e1b2c) 35%, transparent);
+    rotate: -1.5deg;
+  }
+  .sign::before, .sign::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    width: 1.5px;
+    height: 2.4rem;
+    background: var(--muted-foreground, #7e6050);
+  }
+  .sign::before { left: 18%; rotate: 14deg; transform-origin: bottom; }
+  .sign::after { right: 18%; rotate: -14deg; transform-origin: bottom; }
+}
+}

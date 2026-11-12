@@ -24,10 +24,11 @@ permissions:
 
 # The open.blog engine this site was tested with. Grammi's site is a real reader-facing
 # site, so it upgrades on purpose: change this, build locally, then push.
-# This is the commit of journey-to-code-org/open.blog#651 (theme components), which is
-# stacked on #649 (Seasons). Once both are merged, point this at the merge commit on main.
+# This is the commit of journey-to-code-org/open.blog#652 (components rendered ahead), stacked
+# on #651 (theme components) and #649 (Seasons). Once they're merged, point this at the merge
+# commit on main.
 env:
-  OPENBLOG_REV: c53e4f7ece20f388f4cb5751d23844d839aa62a5
+  OPENBLOG_REV: 81198f80e41faec08bacba90cd0f67e64fde28c3
 
 concurrency:
   group: pages
@@ -53,6 +54,10 @@ jobs:
           if git fetch -q origin analytics:analytics 2>/dev/null; then
             mkdir -p .openblog && git show analytics:analytics.json > .openblog/analytics.json
           fi
+      - name: Install the Zubra compiler
+        # Renders theme components (the countdown sign) into the page at build time, so the sign is
+        # there before its script runs and in Admin's preview (open.blog ADR 0409).
+        run: npm install --global @zubra/compiler@5.8.0
       - name: Build the site
         run: openblog build
       - uses: actions/upload-pages-artifact@v3
