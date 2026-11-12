@@ -112,6 +112,8 @@ becomes, and a cache miss quietly installs a newer engine than the key says. It 
 
 ### 10. Smaller things
 
+- `fonts` in `theme.json` emits only `body`, `heading` and `mono`. A fourth family (`"hand"`) is dropped
+  without a warning, so this repo declares it as a token (`fontHand`) instead.
 - `openblog init --help` prints the full command list rather than help for `init`.
 - `publish.paths` defaults to `content`, `static`, `openblog.json`, `themes`, `.github`. A site
   with its own folders (`components/`, `scripts/`) has to remember that Admin's Publish skips them.

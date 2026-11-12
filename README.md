@@ -35,14 +35,31 @@ site. The holiday colors come from the decorations, so that screen leaves them a
 
 ```
 themes/
-  grammis/        the house itself: layout, fonts, the garland hook, the countdown sign
-  thanksgiving/   autumn colors, a leaf-and-acorn garland, a few falling leaves
-  christmas/      red and evergreen, twinkling lights, a little snow
+  grammis/        the house: handwritten brand (Caveat), Fraunces headings, and where
+                  every decoration hangs (house.css)
+  thanksgiving/   the harvest table: plaid tablecloth, a swag of leaves, wheat and little
+                  pumpkins, "Give thanks" bunting, a pumpkin cluster, a mantel of gourds and
+                  candles, and leaves that tumble down the home page
+  christmas/      a pine garland with red bows, gold ornaments and bulbs that twinkle one
+                  by one, a wreath, snow on the welcome card, a snowy village along the
+                  bottom, and snowfall; a pine-night version in dark mode
 ```
 
-`grammis` is the house. Each season `extends` it and changes only **tokens** in its
-`theme.json`: colors, the garland picture (`garland`), and the holiday name (`season`).
-Decorating never means editing the house's stylesheet.
+`grammis` is the house. Each season `extends` it and changes only **tokens**: colours, the
+holiday name (`season`), and five pictures from its `decor/` folder:
+
+| Piece | Hangs | Thanksgiving | Christmas |
+| --- | --- | --- | --- |
+| `garland` | under the header | leaf-and-wheat swag | pine, bows, lights |
+| `banner` | along the top of the welcome card | Give thanks bunting | snow drift |
+| `corner` | on the welcome card's corner | pumpkins and gourds | wreath |
+| `mantel` | along the top of the footer | gourds and candles | village in the snow |
+| `pattern` | behind the page | plaid tablecloth | scattered snowflakes |
+
+The pictures are drawn in code by `scripts/draw_decorations.py`, and
+`scripts/decorate.py` turns them into tokens. Decorating never means editing `house.css`.
+Leaves, snow and twinkling hold still for anyone whose device asks for less motion,
+and recipe pages stay quiet because people are cooking. Phones get the garland, sign and banner, but not the corner piece.
 
 **The house decorates itself, unless Grammi says otherwise.** The deploy workflow runs
 `scripts/season.py` before each build and sets `"theme"` in `openblog.json` from, in order:
@@ -77,8 +94,8 @@ December, the Thanksgiving recipes still have their autumn look while the rest o
 ### Adding a season (Easter, Fourth of July, ...)
 
 1. Copy `themes/thanksgiving/` to `themes/<season>/`. In its `theme.json`, change the
-   colors and `"season": "\"<Name>\""`. Draw the season's `garland.svg`
-   and run `python3 scripts/garland.py <season>` to hang it.
+   colours and `"season": "\"<Name>\""`. Draw the season's pieces in `decor/` (any of
+   the five; leave one out and it isn't hung), then run `python3 scripts/decorate.py <season>`.
 2. Add a window to `seasons.json`.
 3. Add `content/series/<season>.md` with `theme: <season>` for that holiday's recipes.
 4. To get a countdown sign for it, teach `components/holiday-countdown.zb` the date (see below).

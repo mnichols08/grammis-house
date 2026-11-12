@@ -1,48 +1,120 @@
 /* Grammi's House: the structure every season shares.
-   A seasonal theme "decorates" by changing tokens (colours and --ob-garland),
-   so this file never needs editing to change the season. */
+   A season decorates by setting tokens in its theme.json (colours, and the --ob-decor-*
+   pictures made by scripts/decorate.py). This file only says where each piece hangs, so
+   changing the season never means editing it. A piece set to `none` is simply not hung. */
 
-/* The garland hangs under the header, like one strung across a doorway. */
+/* ---- the walls: a texture behind everything (plaid tablecloth, falling stars) ---- */
+body {
+  background-image: var(--ob-decor-pattern);
+  background-size: var(--ob-decor-pattern-size);
+}
+
+/* ---- the brand, in Grammi's handwriting ---- */
+.ob-brand-name {
+  font-family: var(--ob-font-hand, cursive);
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ob-color-accent);
+}
+
+.ob-title {
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+}
+
+/* ---- the garland, strung under the header ---- */
+:root { --gh-garland: calc(var(--ob-decor-garland-height) * var(--gh-garland-scale, 1)); }
 .ob-header {
   position: relative;
-  padding-bottom: var(--ob-garland-height);
+  padding-bottom: calc(var(--gh-garland) * 0.72);
+  border-bottom: 0;
 }
 .ob-header::after {
   content: "";
   position: absolute;
-  inset: auto 0 0 0;
-  height: var(--ob-garland-height);
-  background-image: var(--ob-garland);
+  inset: auto 0 calc(var(--gh-garland) * -0.28) 0;
+  height: var(--gh-garland);
+  background-image: var(--ob-decor-garland);
   background-repeat: repeat-x;
-  background-size: var(--ob-garland-size);
+  background-size: auto 100%;
+  background-position: left top;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ---- the welcome card: a banner along its top, something on its corner ---- */
+.ob-home-welcome {
+  position: relative;
+  margin-top: 1.5rem;
+  padding-top: calc(var(--ob-decor-banner-height) + 0.5rem);
+  overflow: visible;
+}
+.ob-home-welcome::before,
+.ob-home-welcome::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+.ob-home-welcome::before {
+  inset: -2px 0 auto 0;
+  height: var(--ob-decor-banner-height);
+  background-image: var(--ob-decor-banner);
+  background-repeat: var(--ob-decor-banner-repeat);
+  background-size: var(--ob-decor-banner-size);
   background-position: center top;
+  border-radius: var(--ob-radius) var(--ob-radius) 0 0;
+}
+.ob-home-welcome::after {
+  inset: var(--ob-decor-corner-inset);
+  width: var(--ob-decor-corner-width);
+  height: var(--ob-decor-corner-height);
+  background-image: var(--ob-decor-corner);
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center;
+}
+.ob-home-welcome .ob-title {
+  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  max-width: 14ch;
+}
+.ob-home-welcome .ob-home-lede {
+  font-family: var(--ob-font-hand, cursive);
+  font-size: 1.7rem;
+  line-height: 1.3;
+  max-width: 28ch;
+}
+
+/* ---- the mantel, along the top of the footer ---- */
+.ob-footer {
+  position: relative;
+  margin-top: calc(var(--ob-decor-mantel-height) + 3rem);
+}
+.ob-footer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: var(--ob-decor-mantel-height);
+  background-image: var(--ob-decor-mantel);
+  background-repeat: repeat-x;
+  background-size: var(--ob-decor-mantel-size);
+  background-position: left bottom;
   pointer-events: none;
 }
 
-.ob-brand-name {
-  font-family: var(--ob-font-heading);
-  font-size: 1.35rem;
-  font-style: italic;
-  letter-spacing: 0.01em;
-}
-
-/* Recipe cards read like index cards in a recipe box. */
+/* ---- recipe and collection cards read like cards from a recipe box ---- */
 .ob-card {
-  border-top: 4px solid var(--ob-color-accent);
+  border-top: 5px solid var(--ob-color-accent);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 1.7rem,
+    color-mix(in srgb, var(--ob-color-accent-border) 22%, transparent) 1.7rem calc(1.7rem + 1px)
+  );
+  background-position: 0 2.6rem;
 }
 
-/* Section titles get a small flourish underneath. */
-.ob-title::after {
-  content: "";
-  display: block;
-  width: 3.5rem;
-  height: 3px;
-  margin-top: 0.5rem;
-  border-radius: 3px;
-  background: var(--ob-color-accent-border);
-}
-
-/* Seasonal effects (leaves, snow) live in this layer and never catch clicks. */
+/* ---- leaves and snow fall behind the page, never in the way ---- */
 .gh-weather {
   position: fixed;
   inset: 0;
@@ -50,8 +122,18 @@
   pointer-events: none;
   z-index: 0;
 }
-.ob-header, main, footer { position: relative; z-index: 1; }
+main, .ob-footer { position: relative; z-index: 1; }
+.ob-header { z-index: 3; }
+
+/* ---- smaller screens: smaller decorations ---- */
+@media (max-width: 40rem) {
+  :root { --gh-garland-scale: 0.66; }
+  .ob-home-welcome::after { display: none; }
+  .ob-brand-name { font-size: 1.8rem; }
+}
 
 @media print {
-  .ob-header::after, .gh-weather { display: none; }
+  .ob-header::after, .ob-home-welcome::before, .ob-home-welcome::after,
+  .ob-footer::before, .gh-weather { display: none; }
+  body { background-image: none; }
 }

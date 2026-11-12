@@ -25,19 +25,32 @@
   const message = left === 0 ? `Happy ${name}!` : left === 1 ? `${name} is tomorrow!` : `${left} days until ${name}`
 </script>
 <style>
-  :host { display: flex; justify-content: center; margin-top: 0.75rem; position: relative; z-index: 1; }
-  .sign { margin: 0; }
+  :host { display: flex; justify-content: center; position: relative; z-index: 4; margin-top: calc(var(--ob-decor-garland-height, 0px) * -0.12); }
   .sign {
-    display: inline-block;
-    padding: 0.35rem 1rem;
-    border: 2px solid var(--primary, #8c4a2f);
-    border-radius: var(--radius, 12px);
-    background: var(--card, #fffdf9);
-    color: var(--foreground, #2e2219);
-    font-family: var(--ob-font-heading, Georgia, serif);
-    font-style: italic;
-    box-shadow: 0 2px 0 var(--border, #e2d3bf);
+    position: relative;
+    margin: 1.4rem 0 0;
+    padding: 0.3rem 1.3rem 0.45rem;
+    border-radius: 6px;
+    background: var(--card, #fffaf0);
+    border: 2px solid var(--primary, #8e1b2c);
+    color: var(--primary, #8e1b2c);
+    font-family: var(--ob-font-hand, cursive);
+    font-weight: 700;
+    font-size: 1.55rem;
+    line-height: 1.15;
+    box-shadow: 0 3px 0 color-mix(in srgb, var(--primary, #8e1b2c) 35%, transparent);
+    rotate: -1.5deg;
   }
+  .sign::before, .sign::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    width: 1.5px;
+    height: 2.4rem;
+    background: var(--muted-foreground, #7e6050);
+  }
+  .sign::before { left: 18%; rotate: 14deg; transform-origin: bottom; }
+  .sign::after { right: 18%; rotate: -14deg; transform-origin: bottom; }
 </style>
 <holiday-countdown holiday="thanksgiving">
   <p class="sign" role="status">{message}</p>
