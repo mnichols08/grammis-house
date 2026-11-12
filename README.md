@@ -30,6 +30,14 @@ Everything is done in the editor in your web browser. You never have to touch a 
 
 Then **Save seasons** and **Publish**.
 
+**Making a new look in your own words:** open **Design a theme** and describe it, like
+"Warm like my kitchen at Christmas, deep red and pine green, big easy-to-read writing", or tap
+one of the ideas. Pick what to **Start from** (Christmas keeps its lights and wreath, Thanksgiving
+its leaves). The Assistant makes a theme and you see your own site in it. Say what to change
+("a little warmer"), give it a name, and **Save this theme**. Saving doesn't change your site:
+put the new theme on from **Seasons**, for the whole site or as its own season. However the
+Assistant picks colours, the writing is always made dark or light enough to read easily.
+
 **Customize look** lets you make the writing bigger or smaller, or roomier, for the whole
 site. The holiday colors come from the decorations, so that screen leaves them alone on purpose.
 
@@ -134,6 +142,20 @@ component dropped in here follows the current season, in light and dark.
 
 Admin's **Publish** button commits only `content`, `static`, `openblog.json`, `themes` and
 `.github`, so commit changes to `components/` and `scripts/` with git.
+
+## The Assistant (for Design a theme)
+
+`openblog.json` already sets the provider (`knowledgeChecks`: Anthropic, `claude-sonnet-5-5`). The
+key is never stored in the repository: set it where the editor runs.
+
+```sh
+export ANTHROPIC_API_KEY="..."     # or another provider; see open.blog's Admin guide, Optional question generation
+openblog serve --admin
+```
+
+Grammi's description, the site's title and the name of the theme she starts from are sent to the
+provider, and nothing else from the site. Without a key, **Design a theme** says the Assistant isn't
+set up, and everything else works as before.
 
 ## Running it
 
