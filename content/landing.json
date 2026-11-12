@@ -74,6 +74,36 @@
       }
     },
     {
+      "id": "birthday-kristin",
+      "type": "component",
+      "tag": "family-birthday",
+      "props": {
+        "person": "Kristin",
+        "day": "1999-11-27",
+        "age": true
+      }
+    },
+    {
+      "id": "birthday-kaylee",
+      "type": "component",
+      "tag": "family-birthday",
+      "props": {
+        "person": "Kaylee",
+        "day": "2005-02-22",
+        "age": true
+      }
+    },
+    {
+      "id": "birthday-benjamin",
+      "type": "component",
+      "tag": "family-birthday",
+      "props": {
+        "person": "Benjamin",
+        "day": "2025-10-12",
+        "age": true
+      }
+    },
+    {
       "id": "advent",
       "type": "component",
       "tag": "advent-calendar",
