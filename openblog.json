@@ -13,7 +13,7 @@
   "logo": "",
   "favicon": "/favicon.svg",
   "ogImage": "",
-  "theme": "thanksgiving",
+  "theme": "grammis",
   "colorSchemeToggle": null,
   "postPath": "/posts/{slug}/",
   "postsPerPage": 10,
@@ -162,5 +162,13 @@
     "requireApproval": false,
     "approvalFile": ".openblog/distribution-approvals.json"
   },
-  "redirectsFile": false
+  "redirectsFile": false,
+  "seasons": {
+    "version": 1,
+    "enabled": true,
+    "windows": [
+      { "theme": "thanksgiving", "start": "10-15", "end": "11-30" },
+      { "theme": "christmas", "start": "12-01", "end": "01-06" }
+    ]
+  }
 }

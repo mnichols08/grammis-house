@@ -104,7 +104,7 @@ Voice samples (already planned) tell it how Grammi writes; a theme brief tells i
 
 ## Suggested order
 
-1. **Seasons in the engine** (field notes, finding 1). Grammi needs it most, and it's small.
+1. ~~**Seasons in the engine**~~ Done: [open.blog#649](https://github.com/journey-to-code-org/open.blog/pull/649) adds the `seasons` setting and Admin's **Seasons** screen.
 2. **The component manifest + `component` landing section**, with `holiday-countdown` as the first entry.
    This replaces the script injection here.
 3. **Build-time server HTML** behind `--features zubra`.

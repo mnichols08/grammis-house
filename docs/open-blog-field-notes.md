@@ -26,28 +26,13 @@ open.blog v0.56.0 (`d18b32aa`), Rust 1.97, Linux, Chrome, on 2026-11-12.
 
 Ordered by how much they affect a non-technical author.
 
-### 1. Admin can't change the site theme (the season)
+### 1. Admin can't change the site theme (the season): fixed in open.blog#649
 
-`theme` in `openblog.json` can be changed only by editing the file. Admin's Appearance screen
-covers the light/dark toggle, and Customize look covers tokens. Neither picks the theme.
-Posts, pages and series each have a Theme dropdown (`web/admin/admin.js:22128`); the site doesn't.
-
-*Workaround here:* a published page, `content/pages/decorations.md`, whose Theme dropdown is
-read by `scripts/season.py` in CI before the build.
-
-*Proposal:* a **Seasons** feature. The `MM-DD` window format, the "absent means off" rule,
-and the Reminders screen from seasonal reminders (ADR 0354–0356) fit it closely:
-
-```json
-"seasons": { "enabled": true, "default": "grammis",
-  "windows": [ { "theme": "thanksgiving", "start": "10-15", "end": "11-30" },
-               { "theme": "christmas",    "start": "12-01", "end": "01-06" } ],
-  "pin": "" }
-```
-
-The build resolves the site theme from today's date (the Pages workflow already rebuilds hourly),
-and an Admin screen offers "Decorations up now: Thanksgiving · Change · Keep these up". This
-replaces both `seasons.json` and `season.py` in this repo.
+`theme` in `openblog.json` could be changed only by editing the file, and nothing changed it by date.
+[open.blog#649](https://github.com/journey-to-code-org/open.blog/pull/649) adds a `seasons` setting
+(calendar windows that each put up a theme, with `theme` as the look between them) and an Admin
+**Seasons** screen that chooses the site theme and turns the calendar on (ADR 0407). This site uses it,
+pinned to that PR's commit until it's merged. It replaced a `scripts/season.py` workaround here.
 
 ### 2. `openblog serve` commits to git on startup
 

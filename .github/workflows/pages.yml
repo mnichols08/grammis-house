@@ -22,10 +22,12 @@ permissions:
   pages: write
   id-token: write
 
-# The open.blog engine this site was tested with (v0.56.0). Grammi's site is a real
-# reader-facing site, so it upgrades on purpose: change this, build locally, then push.
+# The open.blog engine this site was tested with. Grammi's site is a real reader-facing
+# site, so it upgrades on purpose: change this, build locally, then push.
+# This is the commit of journey-to-code-org/open.blog#649 (Seasons). Once it is merged,
+# point this at the merge commit on main.
 env:
-  OPENBLOG_REV: d18b32aa49904c9425d19b5bf9b5e210384a65af
+  OPENBLOG_REV: 5ef15454677910ce4c1b92794ca65c53f80634ff
 
 concurrency:
   group: pages
@@ -51,8 +53,6 @@ jobs:
           if git fetch -q origin analytics:analytics 2>/dev/null; then
             mkdir -p .openblog && git show analytics:analytics.json > .openblog/analytics.json
           fi
-      - name: Put up this season's decorations (seasons.json)
-        run: python3 scripts/season.py
       - name: Build the site
         run: openblog build
       - uses: actions/upload-pages-artifact@v3

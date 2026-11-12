@@ -23,10 +23,12 @@ Everything is done in the editor in your web browser. You never have to touch a 
 4. **Save**, then **Publish** (top right) to put it on the site.
 5. **New recipe** on the Overview screen starts a new one with everything ready to fill in.
 
-**Changing the decorations:** open **Pages → Decorations → Settings** and choose a season under
-**Theme** (Thanksgiving, Christmas, or No decorations), then **Save** and **Publish**. **Site preview**
-shows the decorations before you publish. The whole house changes within a few minutes of publishing.
-Set Theme back to **Inherit** and the calendar takes over again.
+**Changing the decorations:** open **Seasons**. The top says what's up today and when it changes.
+- **Change the decorations with the calendar** on: each season goes up and comes down on its
+  own days. Change a day with the month and day lists, or **Add a season** for a new holiday.
+- Switched off: pick what the site wears under **Your site wears**, and it stays up until you change it.
+
+Then **Save seasons** and **Publish**.
 
 **Customize look** lets you make the writing bigger or smaller, or roomier, for the whole
 site. The holiday colors come from the decorations, so that screen leaves them alone on purpose.
@@ -61,31 +63,19 @@ The pictures are drawn in code by `scripts/draw_decorations.py`, and
 Leaves, snow and twinkling hold still for anyone whose device asks for less motion,
 and recipe pages stay quiet because people are cooking. Phones get the garland, sign and banner, but not the corner piece.
 
-**The house decorates itself, unless Grammi says otherwise.** The deploy workflow runs
-`scripts/season.py` before each build and sets `"theme"` in `openblog.json` from, in order:
-
-1. the Theme picked on the **Decorations** page in Admin (`content/pages/decorations.md`);
-2. `"pin"` in [`seasons.json`](seasons.json);
-3. the calendar in `seasons.json`;
-4. `"default"` (the plain house).
-
-The calendar:
+**The house decorates itself.** This is open.blog's `seasons` setting in `openblog.json`
+(added in [open.blog#649](https://github.com/journey-to-code-org/open.blog/pull/649)), edited on
+Admin's **Seasons** screen:
 
 | Season | Up | Down |
 | --- | --- | --- |
 | Thanksgiving | Oct 15 | Nov 30 |
 | Christmas | Dec 1 | Jan 6 |
-| (rest of the year) | plain `grammis` house | |
+| (rest of the year) | `theme`: the plain `grammis` house | |
 
-The site rebuilds every hour, so a new season shows up within an hour of its start date.
-open.blog's Admin has no site-wide theme setting yet (see the field notes), which is why the
-Decorations page's own Theme dropdown acts as the switch. `openblog serve` doesn't run the
-script, so locally the whole site changes only after you run it. To try another date:
-
-```sh
-python3 scripts/season.py --date 12-10   # sets "theme" in openblog.json
-openblog serve
-```
+Every build checks today's date, and the site rebuilds every hour, so a new season shows up within an hour
+of its start date. `openblog serve` redecorates by itself at midnight. Days are UTC, so the switch happens
+around 7 or 8 pm the evening before on the East Coast.
 
 **Each holiday keeps its own decorations.** Every recipe belongs to a holiday collection
 (`content/series/thanksgiving.md`, `christmas.md`), and each collection names its theme. So in
@@ -96,7 +86,7 @@ December, the Thanksgiving recipes still have their autumn look while the rest o
 1. Copy `themes/thanksgiving/` to `themes/<season>/`. In its `theme.json`, change the
    colours and `"season": "\"<Name>\""`. Draw the season's pieces in `decor/` (any of
    the five; leave one out and it isn't hung), then run `python3 scripts/decorate.py <season>`.
-2. Add a window to `seasons.json`.
+2. Add it on the **Seasons** screen (or as a window under `seasons` in `openblog.json`).
 3. Add `content/series/<season>.md` with `theme: <season>` for that holiday's recipes.
 4. To get a countdown sign for it, teach `components/holiday-countdown.zb` the date (see below).
 
@@ -116,7 +106,7 @@ that [Zubra UI](https://github.com/journey-to-code-org/zubra-ui) components read
 component dropped in here follows the current season, in light and dark.
 
 Admin's **Publish** button commits only `content`, `static`, `openblog.json`, `themes` and
-`.github`, so commit changes to `components/`, `scripts/` and `seasons.json` with git.
+`.github`, so commit changes to `components/` and `scripts/` with git.
 
 ## Running it
 
