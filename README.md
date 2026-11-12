@@ -60,8 +60,17 @@ by itself. Open **Landing page**, then the sign, to change it:
   is a quote (the **"** button in the editor), with who it's from on the last line.
 - **Quizzes.** "How well do you know Grammi's kitchen?" is a draft with three questions to fill
   in. **Add knowledge check** in the editor makes more. Answers stay on the reader's own device.
-- **Notes on recipes** (comments) need two free accounts to hold what people send. Mikey runs
-  `bash scripts/setup-family-notes.sh` once; after that every recipe has notes at the bottom, and new
+- **Greeting cards.** Open **Greeting cards** (under Family) and add the people you send cards to:
+  a name, an email address, and a birthday. **Write a card**, pick who it's for and which card
+  (Birthday, Christmas, Thanksgiving, Easter, Valentine, Anniversary, Congratulations, Thinking of you,
+  Just because), write your message (`{name}` becomes their first name, `{age}` how old they're turning)
+  and pick the day. A birthday card for someone with a birthday on file fills in the day and goes out
+  every year. **See the card** shows it as it will arrive; **Send me a test** sends it to you first.
+  It goes out at the time you picked, even when your computer is off. The addresses are kept in the
+  private database, never on the site.
+- **Notes on recipes** (comments) and greeting cards need three free accounts to hold what people
+  send and to send the cards (Supabase, Netlify, Brevo). Mikey runs
+  `bash scripts/setup-family-service.sh` once; after that every recipe has notes at the bottom, and new
   ones wait for you in **Moderation inbox** until you approve them.
 
 **Making a new look in your own words:** open **Design a theme** and describe it, like

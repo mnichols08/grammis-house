@@ -24,11 +24,11 @@ permissions:
 
 # The open.blog engine this site was tested with. Grammi's site is a real reader-facing
 # site, so it upgrades on purpose: change this, build locally, then push.
-# This is the commit of journey-to-code-org/open.blog#655 (a component setting that picks a post),
-# stacked on #654, #653, #652, #651 and #649. Once they're merged, point this at the merge commit on main.
+# This is the commit of journey-to-code-org/open.blog#657 (greeting cards), stacked on #655,
+# #654, #653, #652, #651 and #649. Once they're merged, point this at the merge commit on main.
 env:
-  OPENBLOG_REV: 3eec442502e1ae9a20730366d499096b36623411
-  # Notes on recipes (hosted comments) run on Netlify. They're off until scripts/setup-family-notes.sh
+  OPENBLOG_REV: 65373fd55d0be0835f512ccd452a4770f9db3c11
+  # Notes on recipes (hosted comments) and greeting cards run on Netlify. They're off until scripts/setup-family-service.sh
   # has been run: it sets the repository variable NETLIFY_SITE_ID and the secret NETLIFY_AUTH_TOKEN.
   NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
 
