@@ -1,5 +1,5 @@
 ---
-title: Dad's Meatloaf
+title: Pappy's Meatloaf
 date: 2026-04-09
 draft: true
 series: birthday-favorites
@@ -14,7 +14,7 @@ description: "TODO: one sentence about dad's meatloaf, for search results and li
 cover: ""
 ---
 
-Dad's birthday supper, April 9. TODO(Grammi): why this is the one they ask for, and the first time you made it for them.
+Pappy's birthday supper, April 9. TODO(Grammi): why this is the one they ask for, and the first time you made it for them.
 
 ## Ingredients
 

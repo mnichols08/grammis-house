@@ -33,25 +33,44 @@
       }
     },
     {
-      "id": "birthday-dad",
+      "id": "birthday-pappy",
       "type": "component",
       "tag": "family-birthday",
       "props": {
-        "person": "Dad",
+        "person": "Pappy",
         "day": "2026-04-09",
         "dish": "Meatloaf",
-        "recipe": "dads-meatloaf"
+        "recipe": "pappys-meatloaf"
       }
     },
     {
-      "id": "birthday-brother",
+      "id": "birthday-jimmy",
       "type": "component",
       "tag": "family-birthday",
       "props": {
-        "person": "TODO brother's name",
+        "person": "Jimmy",
         "day": "2026-04-11",
         "dish": "Stuffed peppers",
         "recipe": "stuffed-peppers"
+      }
+    },
+    {
+      "id": "birthday-ricky",
+      "type": "component",
+      "tag": "family-birthday",
+      "props": {
+        "person": "Ricky",
+        "day": "2026-09-07"
+      }
+    },
+    {
+      "id": "birthday-grammi",
+      "type": "component",
+      "tag": "family-birthday",
+      "props": {
+        "person": "Grammi",
+        "day": "2026-09-22",
+        "note": "Call her, or better yet, come by!"
       }
     },
     {

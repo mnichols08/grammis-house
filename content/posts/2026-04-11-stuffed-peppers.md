@@ -14,7 +14,7 @@ description: "TODO: one sentence about stuffed peppers, for search results and l
 cover: ""
 ---
 
-TODO(brother's name)'s birthday supper, April 11. TODO(Grammi): why this is the one they ask for, and the first time you made it for them.
+Jimmy's birthday supper, April 11. TODO(Grammi): why this is the one they ask for, and the first time you made it for them.
 
 ## Ingredients
 
