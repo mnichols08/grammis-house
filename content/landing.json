@@ -1,0 +1,30 @@
+{
+  "format": "openblog-landing",
+  "version": 1,
+  "sections": [
+    {
+      "id": "welcome",
+      "type": "welcome",
+      "heading": "Welcome to Grammi's House",
+      "subheading": "Come on in. The kitchen's warm and the recipes are on the counter.",
+      "button": { "label": "Thanksgiving recipes", "href": "/series/thanksgiving/", "style": "primary" }
+    },
+    {
+      "id": "this-season",
+      "type": "rich-text",
+      "markdown": "## This season: Thanksgiving\n\nEverybody's spread out now, so Grammi wrote it all down. Find the turkey, the sides, and the pie, and cook them wherever you are this year. Then send her a picture."
+    },
+    {
+      "id": "recipes",
+      "type": "latest-posts",
+      "heading": "Grammi's recipes",
+      "show": "recipes",
+      "count": 8
+    },
+    {
+      "id": "collections",
+      "type": "series",
+      "heading": "Holiday collections"
+    }
+  ]
+}
