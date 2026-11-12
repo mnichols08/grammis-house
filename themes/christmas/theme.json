@@ -1,0 +1,46 @@
+{
+  "label": "Christmas",
+  "extends": "grammis",
+  "colorScheme": "light",
+  "colors": {
+    "light": {
+      "page": "#fbf8f3",
+      "outer": "#eef2ec",
+      "surfaceRaised": "#f1f4ee",
+      "accent": "#a51d2d",
+      "accentSoft": "#a51d2d",
+      "accentBorder": "#e3a1a8",
+      "link": "#8f1726",
+      "glow": "#f9e1e3",
+      "border": "#d7e0d4",
+      "calloutTip": "#1f6b3d"
+    },
+    "dark": {
+      "page": "#111a15",
+      "outer": "#0b120e",
+      "surface": "#17221c",
+      "surfaceRaised": "#1e2b24",
+      "border": "#2f4237",
+      "accent": "#ff8a8f",
+      "accentSoft": "#ff8a8f",
+      "accentBorder": "#7d2f36",
+      "accentContrast": "#111a15",
+      "link": "#ffa3a7",
+      "glow": "#3a1e22",
+      "text": "#f1f4ef",
+      "muted": "#c4cfc6"
+    }
+  },
+  "tokens": {
+    "garland": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='30' viewBox='0 0 88 30'%3E%3Cpath d='M0 4 Q22 16 44 4 T88 4' fill='none' stroke='%231f3d2b' stroke-width='2'/%3E%3Crect x='9' y='9' width='4' height='3' fill='%231f3d2b'/%3E%3Cellipse cx='11' cy='17' rx='4' ry='6' fill='%23d6283b'/%3E%3Crect x='31' y='9' width='4' height='3' fill='%231f3d2b'/%3E%3Cellipse cx='33' cy='17' rx='4' ry='6' fill='%23f2c14e'/%3E%3Crect x='53' y='9' width='4' height='3' fill='%231f3d2b'/%3E%3Cellipse cx='55' cy='17' rx='4' ry='6' fill='%232f9e5b'/%3E%3Crect x='75' y='9' width='4' height='3' fill='%231f3d2b'/%3E%3Cellipse cx='77' cy='17' rx='4' ry='6' fill='%233c7fd1'/%3E%3C/svg%3E\")",
+    "garlandHeight": "30px",
+    "garlandSize": "88px 30px",
+    "season": "\"Christmas\""
+  },
+  "scripts": [
+    "snow.js"
+  ],
+  "stylesheets": [
+    "christmas.css"
+  ]
+}

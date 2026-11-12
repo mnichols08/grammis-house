@@ -1,0 +1,44 @@
+<!--
+  A small sign that hangs under the garland: how many days until the holiday.
+  `holiday` is "thanksgiving" (the fourth Thursday of November) or "christmas".
+  The text inside is what readers see before (or without) JavaScript.
+-->
+<script>
+  const names = { thanksgiving: 'Thanksgiving', christmas: 'Christmas' }
+
+  function dayOf(year) {
+    if (holiday === 'christmas') return new Date(year, 11, 25)
+    const first = new Date(year, 10, 1).getDay()
+    return new Date(year, 10, 1 + ((4 - first + 7) % 7) + 21)
+  }
+
+  function daysLeft() {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    let day = dayOf(today.getFullYear())
+    if (day < today) day = dayOf(today.getFullYear() + 1)
+    return Math.round((day - today) / 86400000)
+  }
+
+  const name = names[holiday] ?? 'the holiday'
+  const left = daysLeft()
+  const message = left === 0 ? `Happy ${name}!` : left === 1 ? `${name} is tomorrow!` : `${left} days until ${name}`
+</script>
+<style>
+  :host { display: flex; justify-content: center; margin-top: 0.75rem; position: relative; z-index: 1; }
+  .sign { margin: 0; }
+  .sign {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    border: 2px solid var(--primary, #8c4a2f);
+    border-radius: var(--radius, 12px);
+    background: var(--card, #fffdf9);
+    color: var(--foreground, #2e2219);
+    font-family: var(--ob-font-heading, Georgia, serif);
+    font-style: italic;
+    box-shadow: 0 2px 0 var(--border, #e2d3bf);
+  }
+</style>
+<holiday-countdown holiday="thanksgiving">
+  <p class="sign" role="status">{message}</p>
+</holiday-countdown>

@@ -1,0 +1,57 @@
+/* Grammi's House: the structure every season shares.
+   A seasonal theme "decorates" by changing tokens (colours and --ob-garland),
+   so this file never needs editing to change the season. */
+
+/* The garland hangs under the header, like one strung across a doorway. */
+.ob-header {
+  position: relative;
+  padding-bottom: var(--ob-garland-height);
+}
+.ob-header::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: var(--ob-garland-height);
+  background-image: var(--ob-garland);
+  background-repeat: repeat-x;
+  background-size: var(--ob-garland-size);
+  background-position: center top;
+  pointer-events: none;
+}
+
+.ob-brand-name {
+  font-family: var(--ob-font-heading);
+  font-size: 1.35rem;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
+
+/* Recipe cards read like index cards in a recipe box. */
+.ob-card {
+  border-top: 4px solid var(--ob-color-accent);
+}
+
+/* Section titles get a small flourish underneath. */
+.ob-title::after {
+  content: "";
+  display: block;
+  width: 3.5rem;
+  height: 3px;
+  margin-top: 0.5rem;
+  border-radius: 3px;
+  background: var(--ob-color-accent-border);
+}
+
+/* Seasonal effects (leaves, snow) live in this layer and never catch clicks. */
+.gh-weather {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.ob-header, main, footer { position: relative; z-index: 1; }
+
+@media print {
+  .ob-header::after, .gh-weather { display: none; }
+}

@@ -1,0 +1,77 @@
+{
+  "label": "No decorations (just the house)",
+  "extends": "base",
+  "customizable": [
+    "textSize",
+    "spacing",
+    "pageWidth"
+  ],
+  "colorScheme": "light",
+  "colors": {
+    "light": {
+      "page": "#fbf6ee",
+      "outer": "#f3eadb",
+      "surface": "#fffdf9",
+      "surfaceRaised": "#f5ecdf",
+      "text": "#2e2219",
+      "muted": "#5c4a3b",
+      "subtle": "#7a6654",
+      "border": "#e2d3bf",
+      "accent": "#8c4a2f",
+      "accentSoft": "#8c4a2f",
+      "accentBorder": "#d9b49f",
+      "accentContrast": "#ffffff",
+      "link": "#7a3d24",
+      "glow": "#f4e2d6",
+      "codeBg": "#f5ecdf",
+      "codeText": "#2e2219",
+      "ink": "#2e2219"
+    },
+    "dark": {
+      "page": "#1e1813",
+      "outer": "#16110d",
+      "surface": "#27201a",
+      "surfaceRaised": "#312820",
+      "text": "#f3e9dc",
+      "muted": "#cdbda9",
+      "subtle": "#a8957f",
+      "border": "#4a3d31",
+      "accent": "#e3a07c",
+      "accentSoft": "#e3a07c",
+      "accentBorder": "#7d4f38",
+      "accentContrast": "#1e1813",
+      "link": "#f0b493",
+      "glow": "#3a2b21",
+      "codeBg": "#312820",
+      "codeText": "#f3e9dc",
+      "ink": "#1e1813"
+    }
+  },
+  "fonts": {
+    "body": "Georgia, \"Iowan Old Style\", \"Palatino Linotype\", \"Book Antiqua\", serif",
+    "heading": "\"Palatino Linotype\", Palatino, \"Book Antiqua\", Georgia, serif"
+  },
+  "tokens": {
+    "bodySize": "1.1875rem",
+    "bodyLeading": "1.75",
+    "radius": "14px",
+    "headingWeight": "700",
+    "headingTracking": "0",
+    "garland": "none",
+    "garlandHeight": "0px",
+    "garlandSize": "auto",
+    "welcomeMat": "none",
+    "season": "\"\""
+  },
+  "options": {
+    "listStyle": "cards",
+    "postCovers": true
+  },
+  "stylesheets": [
+    "house.css",
+    "zubra-bridge.css"
+  ],
+  "scripts": [
+    "decorations.js"
+  ]
+}

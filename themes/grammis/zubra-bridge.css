@@ -1,0 +1,26 @@
+/* The bridge between open.blog and Zubra UI.
+   Zubra UI components are themed with shadcn/ui's variables; open.blog themes compile to --ob-*.
+   Pointing one at the other means every Zubra UI component on this site follows whatever
+   season is up, in light and dark, with nothing to change in the component. */
+:root {
+  --background: var(--ob-color-page);
+  --foreground: var(--ob-color-text);
+  --card: var(--ob-color-surface);
+  --card-foreground: var(--ob-color-text);
+  --popover: var(--ob-color-surface-raised);
+  --popover-foreground: var(--ob-color-text);
+  --primary: var(--ob-color-accent);
+  --primary-foreground: var(--ob-color-accent-contrast);
+  --secondary: var(--ob-color-surface-raised);
+  --secondary-foreground: var(--ob-color-text);
+  --muted: var(--ob-color-surface-raised);
+  --muted-foreground: var(--ob-color-muted);
+  --accent: var(--ob-color-glow);
+  --accent-foreground: var(--ob-color-text);
+  --destructive: var(--ob-color-callout-caution);
+  --border: var(--ob-color-border);
+  --input: var(--ob-color-border);
+  --ring: var(--ob-color-accent);
+  --radius: var(--ob-radius);
+  --duration-fast: var(--ob-motion);
+}

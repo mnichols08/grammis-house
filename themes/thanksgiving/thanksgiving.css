@@ -1,0 +1,11 @@
+/* Thanksgiving decorations. Colours and the leaf garland are tokens in theme.json. */
+.gh-leaf {
+  position: absolute;
+  top: -2rem;
+  font-size: 1.25rem;
+  opacity: 0.8;
+  animation: gh-fall linear forwards;
+}
+@keyframes gh-fall {
+  to { transform: translate(var(--gh-drift, 4rem), 110vh) rotate(var(--gh-spin, 360deg)); }
+}

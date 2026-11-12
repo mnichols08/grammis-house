@@ -1,0 +1,19 @@
+/* Christmas decorations. Colours and the light-string garland are tokens in theme.json. */
+@media (prefers-reduced-motion: no-preference) {
+  .ob-header::after { animation: gh-twinkle 2.4s ease-in-out infinite alternate; }
+}
+@keyframes gh-twinkle {
+  from { filter: brightness(0.85) saturate(0.9); }
+  to   { filter: brightness(1.25) saturate(1.2) drop-shadow(0 0 3px rgb(255 220 120 / 0.6)); }
+}
+.gh-flake {
+  position: absolute;
+  top: -1rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 2px rgb(0 0 0 / 0.15);
+  animation: gh-snow linear forwards;
+}
+@keyframes gh-snow {
+  to { transform: translate(var(--gh-drift, 1rem), 105vh); }
+}
