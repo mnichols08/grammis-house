@@ -109,3 +109,10 @@ becomes, and a cache miss quietly installs a newer engine than the key says. It 
   `"hidden": true` (or `"selectable": false`) on a theme would keep root themes out of the author's list.
 - Admin is served at `/admin` while the site is under `/grammis-house/`. That's fine, but worth a line in the
   output of `serve` for project sites.
+- With twelve months and six collection looks, the Theme lists hold nineteen entries in one flat list.
+  This repo starts the collection looks' labels with "Series:" so they sort together. A `group` on a
+  theme (shown as an `<optgroup>`) would do it properly, and **Seasons** could offer only the
+  site-wide ones.
+- Parent scripts are inherited, so one `weather.js` in the house serves every month, switched by a
+  token. Reading a token from a script is just `getComputedStyle(...).getPropertyValue("--ob-weather")`,
+  which is worth a line in the themes doc: it's how a theme gives its scripts settings.

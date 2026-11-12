@@ -97,7 +97,8 @@
     "season": "\"\"",
     "decorCornerWidth": "0px",
     "decorCornerHeight": "0px",
-    "fontHand": "\"Caveat\", \"Segoe Print\", \"Bradley Hand\", cursive"
+    "fontHand": "\"Caveat\", \"Segoe Print\", \"Bradley Hand\", cursive",
+    "weather": "none"
   },
   "options": {
     "listStyle": "cards",
@@ -108,11 +109,13 @@
     "zubra-bridge.css",
     "components/holiday-countdown.css"
   ],
-  "scripts": [],
+  "scripts": [
+    "weather.js"
+  ],
   "components": {
     "holiday-countdown": {
       "label": "Countdown sign",
-      "description": "A little hanging sign that counts the days until the holiday.",
+      "description": "A little hanging sign that counts the days until a holiday.",
       "script": "components/holiday-countdown.js",
       "fallback": "A countdown sign to the holiday hangs here.",
       "props": [
@@ -120,8 +123,48 @@
           "name": "holiday",
           "type": "choice",
           "label": "Which holiday",
-          "default": "thanksgiving",
+          "default": "next",
           "choices": [
+            {
+              "value": "next",
+              "label": "Whichever holiday comes next"
+            },
+            {
+              "value": "new-year",
+              "label": "New Year's Day"
+            },
+            {
+              "value": "valentines",
+              "label": "Valentine's Day"
+            },
+            {
+              "value": "st-patricks",
+              "label": "St. Patrick's Day"
+            },
+            {
+              "value": "easter",
+              "label": "Easter"
+            },
+            {
+              "value": "mothers-day",
+              "label": "Mother's Day"
+            },
+            {
+              "value": "fathers-day",
+              "label": "Father's Day"
+            },
+            {
+              "value": "independence-day",
+              "label": "Fourth of July"
+            },
+            {
+              "value": "labor-day",
+              "label": "Labor Day"
+            },
+            {
+              "value": "halloween",
+              "label": "Halloween"
+            },
             {
               "value": "thanksgiving",
               "label": "Thanksgiving"
@@ -131,7 +174,7 @@
               "label": "Christmas"
             }
           ],
-          "help": "The sign counts down to this day, and says Happy Thanksgiving or Merry Christmas when it comes."
+          "help": "The sign counts down to this day and says Happy \u2026 when it comes. \"Whichever holiday comes next\" keeps up with the calendar by itself."
         }
       ],
       "source": "components/holiday-countdown.zb"

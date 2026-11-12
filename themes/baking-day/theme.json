@@ -1,0 +1,56 @@
+{
+  "label": "Series: baking day",
+  "extends": "grammis",
+  "colorScheme": "light",
+  "colors": {
+    "light": {
+      "page": "#fbf3f4",
+      "outer": "#f3ebec",
+      "surface": "#fffcfc",
+      "surfaceRaised": "#f9f0f2",
+      "text": "#33232a",
+      "muted": "#634c55",
+      "subtle": "#634c55",
+      "border": "#ecd9de",
+      "accent": "#9e3a5c",
+      "accentSoft": "#9e3a5c",
+      "accentBorder": "#ba728a",
+      "accentContrast": "#ffffff",
+      "link": "#9e3a5c",
+      "glow": "#f0dde2",
+      "codeBg": "#f9f0f2",
+      "codeText": "#33232a",
+      "ink": "#33232a"
+    },
+    "dark": {
+      "page": "#1e1519",
+      "outer": "#271e22",
+      "surface": "#291d22",
+      "surfaceRaised": "#2d2026",
+      "text": "#f5eaee",
+      "muted": "#d4bfc7",
+      "subtle": "#d4bfc7",
+      "border": "#47343c",
+      "accent": "#f4a6c2",
+      "accentSoft": "#f4a6c2",
+      "accentBorder": "#895e6e",
+      "accentContrast": "#000000",
+      "link": "#f4a6c2",
+      "glow": "#38262d",
+      "codeBg": "#2d2026",
+      "codeText": "#f5eaee",
+      "ink": "#1e1519"
+    }
+  },
+  "tokens": {
+    "season": "\"Baking day\"",
+    "weather": "none",
+    "decorGarlandHeight": "72px",
+    "decorMantelSize": "420px 92px",
+    "decorMantelHeight": "92px",
+    "decorPatternSize": "96px 96px",
+    "decorGarland": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='72' viewBox='0 0 120 72'%3E%3Crect x='0' y='0' width='20' height='24' fill='%23f6b8c8'/%3E%3Cpath d='M0 24A10 10 0 0 0 20 24Z' fill='%23f6b8c8'/%3E%3Crect x='20' y='0' width='20' height='24' fill='%23ffffff'/%3E%3Cpath d='M20 24A10 10 0 0 0 40 24Z' fill='%23ffffff'/%3E%3Crect x='40' y='0' width='20' height='24' fill='%23f6b8c8'/%3E%3Cpath d='M40 24A10 10 0 0 0 60 24Z' fill='%23f6b8c8'/%3E%3Crect x='60' y='0' width='20' height='24' fill='%23ffffff'/%3E%3Cpath d='M60 24A10 10 0 0 0 80 24Z' fill='%23ffffff'/%3E%3Crect x='80' y='0' width='20' height='24' fill='%23f6b8c8'/%3E%3Cpath d='M80 24A10 10 0 0 0 100 24Z' fill='%23f6b8c8'/%3E%3Crect x='100' y='0' width='20' height='24' fill='%23ffffff'/%3E%3Cpath d='M100 24A10 10 0 0 0 120 24Z' fill='%23ffffff'/%3E%3Crect x='0' y='0' width='120' height='4' fill='%238fc7c0'/%3E%3Cpath d='M60.0 30V40' stroke='%238fc7c0' stroke-width='1'/%3E%3Cg transform='translate%2860 56%29 rotate%280%29 scale%281.5%29'%3E%3Cpath d='M-7 1H7L5 11H-5Z' fill='%238fc7c0'/%3E%3Cpath d='M-4 1L-3 11M0 1V11M4 1L3 11' stroke='%23fff' stroke-opacity='.45'/%3E%3Cpath d='M-8 2C-10-3-5-5-4-6-4-10 4-10 4-6 5-5 10-3 8 2Z' fill='%23f6b8c8'/%3E%3Ccircle cy='-10' r='2.4' fill='%23d9293a'/%3E%3Cpath d='M0-12Q2-15 4-15' stroke='%233f8f3a' fill='none'/%3E%3Cpath d='M-5-2h1M1-4h1M4 0h1M-2 0h1' stroke='%23fff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E\")",
+    "decorMantel": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='92' viewBox='0 0 420 92'%3E%3Crect x='0' y='78' width='420' height='12' fill='%23b89a8a'/%3E%3Crect x='0' y='78' width='420' height='3' fill='%23fff' opacity='.18'/%3E%3Cg transform='translate%2840 56%29 rotate%280%29 scale%282%29'%3E%3Cpath d='M-7 1H7L5 11H-5Z' fill='%238fc7c0'/%3E%3Cpath d='M-4 1L-3 11M0 1V11M4 1L3 11' stroke='%23fff' stroke-opacity='.45'/%3E%3Cpath d='M-8 2C-10-3-5-5-4-6-4-10 4-10 4-6 5-5 10-3 8 2Z' fill='%23f6b8c8'/%3E%3Ccircle cy='-10' r='2.4' fill='%23d9293a'/%3E%3Cpath d='M0-12Q2-15 4-15' stroke='%233f8f3a' fill='none'/%3E%3Cpath d='M-5-2h1M1-4h1M4 0h1M-2 0h1' stroke='%23fff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate%28125 49.4%29 rotate%280%29 scale%282.6%29'%3E%3Crect x='-10' y='-4' width='20' height='13' rx='1.5' fill='%23f2a7bd'/%3E%3Crect x='-10' y='1' width='20' height='2' fill='%23fbe3ec'/%3E%3Cpath d='M-10-4H10V-1C8 1 7-1 5 1 3-1 2 1 0-1-2 1-3-1-5 1-7-1-8 1-10-1Z' fill='%23fbe3ec'/%3E%3Crect x='-.8' y='-11' width='1.6' height='7' fill='%238fc7c0'/%3E%3Cpath d='M0-11C-1.5-13 0-15 0-15 0-15 1.5-13 0-11Z' fill='%23f6c218'/%3E%3Cellipse cy='10' rx='13' ry='1.6' fill='%23d6ccb8'/%3E%3C/g%3E%3Cg transform='translate%28210 56%29 rotate%280%29 scale%282%29'%3E%3Cpath d='M-7 1H7L5 11H-5Z' fill='%23f6b8c8'/%3E%3Cpath d='M-4 1L-3 11M0 1V11M4 1L3 11' stroke='%23fff' stroke-opacity='.45'/%3E%3Cpath d='M-8 2C-10-3-5-5-4-6-4-10 4-10 4-6 5-5 10-3 8 2Z' fill='%23fff3c4'/%3E%3Ccircle cy='-10' r='2.4' fill='%23d9293a'/%3E%3Cpath d='M0-12Q2-15 4-15' stroke='%233f8f3a' fill='none'/%3E%3Cpath d='M-5-2h1M1-4h1M4 0h1M-2 0h1' stroke='%23fff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate%28290 58.2%29 rotate%280%29 scale%281.8%29'%3E%3Crect x='-9' y='-3' width='18' height='6' rx='3' fill='%23d6a76a'/%3E%3Crect x='-14' y='-1.2' width='5' height='2.4' rx='1.2' fill='%23a8763e'/%3E%3Crect x='9' y='-1.2' width='5' height='2.4' rx='1.2' fill='%23a8763e'/%3E%3Crect x='-8' y='-2' width='16' height='1' fill='%23fff' opacity='.3'/%3E%3C/g%3E%3Cg transform='translate%28380 56%29 rotate%280%29 scale%282%29'%3E%3Cpath d='M-7 1H7L5 11H-5Z' fill='%238fc7c0'/%3E%3Cpath d='M-4 1L-3 11M0 1V11M4 1L3 11' stroke='%23fff' stroke-opacity='.45'/%3E%3Cpath d='M-8 2C-10-3-5-5-4-6-4-10 4-10 4-6 5-5 10-3 8 2Z' fill='%23c9b6ea'/%3E%3Ccircle cy='-10' r='2.4' fill='%23d9293a'/%3E%3Cpath d='M0-12Q2-15 4-15' stroke='%233f8f3a' fill='none'/%3E%3Cpath d='M-5-2h1M1-4h1M4 0h1M-2 0h1' stroke='%23fff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3C/svg%3E\")",
+    "decorPattern": "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg opacity='0.16'%3E%3Cg transform='translate%2818 20%29 rotate%280%29 scale%280.6%29'%3E%3Cpath d='M-7 1H7L5 11H-5Z' fill='%239e3a5c'/%3E%3Cpath d='M-4 1L-3 11M0 1V11M4 1L3 11' stroke='%23fff' stroke-opacity='.45'/%3E%3Cpath d='M-8 2C-10-3-5-5-4-6-4-10 4-10 4-6 5-5 10-3 8 2Z' fill='%239e3a5c'/%3E%3Ccircle cy='-10' r='2.4' fill='%23d9293a'/%3E%3Cpath d='M0-12Q2-15 4-15' stroke='%233f8f3a' fill='none'/%3E%3Cpath d='M-5-2h1M1-4h1M4 0h1M-2 0h1' stroke='%23fff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate%2866 54%29 rotate%2830%29 scale%280.4%29'%3E%3Cpath d='M-7 1H7L5 11H-5Z' fill='%239e3a5c'/%3E%3Cpath d='M-4 1L-3 11M0 1V11M4 1L3 11' stroke='%23fff' stroke-opacity='.45'/%3E%3Cpath d='M-8 2C-10-3-5-5-4-6-4-10 4-10 4-6 5-5 10-3 8 2Z' fill='%239e3a5c'/%3E%3Ccircle cy='-10' r='2.4' fill='%23d9293a'/%3E%3Cpath d='M0-12Q2-15 4-15' stroke='%233f8f3a' fill='none'/%3E%3Cpath d='M-5-2h1M1-4h1M4 0h1M-2 0h1' stroke='%23fff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate%2836 82%29 rotate%28-20%29 scale%280.5%29'%3E%3Cpath d='M-7 1H7L5 11H-5Z' fill='%239e3a5c'/%3E%3Cpath d='M-4 1L-3 11M0 1V11M4 1L3 11' stroke='%23fff' stroke-opacity='.45'/%3E%3Cpath d='M-8 2C-10-3-5-5-4-6-4-10 4-10 4-6 5-5 10-3 8 2Z' fill='%239e3a5c'/%3E%3Ccircle cy='-10' r='2.4' fill='%23d9293a'/%3E%3Cpath d='M0-12Q2-15 4-15' stroke='%233f8f3a' fill='none'/%3E%3Cpath d='M-5-2h1M1-4h1M4 0h1M-2 0h1' stroke='%23fff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate%2884 14%29 rotate%2815%29 scale%280.3%29'%3E%3Cpath d='M-7 1H7L5 11H-5Z' fill='%239e3a5c'/%3E%3Cpath d='M-4 1L-3 11M0 1V11M4 1L3 11' stroke='%23fff' stroke-opacity='.45'/%3E%3Cpath d='M-8 2C-10-3-5-5-4-6-4-10 4-10 4-6 5-5 10-3 8 2Z' fill='%239e3a5c'/%3E%3Ccircle cy='-10' r='2.4' fill='%23d9293a'/%3E%3Cpath d='M0-12Q2-15 4-15' stroke='%233f8f3a' fill='none'/%3E%3Cpath d='M-5-2h1M1-4h1M4 0h1M-2 0h1' stroke='%23fff' stroke-width='1.2' stroke-linecap='round'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"
+  }
+}

@@ -1,3 +1,4 @@
 /dist
 /.openblog
 /.openblog/private/
+scripts/__pycache__/

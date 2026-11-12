@@ -51,7 +51,7 @@ export class HolidayCountdown extends HTMLElement {
   static zubra = {
     tag,
     props: {
-      holiday: { attribute: "holiday", default: "thanksgiving", required: false },
+      holiday: { attribute: "holiday", default: "next", required: false },
     },
     events: [],
     slots: [],
@@ -63,7 +63,7 @@ export class HolidayCountdown extends HTMLElement {
   // ElementInternals: the element's form value and validity, and :state() for CSS.
   #internals = this.attachInternals();
   // The props, each starting at its default; #given has the ones set from outside.
-  #props = { holiday: "thanksgiving" };
+  #props = { holiday: "next" };
   #given = new Set();
   // What brings the DOM up to date: one function for each spot that changes.
   #updates = [];
@@ -88,7 +88,6 @@ export class HolidayCountdown extends HTMLElement {
   // ---- props: properties, and attributes that set them
 
   get holiday() {
-    reads?.push(() => this.#props.holiday); // what reads it (a computed, an effect) depends on it
     return this.#props.holiday;
   }
   set holiday(value) {
@@ -102,7 +101,7 @@ export class HolidayCountdown extends HTMLElement {
     // raw is the attribute's text, or null once it's removed.
     switch (name) {
       case "holiday":
-        this.holiday = raw ?? "thanksgiving";
+        this.holiday = raw ?? "next";
         break;
     }
   }
@@ -161,28 +160,71 @@ export class HolidayCountdown extends HTMLElement {
       this.#mounted.push(run);
     };
     const state = (initial) => createState(initial, () => this.#requestUpdate());
-    const computed = createComputed;
 
     // ---- <script>
-    const names = { thanksgiving: 'Thanksgiving', christmas: 'Christmas' }
-    const name = computed(() => (names[element.holiday] ?? 'the holiday'))
+    const names = {
+      'new-year': "New Year's Day",
+      valentines: "Valentine's Day",
+      'st-patricks': "St. Patrick's Day",
+      easter: 'Easter',
+      'mothers-day': "Mother's Day",
+      'fathers-day': "Father's Day",
+      'independence-day': 'Fourth of July',
+      'labor-day': 'Labor Day',
+      halloween: 'Halloween',
+      thanksgiving: 'Thanksgiving',
+      christmas: 'Christmas',
+    }
+    // "next" follows the calendar: whichever of these days comes soonest.
+    const name = state(names[element.holiday] ?? 'the next holiday')
 
     // How many days are left is only known in the browser (today's date), so the server
     // renders "Counting down to Christmas" and the element fills in the days when it starts.
     const left = state(null)
 
-    const dayOf = (year) => {
-      if (element.holiday === 'christmas') return new Date(year, 11, 25)
-      const first = new Date(year, 10, 1).getDay()
-      return new Date(year, 10, 1 + ((4 - first + 7) % 7) + 21)
+    // The nth weekday of a month (weekday 0 is Sunday): Mother's Day is the 2nd Sunday of May.
+    const nth = (year, month, weekday, n) => {
+      const first = new Date(year, month, 1).getDay()
+      return new Date(year, month, 1 + ((weekday - first + 7) % 7) + 7 * (n - 1))
+    }
+
+    // Easter Sunday (the Gregorian computus).
+    const easter = (year) => {
+      const a = year % 19, b = Math.floor(year / 100), c = year % 100
+      const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3)
+      const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4
+      const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451)
+      const month = Math.floor((h + l - 7 * m + 114) / 31)
+      return new Date(year, month - 1, ((h + l - 7 * m + 114) % 31) + 1)
+    }
+
+    const dayOf = (year, which) => {
+      switch (which) {
+        case 'new-year': return new Date(year, 0, 1)
+        case 'valentines': return new Date(year, 1, 14)
+        case 'st-patricks': return new Date(year, 2, 17)
+        case 'easter': return easter(year)
+        case 'mothers-day': return nth(year, 4, 0, 2)
+        case 'fathers-day': return nth(year, 5, 0, 3)
+        case 'independence-day': return new Date(year, 6, 4)
+        case 'labor-day': return nth(year, 8, 1, 1)
+        case 'halloween': return new Date(year, 9, 31)
+        case 'christmas': return new Date(year, 11, 25)
+        default: return nth(year, 10, 4, 4)
+      }
     }
 
     onMount(() => {
       const now = new Date()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      let day = dayOf(today.getFullYear())
-      if (day < today) day = dayOf(today.getFullYear() + 1)
-      left.value = Math.round((day - today) / 86400000)
+      const upcoming = (which) => {
+        const day = dayOf(today.getFullYear(), which)
+        return day < today ? dayOf(today.getFullYear() + 1, which) : day
+      }
+      let which = element.holiday
+      if (!names[which]) which = Object.keys(names).reduce((a, b) => (upcoming(b) < upcoming(a) ? b : a))
+      name.value = names[which]
+      left.value = Math.round((upcoming(which) - today) / 86400000)
     })
 
     // ---- the template: its nodes, and how each changing spot is kept up to date
@@ -191,7 +233,7 @@ export class HolidayCountdown extends HTMLElement {
 `);
     const sign = content.children[0];
     this.#updates = [
-      bind(() => (left.value === null ? `Counting down to ${name.value}` : left.value === 0 ? `Happy ${name.value}!` : left.value === 1 ? `${name.value} is tomorrow!` : `${left.value} days until ${name.value}`) ?? "", (value) => (sign.textContent = value)),
+      bind(() => (left.value === null ? `Counting down to ${name.value}` : left.value === 0 ? `${name.value === 'Christmas' ? 'Merry' : 'Happy'} ${name.value}!` : left.value === 1 ? `${name.value} is tomorrow!` : `${left.value} days until ${name.value}`) ?? "", (value) => (sign.textContent = value)),
     ];
     return content;
   }
@@ -300,31 +342,6 @@ function createState(initial, changed) {
     },
     set(next) {
       this.value = next;
-    },
-  };
-}
-
-/** A value derived from props and state, cached until something it read changes. */
-function createComputed(compute) {
-  let seen = null; // [read again, the value it gave]
-  let value;
-  return {
-    get value() {
-      if (!seen || !seen.every(([read, last]) => Object.is(read(), last))) {
-        const outer = reads;
-        const collected = (reads = []);
-        try {
-          value = compute();
-        } finally {
-          reads = outer;
-          seen = collected.map((read) => [read, read()]);
-        }
-      }
-      if (reads) for (const [read] of seen) reads.push(read); // what reads this depends on what it read
-      return value;
-    },
-    get() {
-      return this.value;
     },
   };
 }

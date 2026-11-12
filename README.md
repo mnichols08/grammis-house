@@ -4,8 +4,8 @@ Grammi's kitchen, open all year: her famous holiday recipes and family stories, 
 for every season. Built with [open.blog](https://github.com/journey-to-code-org/open.blog).
 
 The idea: the kids and grandkids have all moved out, so the recipes they grew up on live
-here. The site gets decorated for the season the way the real house does. Thanksgiving
-is up first, and Christmas is ready to go.
+here. The site gets decorated for the season the way the real house does: something new up
+every month of the year, with Thanksgiving and Christmas the biggest of all.
 
 ## For Grammi: writing and changing recipes
 
@@ -30,6 +30,14 @@ Everything is done in the editor in your web browser. You never have to touch a 
 
 Then **Save seasons** and **Publish**.
 
+**Dressing up a recipe collection:** every collection (Thanksgiving, Christmas, or a new one) can
+wear its own look, whatever month it is. Open the collection under **Series**, pick its **Theme**,
+then **Save** and **Publish**. The looks made for collections all start with "Series:" (Recipe box,
+Family stories, Garden journal, Baking day, Letters to the grandkids, Sunday dinner).
+
+**The countdown sign** under the garland counts down to whichever holiday comes next, all year,
+by itself. To pin it to one holiday, open **Landing page**, then the sign, and pick **Which holiday**.
+
 **Making a new look in your own words:** open **Design a theme** and describe it, like
 "Warm like my kitchen at Christmas, deep red and pine green, big easy-to-read writing", or tap
 one of the ideas. Pick what to **Start from** (Christmas keeps its lights and wreath, Thanksgiving
@@ -53,6 +61,9 @@ themes/
   christmas/      a pine garland with red bows, gold ornaments and bulbs that twinkle one
                   by one, a wreath, snow on the welcome card, a snowy village along the
                   bottom, and snowfall; a pine-night version in dark mode
+  january/ ... october/   one for each month (below)
+  recipe-box/ family-stories/ garden-journal/ baking-day/ letters/ sunday-dinner/
+                  looks for recipe collections (below)
 ```
 
 `grammis` is the house. Each season `extends` it and changes only **tokens**: colours, the
@@ -66,20 +77,35 @@ holiday name (`season`), and five pictures from its `decor/` folder:
 | `mantel` | along the top of the footer | gourds and candles | village in the snow |
 | `pattern` | behind the page | plaid tablecloth | scattered snowflakes |
 
-The pictures are drawn in code by `scripts/draw_decorations.py`, and
+The pictures are drawn in code by `scripts/draw_decorations.py` (Thanksgiving and Christmas) and
+`scripts/draw_themes.py` (every other month, and the collection looks), and
 `scripts/decorate.py` turns them into tokens. Decorating never means editing `house.css`.
-Leaves, snow and twinkling hold still for anyone whose device asks for less motion,
+Leaves, snow, petals and the rest of the weather (the `weather` token: `snow`, `hearts`, `clover`,
+`petals`, `leaves`, `confetti` or `none`, drawn by `themes/grammis/weather.js`) hold still for anyone whose device asks for less motion,
 and recipe pages stay quiet because people are cooking. Phones get the garland, sign and banner, but not the corner piece.
 
 **The house decorates itself.** This is open.blog's `seasons` setting in `openblog.json`
 (added in [open.blog#649](https://github.com/journey-to-code-org/open.blog/pull/649)), edited on
 Admin's **Seasons** screen:
 
-| Season | Up | Down |
-| --- | --- | --- |
-| Thanksgiving | Oct 15 | Nov 30 |
-| Christmas | Dec 1 | Jan 6 |
-| (rest of the year) | `theme`: the plain `grammis` house | |
+| Season | Up | Down | What's up | Weather |
+| --- | --- | --- | --- | --- |
+| January | Jan 7 | Jan 31 | snowflakes, mittens and a snowman; "Warm wishes" | snow |
+| February | Feb 1 | Feb 29 | a string of hearts, love letters; "With love" | hearts |
+| March | Mar 1 | Mar 31 | shamrocks and gold coins; "Lucky" | clovers |
+| April | Apr 1 | Apr 30 | Easter eggs and tulips; "Happy Easter" | petals |
+| May | May 1 | May 31 | daisies, tulips and potted flowers for Mother's Day; "In bloom" | petals |
+| June | Jun 1 | Jun 30 | strawberries, jam jars and a berry pie; "Berry sweet" | |
+| July | Jul 1 | Jul 31 | stars and a flag-bunting fan; "Happy 4th" | confetti |
+| August | Aug 1 | Aug 31 | sunflowers and peaches; "Sunny days" | |
+| September | Sep 1 | Sep 30 | apples, a bushel bowl and an apple pie; "Apple days" | leaves |
+| October | Oct 1 | Oct 31 | a friendly pumpkin patch: jack-o'-lanterns, bats, candy corn; "Happy Halloween" | leaves |
+| Thanksgiving | Nov 1 | Nov 30 | (above) | leaves |
+| Christmas | Dec 1 | Jan 6 | (above) | snow |
+
+Christmas comes first in the list because it runs over New Year: the first window that holds
+today wins, so it keeps the house until January 7. Switch the calendar off and the site wears
+`theme` all year (the plain `grammis` house, or any of these).
 
 Every build checks today's date, and the site rebuilds every hour, so a new season shows up within an hour
 of its start date. `openblog serve` redecorates by itself at midnight. Days are UTC, so the switch happens
@@ -89,14 +115,31 @@ around 7 or 8 pm the evening before on the East Coast.
 (`content/series/thanksgiving.md`, `christmas.md`), and each collection names its theme. So in
 December, the Thanksgiving recipes still have their autumn look while the rest of the house is up for Christmas.
 
-### Adding a season (Easter, Fourth of July, ...)
+**Looks for collections.** Six themes are made for collections that aren't a holiday. They hang a
+ribbon under the header, a shelf along the footer and a pattern behind the page (no bunting or
+corner piece: those only go on the home page's welcome card):
 
-1. Copy `themes/thanksgiving/` to `themes/<season>/`. In its `theme.json`, change the
-   colours and `"season": "\"<Name>\""`. Draw the season's pieces in `decor/` (any of
-   the five; leave one out and it isn't hung), then run `python3 scripts/decorate.py <season>`.
+| Theme | Ribbon | Shelf |
+| --- | --- | --- |
+| `recipe-box` | red gingham with jam jars | jars, rolling pin, mixing bowl, pie |
+| `family-stories` | old photographs pinned on a string | photos, a teacup, a letter |
+| `garden-journal` | a vine of herbs and daisies with little pots | potted herbs |
+| `baking-day` | a bakery awning with cupcakes | cupcakes and a birthday cake |
+| `letters` | airmail stripes with envelopes | letters, a teacup, a photo |
+| `sunday-dinner` | blue-and-white lace with teacups | blue-willow china, pie, cake |
+
+### Adding a season (a birthday, a reunion, ...)
+
+1. Describe it in `scripts/draw_themes.py`: colours for light and dark (they're nudged until
+   they're easy to read), the motifs on its garland, the bunting's words, the corner cluster,
+   the shelf and the pattern, and its weather. The motifs are in `scripts/decor_library.py`
+   (hearts, eggs, apples, teacups, ...). Then run `python3 scripts/draw_themes.py <season>` and
+   `python3 scripts/decorate.py <season>`. (Or copy a theme folder and draw `decor/` by hand:
+   any of the five pieces; leave one out and it isn't hung.)
 2. Add it on the **Seasons** screen (or as a window under `seasons` in `openblog.json`).
 3. Add `content/series/<season>.md` with `theme: <season>` for that holiday's recipes.
-4. To get a countdown sign for it, teach `themes/grammis/components/holiday-countdown.zb` its date and add it to the sign's **Which holiday** choices in `theme.json` (see below).
+4. The countdown sign knows New Year's, Valentine's, St. Patrick's, Easter, Mother's and
+   Father's Day, the Fourth of July, Labor Day, Halloween, Thanksgiving and Christmas. For another, teach `themes/grammis/components/holiday-countdown.zb` its date and add it to the sign's **Which holiday** choices in `theme.json` (see below).
 
 ## Components (Zubra)
 
@@ -108,8 +151,8 @@ theme, which declares each one under `components` in its `theme.json`
 
 **Grammi places them herself.** On **Landing page → Add a section**, the theme's components are
 listed after the built-in sections ("Countdown sign: a little hanging sign that counts the days until
-the holiday"). The form comes from the settings the theme declares (for the sign, **Which holiday**:
-Thanksgiving or Christmas). She can move, hide or delete it like any other section. The preview
+a holiday"). The form comes from the settings the theme declares (for the sign, **Which holiday**:
+whichever comes next, or one of eleven holidays). She can move, hide or delete it like any other section. The preview
 shows the component's one-line fallback, because Admin's preview runs no scripts.
 
 To add a component:

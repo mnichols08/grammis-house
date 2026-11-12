@@ -123,6 +123,31 @@ body {
   z-index: 0;
 }
 main, .ob-footer { position: relative; z-index: 1; }
+.gh-drop {
+  position: absolute;
+  top: -3rem;
+  width: var(--gh-size);
+  height: var(--gh-size);
+  opacity: 0;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.18));
+  animation: gh-drop var(--gh-fall) linear forwards;
+}
+.gh-drop svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  animation: gh-sway var(--gh-sway) ease-in-out infinite alternate;
+}
+@keyframes gh-drop {
+  0% { opacity: 0; transform: translate(0, 0); }
+  8% { opacity: 0.9; }
+  85% { opacity: 0.85; }
+  100% { opacity: 0; transform: translate(var(--gh-drift), 105vh); }
+}
+@keyframes gh-sway {
+  from { transform: translateX(-1.2rem) rotate(-30deg); }
+  to { transform: translateX(1.2rem) rotate(30deg); }
+}
 .ob-header { z-index: 3; }
 
 /* ---- smaller screens: smaller decorations ---- */

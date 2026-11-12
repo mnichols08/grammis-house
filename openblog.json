@@ -168,14 +168,64 @@
     "enabled": true,
     "windows": [
       {
-        "theme": "thanksgiving",
-        "start": "10-15",
-        "end": "11-30"
-      },
-      {
         "theme": "christmas",
         "start": "12-01",
         "end": "01-06"
+      },
+      {
+        "theme": "january",
+        "start": "01-07",
+        "end": "01-31"
+      },
+      {
+        "theme": "february",
+        "start": "02-01",
+        "end": "02-29"
+      },
+      {
+        "theme": "march",
+        "start": "03-01",
+        "end": "03-31"
+      },
+      {
+        "theme": "april",
+        "start": "04-01",
+        "end": "04-30"
+      },
+      {
+        "theme": "may",
+        "start": "05-01",
+        "end": "05-31"
+      },
+      {
+        "theme": "june",
+        "start": "06-01",
+        "end": "06-30"
+      },
+      {
+        "theme": "july",
+        "start": "07-01",
+        "end": "07-31"
+      },
+      {
+        "theme": "august",
+        "start": "08-01",
+        "end": "08-31"
+      },
+      {
+        "theme": "september",
+        "start": "09-01",
+        "end": "09-30"
+      },
+      {
+        "theme": "october",
+        "start": "10-01",
+        "end": "10-31"
+      },
+      {
+        "theme": "thanksgiving",
+        "start": "11-01",
+        "end": "11-30"
       }
     ]
   }
