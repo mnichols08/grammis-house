@@ -5,6 +5,7 @@
   :scope { display: block; }
   .stand { display: none; }
   .stand[data-state="shown"] { display: block; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .stand { max-width: 26rem; margin: 1.5rem auto; text-align: center; }
   .tree { position: relative; width: 100%; aspect-ratio: 300 / 360; background: center / contain no-repeat; }
   .orn { position: absolute; width: 9%; aspect-ratio: 1; translate: -50% -50%; background: center / contain no-repeat; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.25)); }
@@ -17,7 +18,19 @@
     animation: twinkle 2.4s ease-in-out infinite alternate; }
   @keyframes twinkle { from { opacity: 0.45; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .lights { animation: none; opacity: 0.8; } }
-  .under { min-height: 0.5rem; }
+  .under { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 0.6rem; margin: -2.2rem 0 0; padding: 0 1rem; list-style: none; position: relative; }
+  .box { display: grid; justify-items: center; gap: 0.15rem; }
+  .paper { width: 2.6rem; height: 2.2rem; border-radius: 4px; position: relative; box-shadow: 0 2px 2px rgb(0 0 0 / 0.25); background: #c8243c; }
+  .paper::before, .paper::after { content: ""; position: absolute; background: #f2c14e; }
+  .paper::before { left: 44%; width: 12%; top: 0; bottom: 0; }
+  .paper::after { top: 40%; height: 14%; left: 0; right: 0; }
+  .box[data-wrap="green"] .paper { background: #2f6b3f; }
+  .box[data-wrap="gold"] .paper { background: #c99624; }
+  .box[data-wrap="blue"] .paper { background: #2f5fa8; }
+  .box[data-wrap="plaid"] .paper { background: repeating-linear-gradient(0deg, transparent 0 6px, rgb(0 0 0 / 0.22) 6px 9px), repeating-linear-gradient(90deg, #a31f33 0 6px, #2f6b3f 6px 9px); }
+  .box[data-wrap="stripes"] .paper { background: repeating-linear-gradient(45deg, #c8243c 0 6px, #fff 6px 11px); }
+  .tag { font-size: 0.75rem; line-height: 1.1; max-width: 5.5rem; overflow-wrap: anywhere; color: var(--foreground, #3a2418); }
+  .count { margin: 0.4rem 0 0; font-family: var(--ob-font-hand, cursive); font-size: 1.25rem; color: var(--primary, #a3172b); }
   .orn[data-spot="spot1"] { left: 50%; top: 20%; }
   .orn[data-spot="spot2"] { left: 40%; top: 33%; }
   .orn[data-spot="spot3"] { left: 61%; top: 31%; }

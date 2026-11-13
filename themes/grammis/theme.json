@@ -111,6 +111,7 @@
     "components/family-birthday.css",
     "components/advent-calendar.css",
     "components/grammis-tree.css",
+    "components/gift-maker.css",
     "components/family-mailbox.css"
   ],
   "scripts": [
@@ -414,6 +415,13 @@
               "label": "All year"
             }
           ]
+        },
+        {
+          "name": "gifts",
+          "type": "text",
+          "label": "Gifts address",
+          "maxLength": 200,
+          "help": "The person who set up your site fills this in once. With it, gifts the family leaves sit wrapped under the tree."
         },
         {
           "name": "spot1",
@@ -1036,6 +1044,37 @@
             {
               "value": "bird",
               "label": "Little red bird"
+            }
+          ]
+        }
+      ]
+    },
+    "gift-maker": {
+      "label": "Leave-a-gift form",
+      "description": "A form where the family leaves you a note or makes you a card. It stays wrapped under your tree until Christmas morning, when you open it in Studio.",
+      "script": "components/gift-maker.js",
+      "fallback": "The family can leave Grammi a gift here in December.",
+      "props": [
+        {
+          "name": "gifts",
+          "type": "text",
+          "label": "Gifts address",
+          "maxLength": 200,
+          "help": "The person who set up your site fills this in once (the family service's address, ending in /api/gifts). Without it, gifts are off."
+        },
+        {
+          "name": "shows",
+          "type": "choice",
+          "label": "When it's on the page",
+          "default": "season",
+          "choices": [
+            {
+              "value": "season",
+              "label": "From November 20 to January 6"
+            },
+            {
+              "value": "always",
+              "label": "All year"
             }
           ]
         }

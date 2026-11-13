@@ -17,6 +17,7 @@ const css = `@layer theme, base, components, utilities;
   :scope { display: block; }
   .stand { display: none; }
   .stand[data-state="shown"] { display: block; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .stand { max-width: 26rem; margin: 1.5rem auto; text-align: center; }
   .tree { position: relative; width: 100%; aspect-ratio: 300 / 360; background: center / contain no-repeat; }
   .orn { position: absolute; width: 9%; aspect-ratio: 1; translate: -50% -50%; background: center / contain no-repeat; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.25)); }
@@ -29,7 +30,19 @@ const css = `@layer theme, base, components, utilities;
     animation: twinkle 2.4s ease-in-out infinite alternate; }
   @keyframes twinkle { from { opacity: 0.45; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .lights { animation: none; opacity: 0.8; } }
-  .under { min-height: 0.5rem; }
+  .under { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 0.6rem; margin: -2.2rem 0 0; padding: 0 1rem; list-style: none; position: relative; }
+  .box { display: grid; justify-items: center; gap: 0.15rem; }
+  .paper { width: 2.6rem; height: 2.2rem; border-radius: 4px; position: relative; box-shadow: 0 2px 2px rgb(0 0 0 / 0.25); background: #c8243c; }
+  .paper::before, .paper::after { content: ""; position: absolute; background: #f2c14e; }
+  .paper::before { left: 44%; width: 12%; top: 0; bottom: 0; }
+  .paper::after { top: 40%; height: 14%; left: 0; right: 0; }
+  .box[data-wrap="green"] .paper { background: #2f6b3f; }
+  .box[data-wrap="gold"] .paper { background: #c99624; }
+  .box[data-wrap="blue"] .paper { background: #2f5fa8; }
+  .box[data-wrap="plaid"] .paper { background: repeating-linear-gradient(0deg, transparent 0 6px, rgb(0 0 0 / 0.22) 6px 9px), repeating-linear-gradient(90deg, #a31f33 0 6px, #2f6b3f 6px 9px); }
+  .box[data-wrap="stripes"] .paper { background: repeating-linear-gradient(45deg, #c8243c 0 6px, #fff 6px 11px); }
+  .tag { font-size: 0.75rem; line-height: 1.1; max-width: 5.5rem; overflow-wrap: anywhere; color: var(--foreground, #3a2418); }
+  .count { margin: 0.4rem 0 0; font-family: var(--ob-font-hand, cursive); font-size: 1.25rem; color: var(--primary, #a3172b); }
   .orn[data-spot="spot1"] { left: 50%; top: 20%; }
   .orn[data-spot="spot2"] { left: 40%; top: 33%; }
   .orn[data-spot="spot3"] { left: 61%; top: 31%; }
@@ -62,13 +75,14 @@ const css = `@layer theme, base, components, utilities;
 
 export class GrammisTree extends HTMLElement {
   /** The attributes this element watches: attributeChangedCallback runs when one changes. */
-  static observedAttributes = ["topper", "nolights", "shows", "spot1", "spot2", "spot3", "spot4", "spot5", "spot6", "spot7", "spot8", "spot9", "spot10", "spot11", "spot12"];
+  static observedAttributes = ["topper", "nolights", "gifts", "shows", "spot1", "spot2", "spot3", "spot4", "spot5", "spot6", "spot7", "spot8", "spot9", "spot10", "spot11", "spot12"];
   /** What framework adapters (@zubra/runtime/react, /vue) read to wrap this element. */
   static zubra = {
     tag,
     props: {
       topper: { attribute: "topper", default: "star", required: false },
       nolights: { attribute: "nolights", default: false, required: false },
+      gifts: { attribute: "gifts", default: "", required: false },
       shows: { attribute: "shows", default: "season", required: false },
       spot1: { attribute: "spot1", default: "gold-ball", required: false },
       spot2: { attribute: "spot2", default: "red-ball", required: false },
@@ -93,7 +107,7 @@ export class GrammisTree extends HTMLElement {
   // ElementInternals: the element's form value and validity, and :state() for CSS.
   #internals = this.attachInternals();
   // The props, each starting at its default; #given has the ones set from outside.
-  #props = { topper: "star", nolights: false, shows: "season", spot1: "gold-ball", spot2: "red-ball", spot3: "candy-cane", spot4: "bell", spot5: "heart", spot6: "blue-ball", spot7: "snowflake", spot8: "gingerbread", spot9: "red-ball", spot10: "gold-ball", spot11: "pinecone", spot12: "bird" };
+  #props = { topper: "star", nolights: false, gifts: "", shows: "season", spot1: "gold-ball", spot2: "red-ball", spot3: "candy-cane", spot4: "bell", spot5: "heart", spot6: "blue-ball", spot7: "snowflake", spot8: "gingerbread", spot9: "red-ball", spot10: "gold-ball", spot11: "pinecone", spot12: "bird" };
   #given = new Set();
   // What brings the DOM up to date: one function for each spot that changes.
   #updates = [];
@@ -106,7 +120,7 @@ export class GrammisTree extends HTMLElement {
     super();
     // A property set before this class was defined sits on the element itself, hiding the
     // accessor below: take it over.
-    for (const prop of ["topper", "nolights", "shows", "spot1", "spot2", "spot3", "spot4", "spot5", "spot6", "spot7", "spot8", "spot9", "spot10", "spot11", "spot12"]) {
+    for (const prop of ["topper", "nolights", "gifts", "shows", "spot1", "spot2", "spot3", "spot4", "spot5", "spot6", "spot7", "spot8", "spot9", "spot10", "spot11", "spot12"]) {
       if (Object.hasOwn(this, prop)) {
         const value = this[prop];
         delete this[prop];
@@ -136,6 +150,17 @@ export class GrammisTree extends HTMLElement {
     this.#given.add("nolights");
     if (Object.is(value, this.#props.nolights)) return;
     this.#props.nolights = value;
+    this.#requestUpdate();
+  }
+
+  get gifts() {
+    reads?.push(() => this.#props.gifts); // what reads it (a computed, an effect) depends on it
+    return this.#props.gifts;
+  }
+  set gifts(value) {
+    this.#given.add("gifts");
+    if (Object.is(value, this.#props.gifts)) return;
+    this.#props.gifts = value;
     this.#requestUpdate();
   }
 
@@ -291,6 +316,9 @@ export class GrammisTree extends HTMLElement {
       case "nolights":
         this.nolights = raw !== null;
         break;
+      case "gifts":
+        this.gifts = raw ?? "";
+        break;
       case "shows":
         this.shows = raw ?? "season";
         break;
@@ -419,6 +447,28 @@ export class GrammisTree extends HTMLElement {
     })()
 
     const state = state2(element.shows === 'always' ? 'shown' : 'hidden')
+    const boxes = state2([])
+    const boxWords = state2('')
+
+    // The wrapped boxes: who each is from (when shown) and its paper, never what's inside.
+    const loadGifts = async () => {
+      const address = String(element.gifts || '').trim().replace(/\/+$/, '')
+      if (!/^https:\/\//.test(address)) return
+      try {
+        const reply = await (await fetch(`${address}/tree`, { credentials: 'omit' })).json()
+        const papers = ['red', 'green', 'gold', 'blue', 'plaid', 'stripes']
+        boxes.value = (reply.gifts || []).slice(0, 60).map((g, i) => ({
+          id: String(g.id),
+          wrap: papers.includes(g.wrap) ? g.wrap : 'red',
+          from: typeof g.from === 'string' ? g.from.slice(0, 40) : '',
+          tilt: ((i * 37) % 9) - 4,
+        }))
+        const n = boxes.value.length
+        boxWords.value = n === 0 ? '' : n === 1 ? '1 gift under the tree' : `${n} gifts under the tree`
+      } catch (_) {
+        boxes.value = []
+      }
+    }
 
     onMount(() => {
       const now = new Date()
@@ -426,30 +476,35 @@ export class GrammisTree extends HTMLElement {
       const date = now.getDate()
       const inSeason = (month === 10 && date >= 20) || month === 11 || (month === 0 && date <= 6)
       if (element.shows === 'always' || inSeason) state.value = 'shown'
+      loadGifts()
+      const again = () => loadGifts()
+      window.addEventListener('grammis-gift', again)
+      return () => window.removeEventListener('grammis-gift', again)
     })
 
     // ---- the template: its nodes, and how each changing spot is kept up to date
     const content = clone(`
-  <figure class="stand" role="img">
-    <div class="tree">
+  <figure class="stand">
+    <div class="tree" role="img">
       <!--if--><!--/if-->
       <!--if--><!--/if-->
       <!--each--><!--/each-->
     </div>
-    <div class="under"></div>
+    <!--if--><!--/if-->
   </figure>
 `);
     const stand = content.children[0];
+    const tree = stand.children[0];
     this.#updates = [
       bind(() => state.value, (value) => attribute(stand, "data-state", value)),
-      bind(() => said, (value) => attribute(stand, "aria-label", value)),
+      bind(() => said, (value) => attribute(tree, "aria-label", value)),
       // <zb-if test={lit}>
-      when(stand.children[0].childNodes[1], stand.children[0].childNodes[2], () => lit.value, [() => {
+      when(tree.childNodes[1], tree.childNodes[2], () => lit.value, [() => {
         const branch = clone(`<span class="lights" aria-hidden="true"></span>`);
         return { nodes: branch, update() { } };
       }, null]),
       // <zb-if test={crown}>
-      when(stand.children[0].childNodes[4], stand.children[0].childNodes[5], () => crown.value, [() => {
+      when(tree.childNodes[4], tree.childNodes[5], () => crown.value, [() => {
         const branch2 = clone(`<span class="topper" aria-hidden="true"></span>`);
         const topper2 = branch2.children[0];
         const updates = [
@@ -458,7 +513,7 @@ export class GrammisTree extends HTMLElement {
         return { nodes: branch2, update() { for (const update of updates) update(); } };
       }, null]),
       // <zb-each items={placed} as="o" key={o.spot}>
-      $list(stand.children[0].childNodes[7], stand.children[0].childNodes[8], () => placed.value, (o, index) => o.spot, (o, index) => {
+      $list(tree.childNodes[7], tree.childNodes[8], () => placed.value, (o, index) => o.spot, (o, index) => {
         const row = clone(`
         <span class="orn" aria-hidden="true"></span>
       `);
@@ -469,6 +524,40 @@ export class GrammisTree extends HTMLElement {
         ];
         return { nodes: row, update(next, at) { o = next; index = at; for (const update of updates2) update(); } };
       }),
+      // <zb-if test={boxes.length}>
+      when(stand.childNodes[3], stand.childNodes[4], () => boxes.value.length, [() => {
+        const branch3 = clone(`
+      <ul class="under" aria-label="Gifts under the tree">
+        <!--each--><!--/each-->
+      </ul>
+      <p class="count"></p>
+    `);
+        const count = branch3.children[1];
+        const updates4 = [
+          // <zb-each items={boxes} as="b" key={b.id}>
+          $list(branch3.children[0].childNodes[1], branch3.children[0].childNodes[2], () => boxes.value, (b, index2) => b.id, (b, index2) => {
+            const row2 = clone(`
+          <li class="box">
+            <span class="paper" aria-hidden="true"></span>
+            <span class="tag"></span>
+            <span class="visually-hidden"></span>
+          </li>
+        `);
+            const box = row2.children[0];
+            const tag2 = box.children[1];
+            const visuallyHidden = box.children[2];
+            const updates3 = [
+              bind(() => b.wrap, (value) => attribute(box, "data-wrap", value)),
+              bind(() => `${b.tilt}deg`, (value) => setStyle(box, "rotate", value)),
+              bind(() => (b.from ? `From ${b.from}` : '') ?? "", (value) => (tag2.textContent = value)),
+              bind(() => (b.from ? "" : "A wrapped gift") ?? "", (value) => (visuallyHidden.textContent = value)),
+            ];
+            return { nodes: row2, update(next2, at2) { b = next2; index2 = at2; for (const update of updates3) update(); } };
+          }),
+          bind(() => boxWords.value ?? "", (value) => (count.textContent = value)),
+        ];
+        return { nodes: branch3, update() { for (const update of updates4) update(); } };
+      }, null]),
     ];
     return content;
   }
@@ -520,6 +609,12 @@ function attribute(node, name, value) {
   } else {
     node.setAttribute(name, value);
   }
+}
+
+/** One CSS property from a value: null, false and "" remove it. */
+function setStyle(node, property, value) {
+  if (value == null || value === false || value === "") node.style.removeProperty(property);
+  else node.style.setProperty(property, String(value));
 }
 
 /** Puts a node in place (the platform's insertBefore, not one an element overrides for its slots). */

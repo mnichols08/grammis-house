@@ -184,7 +184,10 @@ All set.
   Notes: every recipe has a place for notes at the bottom. New ones wait in Admin's Moderation
   inbox until Grammi approves them.
   Greeting cards: in Admin under Family. Try "Send me a test" first (it goes to $SENDER_EMAIL).
-  Gifts: tell the family the gift password. It's in Railway (family > Variables >
+  Gifts: on the Landing page add the "Christmas tree" and the "Leave-a-gift form", and in each
+  set "Gifts address" to:
+      $FAMILY_URL/api/gifts
+  Then tell the family the gift password. It's in Railway (family > Variables >
   OPENBLOG_GIFTS_FAMILY_CODE) if anyone forgets it.
 
   The first deploy of each takes a few minutes (the admin panel builds the engine). Watch with:

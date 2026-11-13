@@ -4,6 +4,8 @@
 
   topper  what's on top: "star" (default), "bow", "snowflake" or "none"
   nolights  leave the lights off (default: the lights are on)
+  gifts   the family service's gifts address (…/api/gifts): gifts the family left sit wrapped
+          under the tree, with the giver's name only where they and Grammi both said so
   shows   when it's on the page: "season" (from November 20 to January 6, the default) or "always"
   spot1   Near the top (default gold-ball)
   spot2   Upper branches, left (default red-ball)
@@ -54,6 +56,28 @@
   })()
 
   let state = shows === 'always' ? 'shown' : 'hidden'
+  let boxes = []
+  let boxWords = ''
+
+  // The wrapped boxes: who each is from (when shown) and its paper, never what's inside.
+  const loadGifts = async () => {
+    const address = String(gifts || '').trim().replace(/\/+$/, '')
+    if (!/^https:\/\//.test(address)) return
+    try {
+      const reply = await (await fetch(`${address}/tree`, { credentials: 'omit' })).json()
+      const papers = ['red', 'green', 'gold', 'blue', 'plaid', 'stripes']
+      boxes = (reply.gifts || []).slice(0, 60).map((g, i) => ({
+        id: String(g.id),
+        wrap: papers.includes(g.wrap) ? g.wrap : 'red',
+        from: typeof g.from === 'string' ? g.from.slice(0, 40) : '',
+        tilt: ((i * 37) % 9) - 4,
+      }))
+      const n = boxes.length
+      boxWords = n === 0 ? '' : n === 1 ? '1 gift under the tree' : `${n} gifts under the tree`
+    } catch (_) {
+      boxes = []
+    }
+  }
 
   onMount(() => {
     const now = new Date()
@@ -61,12 +85,17 @@
     const date = now.getDate()
     const inSeason = (month === 10 && date >= 20) || month === 11 || (month === 0 && date <= 6)
     if (shows === 'always' || inSeason) state = 'shown'
+    loadGifts()
+    const again = () => loadGifts()
+    window.addEventListener('grammis-gift', again)
+    return () => window.removeEventListener('grammis-gift', again)
   })
 </script>
 <style>
   :host { display: block; }
   .stand { display: none; }
   .stand[data-state="shown"] { display: block; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .stand { max-width: 26rem; margin: 1.5rem auto; text-align: center; }
   .tree { position: relative; width: 100%; aspect-ratio: 300 / 360; background: center / contain no-repeat; }
   .orn { position: absolute; width: 9%; aspect-ratio: 1; translate: -50% -50%; background: center / contain no-repeat; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.25)); }
@@ -79,7 +108,19 @@
     animation: twinkle 2.4s ease-in-out infinite alternate; }
   @keyframes twinkle { from { opacity: 0.45; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .lights { animation: none; opacity: 0.8; } }
-  .under { min-height: 0.5rem; }
+  .under { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem 0.6rem; margin: -2.2rem 0 0; padding: 0 1rem; list-style: none; position: relative; }
+  .box { display: grid; justify-items: center; gap: 0.15rem; }
+  .paper { width: 2.6rem; height: 2.2rem; border-radius: 4px; position: relative; box-shadow: 0 2px 2px rgb(0 0 0 / 0.25); background: #c8243c; }
+  .paper::before, .paper::after { content: ""; position: absolute; background: #f2c14e; }
+  .paper::before { left: 44%; width: 12%; top: 0; bottom: 0; }
+  .paper::after { top: 40%; height: 14%; left: 0; right: 0; }
+  .box[data-wrap="green"] .paper { background: #2f6b3f; }
+  .box[data-wrap="gold"] .paper { background: #c99624; }
+  .box[data-wrap="blue"] .paper { background: #2f5fa8; }
+  .box[data-wrap="plaid"] .paper { background: repeating-linear-gradient(0deg, transparent 0 6px, rgb(0 0 0 / 0.22) 6px 9px), repeating-linear-gradient(90deg, #a31f33 0 6px, #2f6b3f 6px 9px); }
+  .box[data-wrap="stripes"] .paper { background: repeating-linear-gradient(45deg, #c8243c 0 6px, #fff 6px 11px); }
+  .tag { font-size: 0.75rem; line-height: 1.1; max-width: 5.5rem; overflow-wrap: anywhere; color: var(--foreground, #3a2418); }
+  .count { margin: 0.4rem 0 0; font-family: var(--ob-font-hand, cursive); font-size: 1.25rem; color: var(--primary, #a3172b); }
   .orn[data-spot="spot1"] { left: 50%; top: 20%; }
   .orn[data-spot="spot2"] { left: 40%; top: 33%; }
   .orn[data-spot="spot3"] { left: 61%; top: 31%; }
@@ -107,15 +148,26 @@
   .topper[data-kind="bow"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-16 -12 32 26%27%3E%3Cpath d=%27M0 0C-12-12-16 0-9 4-5 6-2 3 0 0ZM0 0C12-12 16 0 9 4 5 6 2 3 0 0Z%27 fill=%27%23c8243c%27/%3E%3Cpath d=%27M-1 2-7 13-2 11 1 14ZM1 2 7 13 2 11-1 14Z%27 fill=%27%239c1a27%27/%3E%3Crect x=%27-3.5%27 y=%27-3.5%27 width=%277%27 height=%277%27 rx=%272%27 fill=%27%23e0394c%27/%3E%3C/svg%3E"); }
   .topper[data-kind="snowflake"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Cg stroke=%27%237fb3e0%27 stroke-width=%272%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M0-10V10M-8.7-5 8.7 5M-8.7 5 8.7-5%27/%3E%3Cpath d=%27M-3-8 0-5 3-8M-3 8 0 5 3 8%27 fill=%27none%27/%3E%3C/g%3E%3C/svg%3E"); }
 </style>
-<grammis-tree topper="star" nolights={false} shows="season" spot1="gold-ball" spot2="red-ball" spot3="candy-cane" spot4="bell" spot5="heart" spot6="blue-ball" spot7="snowflake" spot8="gingerbread" spot9="red-ball" spot10="gold-ball" spot11="pinecone" spot12="bird">
-  <figure class="stand" data-state={state} role="img" aria-label={said}>
-    <div class="tree">
+<grammis-tree topper="star" nolights={false} gifts="" shows="season" spot1="gold-ball" spot2="red-ball" spot3="candy-cane" spot4="bell" spot5="heart" spot6="blue-ball" spot7="snowflake" spot8="gingerbread" spot9="red-ball" spot10="gold-ball" spot11="pinecone" spot12="bird">
+  <figure class="stand" data-state={state}>
+    <div class="tree" role="img" aria-label={said}>
       <zb-if test={lit}><span class="lights" aria-hidden="true"></span></zb-if>
       <zb-if test={crown}><span class="topper" data-kind={crown} aria-hidden="true"></span></zb-if>
       <zb-each items={placed} as="o" key={o.spot}>
         <span class="orn" data-spot={o.spot} data-kind={o.kind} aria-hidden="true"></span>
       </zb-each>
     </div>
-    <div class="under"></div>
+    <zb-if test={boxes.length}>
+      <ul class="under" aria-label="Gifts under the tree">
+        <zb-each items={boxes} as="b" key={b.id}>
+          <li class="box" data-wrap={b.wrap} style:rotate={`${b.tilt}deg`}>
+            <span class="paper" aria-hidden="true"></span>
+            <span class="tag">{b.from ? `From ${b.from}` : ''}</span>
+            <span class="visually-hidden">{b.from ? '' : 'A wrapped gift'}</span>
+          </li>
+        </zb-each>
+      </ul>
+      <p class="count">{boxWords}</p>
+    </zb-if>
   </figure>
 </grammis-tree>
