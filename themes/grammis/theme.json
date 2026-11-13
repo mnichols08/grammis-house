@@ -368,7 +368,7 @@
       "description": "A tree you decorate yourself: choose what hangs on each of twelve branches and what goes on top.",
       "script": "components/grammis-tree.js",
       "source": "components/grammis-tree.zb",
-      "fallback": "Grammi's Christmas tree stands here in December.",
+      "fallback": "Grammi's Christmas tree stands here from late November.",
       "props": [
         {
           "name": "topper",
@@ -395,10 +395,20 @@
           ]
         },
         {
-          "name": "nolights",
-          "type": "toggle",
-          "label": "Leave the lights off",
-          "help": "The lights twinkle softly. Readers who turn off motion see them still."
+          "name": "lights",
+          "type": "choice",
+          "label": "Lights",
+          "default": "on",
+          "choices": [
+            {
+              "value": "on",
+              "label": "On, twinkling gently"
+            },
+            {
+              "value": "off",
+              "label": "Off"
+            }
+          ]
         },
         {
           "name": "shows",
@@ -419,9 +429,9 @@
         {
           "name": "gifts",
           "type": "text",
-          "label": "Gifts address",
+          "label": "Gifts address (leave as it is)",
           "maxLength": 200,
-          "help": "The person who set up your site fills this in once. With it, gifts the family leaves sit wrapped under the tree."
+          "help": "The person who set up your site fills this in once. You don't need to change it."
         },
         {
           "name": "spot1",
@@ -1053,14 +1063,14 @@
       "label": "Leave-a-gift form",
       "description": "A form where the family leaves you a note or makes you a card. It stays wrapped under your tree until Christmas morning, when you open it in Studio.",
       "script": "components/gift-maker.js",
-      "fallback": "The family can leave Grammi a gift here in December.",
+      "fallback": "The family can leave Grammi a gift here from late November.",
       "props": [
         {
           "name": "gifts",
           "type": "text",
-          "label": "Gifts address",
+          "label": "Gifts address (leave as it is)",
           "maxLength": 200,
-          "help": "The person who set up your site fills this in once (the family service's address, ending in /api/gifts). Without it, gifts are off."
+          "help": "The person who set up your site fills this in once. You don't need to change it."
         },
         {
           "name": "shows",
