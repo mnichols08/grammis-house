@@ -22,15 +22,10 @@ permissions:
   pages: write
   id-token: write
 
-# The open.blog engine this site was tested with. Grammi's site is a real reader-facing
-# site, so it upgrades on purpose: change this, build locally, then push.
-# This is the commit of journey-to-code-org/open.blog#657 (greeting cards), stacked on #655,
-# #654, #653, #652, #651 and #649. Once they're merged, point this at the merge commit on main.
-env:
-  OPENBLOG_REV: 65373fd55d0be0835f512ccd452a4770f9db3c11
-  # Notes on recipes (hosted comments) and greeting cards run on Netlify. They're off until scripts/setup-family-service.sh
-  # has been run: it sets the repository variable NETLIFY_SITE_ID and the secret NETLIFY_AUTH_TOKEN.
-  NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
+# The open.blog engine this site is built with is pinned in .openblog-rev, the one place the
+# version lives: this build, the admin panel and the family service on Railway all read it.
+# Grammi's site is a real reader-facing site, so it upgrades on purpose: change that file,
+# build locally, then push.
 
 concurrency:
   group: pages
@@ -41,6 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Read the engine version
+        run: echo "OPENBLOG_REV=$(tr -d '[:space:]' < .openblog-rev)" >> "$GITHUB_ENV"
       - uses: dtolnay/rust-toolchain@stable
       # The binary is cached so the engine is compiled once, not on every push.
       # Bump the key (or delete the cache) to pick up a newer open.blog.
@@ -62,18 +59,6 @@ jobs:
         run: npm install --global @zubra/compiler@5.8.0
       - name: Build the site
         run: openblog build
-      - name: Deploy the family notes service to Netlify
-        # Off until NETLIFY_SITE_ID is set. The function is open.blog's own (netlify/functions), at the
-        # same commit as the engine; Netlify also keeps a copy of the site, which nobody needs to visit.
-        if: env.NETLIFY_SITE_ID != ''
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        run: |
-          git clone -q https://github.com/journey-to-code-org/open.blog "$RUNNER_TEMP/openblog"
-          git -C "$RUNNER_TEMP/openblog" checkout -q "$OPENBLOG_REV"
-          cd "$RUNNER_TEMP/openblog"
-          npx -y netlify-cli@17 deploy --prod --no-build --dir "$GITHUB_WORKSPACE/dist" \
-            --functions netlify/functions --site "$NETLIFY_SITE_ID"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
