@@ -17,7 +17,7 @@ import json
 import sys
 from pathlib import Path
 
-from decor_library import band, bunting, corner, garland, mantel, pattern, scheme
+from decor_library import band, bunting, corner, garland, mantel, pattern, pennants, scheme
 
 THEMES = Path(__file__).resolve().parent.parent / "themes"
 
@@ -180,6 +180,23 @@ MONTHS = {
         plank="#8a5a2e",
         pattern=("spinning_top", R(c="#b3192d", band="#b3192d")),
     ),
+    "christmas-florida": dict(
+        label="Christmas in Florida",
+        light=["#f7efe1", "#fffcf6", "#14303a", "#41585e", "#e6d6bc", "#0b7178"],
+        dark=["#0d1f28", "#142b36", "#eaf5f3", "#b3cbc9", "#2a4652", "#62d0c8"],
+        weather="snow",
+        garland=R(items=[("starfish", R(c="#f08a5d")), ("shell", R()), ("beach_ball", R()), ("starfish", R(c="#e8577a", dot="#ffd6de")),
+                         ("shell", R(c="#ffffff", ridge="#2aa7a0")), ("bauble", R(c="#c8243c")), ("starfish", R(c="#f2b632", dot="#fff3c4")), ("bauble", R(c="#2f8a4f"))],
+                  rope="#2aa7a0", twine="#ffffff", seam=("bow", R(c="#c8243c")), seam_hang=("beach_ball", R())),
+        banner=("SEASON'S BEACHINGS", ["#0b7178", "#c23651", ("#f2c14e", "#8a1023"), "#267a43"], ("starfish", R(c="#f08a5d"))),
+        corner=[("palm_tree", R(baubles=["#c8243c", "#f2c14e", "#2f8a4f", "#e8577a"]), 128, 90, 4.4, 0),
+                ("sand_snowman", R(), 52, 120, 3.1, -4), ("shell", R(), 104, 150, 1.2, -12), ("flipflop", R(), 152, 148, 1.3, 72),
+                ("flipflop", R(c="#e8577a", strap="#2aa7a0"), 170, 134, 1.3, 58), ("starfish", R(c="#f08a5d"), 192, 146, 1.4, 18)],
+        mantel=[("sand_snowman", R(), 34, 2.5), ("pail", R(), 100, 1.9), ("flipflop", R(c="#e8577a", strap="#2aa7a0"), 152, 1.5), ("flipflop", R(c="#e8577a", strap="#2aa7a0"), 172, 1.5),
+                ("palm_tree", R(baubles=["#c8243c", "#f2c14e"]), 238, 2.7), ("beach_ball", R(), 302, 1.8), ("starfish", R(c="#f08a5d"), 352, 1.6), ("shell", R(), 400, 1.6)],
+        plank="#9c8466",
+        pattern=("starfish", R(c="#0b7178", dot="#0b7178")),
+    ),
 }
 
 SERIES = {
@@ -273,7 +290,7 @@ def month(name, spec):
         "mantel": mantel(spec["mantel"], plank=spec["plank"]),
         "pattern": pattern(*spec["pattern"]),
     }
-    banner_w = len(words) * 40 + 20
+    banner_w = len(pennants(words)) * 40 + 20
     tokens = {
         "season": json.dumps(spec["label"].split(":")[0]),  # "Christmas", "July"
         "weather": spec["weather"],

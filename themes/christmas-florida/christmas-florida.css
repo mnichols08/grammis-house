@@ -1,0 +1,27 @@
+/* Christmas in Florida: Christmas the way it comes at the beach, warm and a little silly. Sand
+   underfoot, a beach-towel stripe around the welcome card, sea teal and coral with Christmas red
+   and green, and a surf-shop script for headings. The decorations are her own: a palm tree in
+   string lights with ornaments on its fronds, a snowman made of sand in a sun hat, starfish,
+   shells, flip-flops and a beach ball hung up like an ornament. */
+body {
+  background:
+    var(--ob-decor-pattern) 0 0 / var(--ob-decor-pattern-size),
+    radial-gradient(circle at 20% 30%, rgb(160 120 60 / 0.05) 0 1px, transparent 1.5px) 0 0 / 7px 7px,
+    var(--ob-color-page);
+}
+.ob-home-welcome {
+  border: 0;
+  border-radius: 24px;
+  background:
+    radial-gradient(120% 60% at 50% 115%, color-mix(in srgb, #2aa7a0 10%, transparent), transparent 70%),
+    var(--ob-color-surface);
+  box-shadow: 0 0 0 6px #2aa7a0, 0 0 0 10px var(--ob-color-surface), 0 0 0 14px #e8577a, 0 18px 30px -16px rgb(10 50 60 / 0.45);
+}
+.ob-home-welcome .ob-title { font-weight: 400; line-height: 1.2; font-size: clamp(2.3rem, 6vw, 3.8rem); }
+.ob-heading { font-weight: 400; }
+.ob-home-button-primary { border-radius: 999px; box-shadow: 0 4px 0 color-mix(in srgb, var(--ob-color-accent) 55%, #000); }
+.ob-card {
+  border-top: 0;
+  border-radius: 16px;
+  box-shadow: 0 0 0 1px var(--ob-color-border), 0 5px 0 color-mix(in srgb, #2aa7a0 45%, var(--ob-color-border));
+}

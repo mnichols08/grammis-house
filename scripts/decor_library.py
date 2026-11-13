@@ -315,8 +315,20 @@ def band(kind, colors, hang=None, W=120, H=72):
     return svg(W, H, "".join(out))
 
 
+def pennants(words):
+    """The pennants a bunting needs: one per letter, an apostrophe riding on the letter before it."""
+    out = []
+    for ch in words:
+        if ch in "'’" and out and out[-1] != " ":
+            out[-1] += "’"
+        else:
+            out.append(ch)
+    return out
+
+
 def bunting(words, colors, gap_motif=None, letter="#fffaf0"):
     """Pennants with a letter each, on a sagging string. A space becomes a small motif."""
+    words = pennants(words)
     n = len(words)
     W = n * 40 + 20
     p0, p1, p2 = (0, 10), (W / 2, 30), (W, 10)
@@ -471,3 +483,99 @@ def train_car(c="#2f6fd0", **_):
 
 MOTIFS.update({"spinning_top": spinning_top, "drum": drum, "block": block, "rocking_horse": rocking_horse,
                "nutcracker": nutcracker, "teddy": teddy, "train_car": train_car})
+
+
+# ----------------------------------------------------------------------------- Christmas in Florida
+
+def bauble(c="#c8243c", cap="#f2c14e", **_):
+    return (f"<circle cy='2' r='8' fill='{c}'/><rect x='-2.4' y='-8.4' width='4.8' height='3.4' rx='.8' fill='{cap}'/>"
+            f"<circle cy='-10' r='1.6' fill='none' stroke='{cap}' stroke-width='.9'/>"
+            "<ellipse cx='-3' cy='-1' rx='2' ry='1.2' fill='#fff' opacity='.45' transform='rotate(-30 -3 -1)'/>")
+
+
+def beach_ball(colors=("#c8243c", "#2aa7a0", "#f2c14e"), cap="#f2c14e", **_):
+    """A beach ball hung up as a Christmas ornament: cap and loop on top."""
+    cy, r = 2, 8.5
+    out = [f"<circle cy='{cy}' r='{r}' fill='#ffffff'/>"]
+    for i in range(6):
+        if i % 2:
+            continue
+        a0, a1 = math.pi / 3 * i - math.pi / 2, math.pi / 3 * (i + 1) - math.pi / 2
+        out.append(f"<path d='M0 {cy}L{f(r * math.cos(a0))} {f(cy + r * math.sin(a0))}A{r} {r} 0 0 1 {f(r * math.cos(a1))} {f(cy + r * math.sin(a1))}Z' fill='{colors[i // 2 % len(colors)]}'/>")
+    out.append(f"<circle cy='{cy}' r='{r}' fill='none' stroke='#000' stroke-opacity='.12'/><circle cy='{cy}' r='1.8' fill='#ffffff'/>")
+    out.append(f"<rect x='-2.4' y='-8.6' width='4.8' height='3' rx='.8' fill='{cap}'/><circle cy='-10.2' r='1.6' fill='none' stroke='{cap}' stroke-width='.9'/>")
+    out.append("<ellipse cx='-3.4' cy='-1.6' rx='2' ry='1.2' fill='#fff' opacity='.5' transform='rotate(-30 -3.4 -1.6)'/>")
+    return "".join(out)
+
+
+def starfish(c="#f08a5d", dot="#ffe0c2", **_):
+    pts = []
+    for i in range(5):
+        a = math.pi * 2 / 5 * i - math.pi / 2
+        b = a + math.pi / 5
+        pts.append((f(11 * math.cos(a)), f(11 * math.sin(a)), f(3.2 * math.cos(b)), f(3.2 * math.sin(b))))
+    d = f"M{pts[0][0]} {pts[0][1]}" + "".join(f"Q{qx} {qy} {pts[(i + 1) % 5][0]} {pts[(i + 1) % 5][1]}" for i, (_x, _y, qx, qy) in enumerate(pts)) + "Z"
+    dots = "".join(f"<circle cx='{f(rr * math.cos(math.pi * 2 / 5 * i - math.pi / 2))}' cy='{f(rr * math.sin(math.pi * 2 / 5 * i - math.pi / 2))}' r='.8' fill='{dot}'/>"
+                   for i in range(5) for rr in (3.5, 6.5))
+    return f"<path d='{d}' fill='{c}' stroke='{c}' stroke-width='2' stroke-linejoin='round'/>{dots}<circle r='1.2' fill='{dot}'/>"
+
+
+def shell(c="#f6c6b0", ridge="#e0806c", **_):
+    ridges = "".join(f"<path d='M0 8L{f(10 * math.sin(a))} {f(-1 - 9 * math.cos(a))}' stroke='{ridge}' stroke-width='.9' stroke-linecap='round'/>"
+                     for a in (-1.05, -.63, -.21, .21, .63, 1.05))
+    return (f"<path d='M0 8L-10.5-1C-10-8-5-11 0-11 5-11 10-8 10.5-1Z' fill='{c}' stroke='{ridge}' stroke-width='.8' stroke-linejoin='round'/>{ridges}"
+            f"<path d='M-4 7.5H4L3 11H-3Z' fill='{c}' stroke='{ridge}' stroke-width='.8' stroke-linejoin='round'/>")
+
+
+def flipflop(c="#2aa7a0", strap="#c8243c", **_):
+    return (f"<path d='M0-11C5-11 6-5 5 0 4 5 5 11 0 11-5 11-4 5-5 0-6-5-5-11 0-11Z' fill='{c}'/>"
+            "<path d='M0-10C4-10 4.5-5 4 0' stroke='#fff' stroke-opacity='.35' fill='none'/>"
+            f"<path d='M-4.6 2L0-6 4.6 2' stroke='{strap}' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/>"
+            "<circle cy='-6' r='1.2' fill='#ffffff'/>")
+
+
+def sand_snowman(sand="#e6c88f", hat="#f2d06b", band="#e8577a", **_):
+    """A snowman made of sand, in a sun hat and sunglasses, with sand-dollar buttons."""
+    grains = "".join(f"<circle cx='{x}' cy='{y}' r='.45' fill='#a8834a' opacity='.6'/>" for x, y in ((-3, 4), (2.5, 7), (-1, 9.5), (4, 3), (-4.5, 8), (2, -1.5), (-2.5, -4)))
+    return (f"<ellipse cy='12' rx='10' ry='2' fill='{sand}'/><circle cy='6' r='6.5' fill='{sand}' stroke='#c49a5a' stroke-width='.8'/>"
+            f"<circle cy='-3.5' r='4.6' fill='{sand}' stroke='#c49a5a' stroke-width='.8'/>{grains}"
+            "<path d='M-3.6-4.6H-.6L-.9-2.6H-3.3ZM.6-4.6H3.6L3.3-2.6H.9Z' fill='#26303a'/><path d='M-.6-4.2H.6' stroke='#26303a' stroke-width='.6'/>"
+            "<path d='M0-2L3.4-1.3 0-.8Z' fill='#f08a24'/><path d='M-1.6 0Q0 1 1.6 0' stroke='#26303a' stroke-width='.6' fill='none' stroke-linecap='round'/>"
+            f"<ellipse cy='-7.4' rx='8.4' ry='1.9' fill='{hat}'/><path d='M-4.2-7.4C-4.2-11.6 4.2-11.6 4.2-7.4Z' fill='{hat}'/>"
+            f"<path d='M-4.1-8.6H4.1V-7.4H-4.1Z' fill='{band}'/><path d='M3-8.8C5-10.6 7-9 5.6-7.6' stroke='{band}' stroke-width='.8' fill='none'/>"
+            + "".join(f"<circle cy='{y}' r='1' fill='#fffaf0' stroke='#c49a5a' stroke-width='.3'/>" for y in (3, 6, 9)))
+
+
+def palm_tree(trunk="#a8763e", frond="#2f8a4f", lights=("#c8243c", "#f2c14e", "#2aa7a0", "#ffffff"), baubles=None, **_):
+    """A palm tree wrapped in string lights; `baubles` (colours) hang from the frond tips."""
+    out = [f"<path d='M-3.4 12Q-1.6 3 .2-6H2.4Q.6 3 .6 12Z' fill='{trunk}'/>"]
+    out.append("".join(f"<path d='M{f(-3.1 + (12 - y) * .19)} {y}h3.6' stroke='#000' stroke-opacity='.18' stroke-width='.6'/>" for y in (9, 6, 3, 0, -3)))
+    wrap = [(-3.2, 11), (.8, 8.6), (-2.4, 6.2), (1, 3.8), (-1.6, 1.4), (1.5, -1), (-.8, -3.4), (2, -5.4)]
+    out.append("<path d='M" + "L".join(f"{f(x)} {f(y)}" for x, y in wrap) + "' stroke='#2a4a2e' stroke-width='.4' fill='none'/>")
+    out.append("".join(f"<circle cx='{f(x)}' cy='{f(y)}' r='.95' fill='{lights[i % len(lights)]}'/>" for i, (x, y) in enumerate(wrap)))
+    leaf_d = "M0 0C4-4 9-4.4 13 .6C9-1.4 4-1.2 0 0Z"
+    tips = []
+    for a, flip in ((-70, 1), (-70, -1), (-25, 1), (-25, -1), (12, 1), (12, -1)):
+        out.append(f"<g transform='translate(1.2 -6.4) scale({flip} 1) rotate({a})'><path d='{leaf_d}' fill='{frond}'/>"
+                   f"<path d='M1 0C5-2.4 9-2.4 12.4.4' stroke='#fff' stroke-opacity='.3' stroke-width='.5' fill='none'/></g>")
+        r = math.radians(a)
+        if a > -70:  # the drooping fronds carry the ornaments
+            tips.append((1.2 + flip * (13 * math.cos(r) - .6 * math.sin(r)), -6.4 + 13 * math.sin(r) + .6 * math.cos(r)))
+    out.append("<circle cx='0' cy='-5.2' r='1.5' fill='#6b4a2b'/><circle cx='2.6' cy='-5' r='1.5' fill='#7a5a34'/>")
+    if baubles:
+        for i, (x, y) in enumerate(tips):
+            out.append(f"<path d='M{f(x)} {f(y)}v2.6' stroke='#8a6a3e' stroke-width='.35'/>")
+            out.append(place(bauble(baubles[i % len(baubles)]), x, y + 4.6, 0, .2))
+    return "".join(out)
+
+
+def pail(c="#2aa7a0", sand="#e6c88f", shovel="#f2c14e", **_):
+    return (f"<path d='M3 -3L10-12' stroke='{shovel}' stroke-width='1.6' stroke-linecap='round'/><path d='M9-14L12.5-12 10.5-9.5 8-11Z' fill='{shovel}'/>"
+            f"<path d='M-6-3C-4-6 4-6 6-3Z' fill='{sand}'/><path d='M-7-3H7L5.4 10H-5.4Z' fill='{c}'/>"
+            "<rect x='-7.6' y='-3.6' width='15.2' height='2.4' rx='1' fill='#ffffff' opacity='.85'/>"
+            "<path d='M-7-2C-8-11 8-11 7-2' stroke='#8a9ba0' stroke-width='.8' fill='none'/>"
+            f"{place(starfish(c='#ffffff', dot='#ffffff'), 0, 3.5, 10, .28)}<path d='M-4.6 1V8' stroke='#fff' stroke-opacity='.3' stroke-width='1.2'/>")
+
+
+MOTIFS.update({"bauble": bauble, "beach_ball": beach_ball, "starfish": starfish, "shell": shell, "flipflop": flipflop,
+               "sand_snowman": sand_snowman, "palm_tree": palm_tree, "pail": pail})

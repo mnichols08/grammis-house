@@ -98,6 +98,8 @@ themes/
                   bottom, and snowfall; a pine-night version in dark mode
   january/ ... october/   one for each month (below)
   christmas-toyshelf/     another Christmas: felt, stitches and old-fashioned toys on the shelf
+  christmas-florida/      Christmas at the beach: a palm tree in lights, a sand snowman in a sun hat,
+                          starfish, shells and flip-flops, and "Season's Beachings" bunting
   family-wall/    the fridge door, for the Family Wall page
   recipe-box/ family-stories/ garden-journal/ baking-day/ letters/ sunday-dinner/
                   looks for recipe collections (below)

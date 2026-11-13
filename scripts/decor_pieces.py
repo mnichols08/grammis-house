@@ -34,12 +34,18 @@ LOOKS = {
         "garland": "Toy blocks", "banner": "Merry and Bright sign", "corner": "Rocking horse and blocks",
         "mantel": "Toys in a row", "pattern": "Little toys",
     },
+    "christmas-florida": {
+        "garland": "Shells and starfish", "banner": "Season's Beachings sign", "corner": "Palm tree and sand snowman",
+        "mantel": "Beach things on the shelf", "pattern": "Little starfish",
+    },
 }
 
-# Snow: christmas draws it in snow.js (the ghSnow token); the toy shelf uses the house weather.
+# Snow: christmas draws it in snow.js (the ghSnow token); the toy shelf and Florida use the house
+# weather (in Florida the joke is that it snows anyway).
 SNOW = {
     "christmas": ("ghSnow", "on"),
     "christmas-toyshelf": ("weather", "snow"),
+    "christmas-florida": ("weather", "snow"),
 }
 
 
