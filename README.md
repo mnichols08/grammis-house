@@ -46,11 +46,12 @@ by itself. Open **Landing page**, then the sign, to change it:
 
 ## For the family
 
-- **Birthdays.** Each person has a **Birthday card** on the Landing page: their name, their
-  birthday, their favorite dish and your recipe for it. It stays out of sight until a week before
-  ("3 days until Mikey's birthday!"), and on the day it's a party with candles and a **Make it**
-  button. Add someone with **Add a section → Birthday card**. Their recipes are in the **Birthday
-  Favorites** collection (drafts until you write them).
+- **Birthdays.** The family's birthdays are private, so they aren't on the site. Keep them in
+  **Greeting cards** (under Family), where only you can see them, and send a birthday card from
+  there. The **Birthday card** section still exists (**Add a section → Birthday card**), but
+  anything you put in it, the birth date included, is public: anyone can read it on the site.
+  Everyone's favorite dishes are in the **Birthday Favorites** collection (drafts until you write
+  them).
 - **The advent calendar** shows up on November 20: 24 doors, one to open each day from December 1.
   Behind a door is your post for that day if you've written one (date it that day and give it the
   tag `advent`), or something to do together ("Bake a batch of cookies and share half").
