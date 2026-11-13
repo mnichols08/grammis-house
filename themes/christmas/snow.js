@@ -55,7 +55,10 @@ function snow() {
   }
 }
 
+// "Snow" is a piece Grammi can take down in Studio: the ghSnow token is "none" then.
+const snowing = getComputedStyle(document.documentElement).getPropertyValue("--ob-gh-snow").trim() !== "none";
+
 if (!reduce) {
   lights();
-  if (home) snow();
+  if (home && snowing) snow();
 }
