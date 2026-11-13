@@ -3,7 +3,7 @@
   with the ornament she picks (or nothing), something on top, and lights that twinkle.
 
   topper  what's on top: "star" (default), "bow", "snowflake" or "none"
-  nolights  leave the lights off (default: the lights are on)
+  lights  "on" (default, twinkling) or "off"
   gifts   the family service's gifts address (…/api/gifts): gifts the family left sit wrapped
           under the tree, with the giver's name only where they and Grammi both said so
   shows   when it's on the page: "season" (from November 20 to January 6, the default) or "always"
@@ -45,7 +45,7 @@
     .map(([spot, kind]) => ({ spot, kind: NAMES[kind] && kind !== 'none' ? kind : '' }))
     .filter((o) => o.kind)
   const crown = ['star', 'bow', 'snowflake'].includes(topper) ? topper : topper === 'none' ? '' : 'star'
-  const lit = !(nolights === true || nolights === 'true' || nolights === '')
+  const lit = lights !== 'off'
   const said = (() => {
     const counts = {}
     for (const o of placed) counts[o.kind] = (counts[o.kind] || 0) + 1
@@ -148,7 +148,7 @@
   .topper[data-kind="bow"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-16 -12 32 26%27%3E%3Cpath d=%27M0 0C-12-12-16 0-9 4-5 6-2 3 0 0ZM0 0C12-12 16 0 9 4 5 6 2 3 0 0Z%27 fill=%27%23c8243c%27/%3E%3Cpath d=%27M-1 2-7 13-2 11 1 14ZM1 2 7 13 2 11-1 14Z%27 fill=%27%239c1a27%27/%3E%3Crect x=%27-3.5%27 y=%27-3.5%27 width=%277%27 height=%277%27 rx=%272%27 fill=%27%23e0394c%27/%3E%3C/svg%3E"); }
   .topper[data-kind="snowflake"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -12 24 24%27%3E%3Cg stroke=%27%237fb3e0%27 stroke-width=%272%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M0-10V10M-8.7-5 8.7 5M-8.7 5 8.7-5%27/%3E%3Cpath d=%27M-3-8 0-5 3-8M-3 8 0 5 3 8%27 fill=%27none%27/%3E%3C/g%3E%3C/svg%3E"); }
 </style>
-<grammis-tree topper="star" nolights={false} gifts="" shows="season" spot1="gold-ball" spot2="red-ball" spot3="candy-cane" spot4="bell" spot5="heart" spot6="blue-ball" spot7="snowflake" spot8="gingerbread" spot9="red-ball" spot10="gold-ball" spot11="pinecone" spot12="bird">
+<grammis-tree topper="star" lights="on" gifts="" shows="season" spot1="gold-ball" spot2="red-ball" spot3="candy-cane" spot4="bell" spot5="heart" spot6="blue-ball" spot7="snowflake" spot8="gingerbread" spot9="red-ball" spot10="gold-ball" spot11="pinecone" spot12="bird">
   <figure class="stand" data-state={state}>
     <div class="tree" role="img" aria-label={said}>
       <zb-if test={lit}><span class="lights" aria-hidden="true"></span></zb-if>

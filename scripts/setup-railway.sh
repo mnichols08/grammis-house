@@ -170,8 +170,20 @@ const next = text
 if (next === text) { console.error("openblog.json: engagement was already set; left as it is"); process.exit(0); }
 fs.writeFileSync("openblog.json", next);
 EOF
-git add openblog.json
-git commit -q -m "Turn on notes, through the family service on Railway" && git push -q || true
+say "Pointing the tree and the gift form at the family service..."
+node - "$FAMILY_URL/api/gifts" <<'EOF'
+const fs = require("fs");
+const [address] = process.argv.slice(2);
+const path = "themes/grammis/theme.json";
+const theme = JSON.parse(fs.readFileSync(path, "utf8"));
+for (const name of ["grammis-tree", "gift-maker"]) {
+  const prop = theme.components?.[name]?.props?.find((p) => p.name === "gifts");
+  if (prop) prop.default = address;
+}
+fs.writeFileSync(path, JSON.stringify(theme, null, 2) + "\n");
+EOF
+git add openblog.json themes/grammis/theme.json
+git commit -q -m "Turn on notes and gifts, through the family service on Railway" && git push -q || true
 
 cat <<EOF
 
@@ -184,10 +196,9 @@ All set.
   Notes: every recipe has a place for notes at the bottom. New ones wait in Admin's Moderation
   inbox until Grammi approves them.
   Greeting cards: in Admin under Family. Try "Send me a test" first (it goes to $SENDER_EMAIL).
-  Gifts: on the Landing page add the "Christmas tree" and the "Leave-a-gift form", and in each
-  set "Gifts address" to:
-      $FAMILY_URL/api/gifts
-  Then tell the family the gift password. It's in Railway (family > Variables >
+  Gifts: on the Landing page add the "Christmas tree" and the "Leave-a-gift form" (their gifts
+  address is already filled in). The family password is on Studio's Gifts screen, where Grammi can
+  change it; tell the family. It's in Railway (family > Variables >
   OPENBLOG_GIFTS_FAMILY_CODE) if anyone forgets it.
 
   The first deploy of each takes a few minutes (the admin panel builds the engine). Watch with:

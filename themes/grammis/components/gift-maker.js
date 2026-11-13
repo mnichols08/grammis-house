@@ -44,11 +44,12 @@ function inSeason(date = new Date()) {
   return (month === 10 && day >= 20) || month === 11 || (month === 0 && day <= 6);
 }
 
-/** When gifts left now open, in words. Exported for tests. */
-export function opensWords(iso) {
-  if (!iso) return "on Christmas morning";
-  const year = new Date(iso).getFullYear();
-  return year > new Date().getFullYear() ? `next Christmas morning (${year})` : "on Christmas morning";
+/** When Grammi can open a gift left now, in words. Exported for tests. */
+export function opensWords(iso, now = Date.now()) {
+  if (!iso) return "Grammi opens it on Christmas morning.";
+  const at = Date.parse(iso);
+  if (at <= now + 60 * 1000) return "Grammi can open it right away.";
+  return new Date(at).getFullYear() > new Date(now).getFullYear() ? `Grammi opens it next Christmas morning (${new Date(at).getFullYear()}).` : "Grammi opens it on Christmas morning.";
 }
 
 const Base = globalThis.HTMLElement ?? class {}; // on a server, nothing to extend
@@ -94,7 +95,7 @@ export class GiftMaker extends Base {
       ...Object.entries(options).map(([value, label]) => make("label", { class: "gm-choice" },
         make("input", { type: "radio", name, value, checked: value === checked, onchange: () => this.#changed() }),
         make("span", { text: label }))));
-    const counter = (name, max) => make("span", { class: "gm-count", id: `${id}-${name}-count`, "aria-live": "polite", text: `0 of ${max}` });
+    const counter = (name, max) => make("span", { class: "gm-count", id: `${id}-${name}-count`, text: `Up to ${max.toLocaleString()} letters` });
     const sticker = make("select", { id: `${id}-sticker` }, ...Object.entries(STICKER_WORDS).map(([value, label]) => make("option", { value, text: label })));
     const place = make("select", { id: `${id}-place` }, ...PLACES.map(([label], index) => make("option", { value: String(index), text: label })));
 
@@ -108,25 +109,28 @@ export class GiftMaker extends Base {
       make("textarea", { id: `${id}-note`, name: "note", rows: 5, maxlength: LIMITS.note, "aria-describedby": `${id}-note-count`, oninput: () => this.#changed() }),
       counter("note", LIMITS.note));
     const cardBox = make("div", { class: "gm-part", "data-part": "card", hidden: true },
-      radios("design", "Card", Object.fromEntries(Object.entries(DESIGNS).map(([key, d]) => [key, d.label])), "holly"),
+      radios("design", "Pick your card", Object.fromEntries(Object.entries(DESIGNS).map(([key, d]) => [key, d.label])), "holly"),
       make("label", { for: `${id}-message`, text: "What it says" }),
       make("textarea", { id: `${id}-message`, name: "message", rows: 3, maxlength: LIMITS.message, "aria-describedby": `${id}-message-count`, oninput: () => this.#changed() }),
       counter("message", LIMITS.message),
-      make("label", { for: `${id}-signoff`, text: "Signed (optional)" }),
-      make("input", { id: `${id}-signoff`, name: "signOff", maxlength: LIMITS.signOff, placeholder: "Love, Ava", oninput: () => this.#changed() }),
+      make("label", { for: `${id}-signoff`, text: "Sign it (if you want)" }),
+      make("input", { id: `${id}-signoff`, name: "signOff", maxlength: LIMITS.signOff, oninput: () => this.#changed() }),
       make("fieldset", { class: "gm-sticker-maker" },
         make("legend", { text: "Stickers (up to 8)" }),
         make("div", { class: "gm-row" },
           make("span", {}, make("label", { for: `${id}-sticker`, text: "Sticker" }), sticker),
-          make("span", {}, make("label", { for: `${id}-place`, text: "Where" }), place),
+          make("span", {}, make("label", { for: `${id}-place`, text: "Where on the card" }), place),
           this.addSticker),
         this.stickerList),
-      make("p", { class: "gm-hint", text: "How your card looks:" }),
+      make("p", { class: "gm-hint", text: "How your card looks. You can also tap the card to put the sticker right there." }),
       this.preview);
 
     const form = make("form", { class: "gm-form", novalidate: true, "aria-labelledby": `${id}-h`, onsubmit: (event) => { event.preventDefault(); this.#send(); } },
       make("h2", { id: `${id}-h`, class: "gm-title", text: "Leave a gift under Grammi's tree" }),
       make("p", { class: "gm-lede", text: "Write her a note or make her a card. It stays wrapped until Christmas morning, and only Grammi reads it." }),
+      make("label", { for: `${id}-code`, text: "The family password" }),
+      make("p", { class: "gm-hint", id: `${id}-code-hint`, text: "So only family can leave gifts. Capital letters and spaces don't matter. Ask the family if you don't know it." }),
+      make("input", { id: `${id}-code`, name: "code", autocomplete: "off", "aria-describedby": `${id}-code-hint`, required: true }),
       make("label", { for: `${id}-from`, text: "Your name" }),
       make("input", { id: `${id}-from`, name: "from", maxlength: LIMITS.from, autocomplete: "name", required: true }),
       radios("visibility", "Who sees that it's from you?", { private: "Just Grammi", public: "Everyone who sees the tree" }, "private",
@@ -134,9 +138,6 @@ export class GiftMaker extends Base {
       radios("kind", "What would you like to leave?", { note: "A note", card: "A card I make" }, "note"),
       noteBox, cardBox,
       radios("wrap", "Wrapping paper", WRAPS, "red"),
-      make("label", { for: `${id}-code`, text: "The family password" }),
-      make("p", { class: "gm-hint", id: `${id}-code-hint`, text: "So only family can leave gifts. Ask the family if you don't know it." }),
-      make("input", { id: `${id}-code`, name: "code", autocomplete: "off", "aria-describedby": `${id}-code-hint`, required: true }),
       // People never see this; robots fill in every field they find.
       make("div", { class: "gm-away", "aria-hidden": "true" },
         make("label", { for: `${id}-website`, text: "Leave this empty" }),
@@ -153,6 +154,15 @@ export class GiftMaker extends Base {
     this.#stickers.push({ kind, x, y, where });
     this.#changed();
     this.stickerList.querySelector("li:last-child button")?.focus();
+  }
+
+  #addAt(kind, x, y) {
+    if (this.#stickers.length >= LIMITS.stickers || !STICKERS[kind]) return;
+    const across = x < 34 ? "left" : x > 66 ? "right" : "middle";
+    const down = y < 34 ? "top" : y > 66 ? "bottom" : "middle";
+    const where = down === "middle" && across === "middle" ? "Middle" : `${down[0].toUpperCase()}${down.slice(1)} ${across}`;
+    this.#stickers.push({ kind, x, y, where });
+    this.#changed();
   }
 
   #remove(index) {
@@ -176,7 +186,8 @@ export class GiftMaker extends Base {
     for (const [name, max] of [["note", LIMITS.note], ["message", LIMITS.message]]) {
       const field = this.#field(name);
       const out = this.querySelector(`#${this.#id}-${name}-count`);
-      if (field && out) out.textContent = `${field.value.length} of ${max}`;
+      const left = field ? max - field.value.length : max;
+      if (out) out.textContent = left < 50 ? `${left} letters left` : `Up to ${max.toLocaleString()} letters`;
     }
     this.stickerList.replaceChildren(...this.#stickers.map((s, index) => make("li", {},
       make("span", { text: `${STICKER_WORDS[s.kind]}, ${s.where.toLowerCase()}` }),
@@ -184,7 +195,15 @@ export class GiftMaker extends Base {
     this.addSticker.disabled = this.#stickers.length >= LIMITS.stickers;
     if (kind === "card") {
       const card = this.#card();
-      this.preview.replaceChildren(drawCard({ ...card, message: card.message || "Your words go here" }, { label: `Your card so far: ${card.message || "no words yet"}` }));
+      const art = drawCard({ ...card, message: card.message || "Your words go here" }, { label: `Your card so far: ${card.message || "no words yet"}` });
+      // A tap on the card puts the chosen sticker right there (the lists above do the same by keyboard).
+      art.addEventListener("click", (event) => {
+        const box = art.getBoundingClientRect();
+        const x = Math.round(Math.min(100, Math.max(0, ((event.clientX - box.left) / box.width - 0.05) / 0.9 * 100)));
+        const y = Math.round(Math.min(100, Math.max(0, ((event.clientY - box.top) / box.height - 0.075) / 0.85 * 100)));
+        this.#addAt(this.querySelector(`#${this.#id}-sticker`).value, x, y);
+      });
+      this.preview.replaceChildren(art);
     }
   }
 
@@ -223,7 +242,8 @@ export class GiftMaker extends Base {
       window.dispatchEvent(new CustomEvent("grammis-gift"));
       const thanks = make("div", { class: "gm-thanks", tabindex: "-1" },
         make("h2", { class: "gm-title", text: "Thank you!" }),
-        make("p", { text: `Your gift is under the tree. Grammi opens it ${opensWords(reply.opensAt)}.` }),
+        make("p", { text: `Your gift is under the tree. ${opensWords(reply.opensAt)}` }),
+        make("p", { text: "Spotted a mistake? Just leave another one." }),
         make("button", { type: "button", class: "gm-secondary", text: "Leave another", onclick: () => { this.#stickers = []; this.#draw(); this.#fetchToken(); this.querySelector("input")?.focus(); } }));
       this.replaceChildren(thanks);
       thanks.focus();

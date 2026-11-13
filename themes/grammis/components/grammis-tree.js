@@ -75,13 +75,13 @@ const css = `@layer theme, base, components, utilities;
 
 export class GrammisTree extends HTMLElement {
   /** The attributes this element watches: attributeChangedCallback runs when one changes. */
-  static observedAttributes = ["topper", "nolights", "gifts", "shows", "spot1", "spot2", "spot3", "spot4", "spot5", "spot6", "spot7", "spot8", "spot9", "spot10", "spot11", "spot12"];
+  static observedAttributes = ["topper", "lights", "gifts", "shows", "spot1", "spot2", "spot3", "spot4", "spot5", "spot6", "spot7", "spot8", "spot9", "spot10", "spot11", "spot12"];
   /** What framework adapters (@zubra/runtime/react, /vue) read to wrap this element. */
   static zubra = {
     tag,
     props: {
       topper: { attribute: "topper", default: "star", required: false },
-      nolights: { attribute: "nolights", default: false, required: false },
+      lights: { attribute: "lights", default: "on", required: false },
       gifts: { attribute: "gifts", default: "", required: false },
       shows: { attribute: "shows", default: "season", required: false },
       spot1: { attribute: "spot1", default: "gold-ball", required: false },
@@ -107,7 +107,7 @@ export class GrammisTree extends HTMLElement {
   // ElementInternals: the element's form value and validity, and :state() for CSS.
   #internals = this.attachInternals();
   // The props, each starting at its default; #given has the ones set from outside.
-  #props = { topper: "star", nolights: false, gifts: "", shows: "season", spot1: "gold-ball", spot2: "red-ball", spot3: "candy-cane", spot4: "bell", spot5: "heart", spot6: "blue-ball", spot7: "snowflake", spot8: "gingerbread", spot9: "red-ball", spot10: "gold-ball", spot11: "pinecone", spot12: "bird" };
+  #props = { topper: "star", lights: "on", gifts: "", shows: "season", spot1: "gold-ball", spot2: "red-ball", spot3: "candy-cane", spot4: "bell", spot5: "heart", spot6: "blue-ball", spot7: "snowflake", spot8: "gingerbread", spot9: "red-ball", spot10: "gold-ball", spot11: "pinecone", spot12: "bird" };
   #given = new Set();
   // What brings the DOM up to date: one function for each spot that changes.
   #updates = [];
@@ -120,7 +120,7 @@ export class GrammisTree extends HTMLElement {
     super();
     // A property set before this class was defined sits on the element itself, hiding the
     // accessor below: take it over.
-    for (const prop of ["topper", "nolights", "gifts", "shows", "spot1", "spot2", "spot3", "spot4", "spot5", "spot6", "spot7", "spot8", "spot9", "spot10", "spot11", "spot12"]) {
+    for (const prop of ["topper", "lights", "gifts", "shows", "spot1", "spot2", "spot3", "spot4", "spot5", "spot6", "spot7", "spot8", "spot9", "spot10", "spot11", "spot12"]) {
       if (Object.hasOwn(this, prop)) {
         const value = this[prop];
         delete this[prop];
@@ -142,14 +142,14 @@ export class GrammisTree extends HTMLElement {
     this.#requestUpdate();
   }
 
-  get nolights() {
-    reads?.push(() => this.#props.nolights); // what reads it (a computed, an effect) depends on it
-    return this.#props.nolights;
+  get lights() {
+    reads?.push(() => this.#props.lights); // what reads it (a computed, an effect) depends on it
+    return this.#props.lights;
   }
-  set nolights(value) {
-    this.#given.add("nolights");
-    if (Object.is(value, this.#props.nolights)) return;
-    this.#props.nolights = value;
+  set lights(value) {
+    this.#given.add("lights");
+    if (Object.is(value, this.#props.lights)) return;
+    this.#props.lights = value;
     this.#requestUpdate();
   }
 
@@ -313,8 +313,8 @@ export class GrammisTree extends HTMLElement {
       case "topper":
         this.topper = raw ?? "star";
         break;
-      case "nolights":
-        this.nolights = raw !== null;
+      case "lights":
+        this.lights = raw ?? "on";
         break;
       case "gifts":
         this.gifts = raw ?? "";
@@ -436,7 +436,7 @@ export class GrammisTree extends HTMLElement {
       .map(([spot, kind]) => ({ spot, kind: NAMES[kind] && kind !== 'none' ? kind : '' }))
       .filter((o) => o.kind)))
     const crown = computed(() => (['star', 'bow', 'snowflake'].includes(element.topper) ? element.topper : element.topper === 'none' ? '' : 'star'))
-    const lit = computed(() => (!(element.nolights === true || element.nolights === 'true' || element.nolights === '')))
+    const lit = computed(() => (element.lights !== 'off'))
     const said = (() => {
       const counts = {}
       for (const o of placed.value) counts[o.kind] = (counts[o.kind] || 0) + 1

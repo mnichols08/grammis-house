@@ -29,7 +29,7 @@
   gift-maker .gm-row > span { display: grid; gap: 0.25rem; flex: 1 1 9rem; }
   gift-maker .gm-stickers { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.25rem; }
   gift-maker .gm-stickers li { display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
-  gift-maker .gm-preview svg { width: 100%; height: auto; display: block; }
+  gift-maker .gm-preview svg { width: 100%; height: auto; display: block; cursor: crosshair; }
   gift-maker button { font: inherit; cursor: pointer; border-radius: 999px; }
   gift-maker .gm-send {
     justify-self: start; padding: 0.7rem 1.4rem; border: 0; font-weight: 700;
