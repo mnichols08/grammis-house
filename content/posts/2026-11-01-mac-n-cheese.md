@@ -1,7 +1,7 @@
 ---
 title: Grammi's Mac n Cheese
 date: 2026-11-07
-draft: true
+draft: false
 series: thanksgiving
 profile: recipe
 course: Side dish
@@ -14,8 +14,6 @@ description: "Grammi's baked mac n cheese: medium shells in a sauce made with tw
 cover: ""
 ---
 
-
-TODO(Grammi): the story. Who taught you this, the year it went wrong, who always asks for seconds.
 
 ## Ingredients
 
@@ -39,7 +37,6 @@ TODO(Grammi): the story. Who taught you this, the year it went wrong, who always
 
 ## Grammi's notes
 
-- TODO(Grammi): make-ahead tips, substitutions, what not to do.
 
 ## The handwritten card
 

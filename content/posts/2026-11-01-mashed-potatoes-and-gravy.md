@@ -1,7 +1,7 @@
 ---
 title: Grammi's Mashed Potatoes
 date: 2026-11-03
-draft: true
+draft: false
 series: thanksgiving
 profile: recipe
 course: Side dish
@@ -14,8 +14,6 @@ description: "Grammi's mashed potatoes, cooked overnight in the slow cooker in c
 cover: ""
 ---
 
-
-TODO(Grammi): the story. Who taught you this, the year it went wrong, who always asks for seconds.
 
 ## Ingredients
 
@@ -34,8 +32,6 @@ TODO(Grammi): the story. Who taught you this, the year it went wrong, who always
 ## Grammi's notes
 
 - The broth the potatoes cooked in is what the gravy starts from, so don't pour it out.
-- TODO(Grammi): what do you set the slow cooker to overnight, and what size are the boxes of broth?
-- TODO(Grammi): the gravy. It isn't written down yet.
 
 ## The handwritten card
 
