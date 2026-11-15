@@ -1,7 +1,7 @@
 ---
 title: Grammi's Scalloped Potatoes
 date: 2026-11-08
-draft: true
+draft: false
 series: thanksgiving
 profile: recipe
 course: Side dish
@@ -14,8 +14,6 @@ description: "Grammi's scalloped potatoes: sliced russets and onion rings baked 
 cover: ""
 ---
 
-
-TODO(Grammi): the story. Who taught you this, the year it went wrong, who always asks for seconds.
 
 ## Ingredients
 
@@ -40,7 +38,6 @@ TODO(Grammi): the story. Who taught you this, the year it went wrong, who always
 ## Grammi's notes
 
 - You can also make these in the crockpot on high.
-- TODO(Grammi): how long do they take in the crockpot?
 
 ## The handwritten card
 
