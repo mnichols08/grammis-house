@@ -52,5 +52,31 @@
   },
   "stylesheets": [
     "fridge.css"
-  ]
+  ],
+  "decorations": {
+    "garland": {
+      "label": "Garland",
+      "tokens": [
+        "decorGarland",
+        "decorGarlandHeight"
+      ],
+      "off": {
+        "decorGarland": "none",
+        "decorGarlandHeight": "0px"
+      },
+      "variants": {}
+    },
+    "pattern": {
+      "label": "Wallpaper",
+      "tokens": [
+        "decorPattern",
+        "decorPatternSize"
+      ],
+      "off": {
+        "decorPattern": "none",
+        "decorPatternSize": "auto"
+      },
+      "variants": {}
+    }
+  }
 }

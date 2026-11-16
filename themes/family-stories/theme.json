@@ -73,5 +73,45 @@
   },
   "stylesheets": [
     "family-stories.css"
-  ]
+  ],
+  "decorations": {
+    "garland": {
+      "label": "Garland",
+      "tokens": [
+        "decorGarland",
+        "decorGarlandHeight"
+      ],
+      "off": {
+        "decorGarland": "none",
+        "decorGarlandHeight": "0px"
+      },
+      "variants": {}
+    },
+    "mantel": {
+      "label": "Mantel",
+      "tokens": [
+        "decorMantel",
+        "decorMantelSize",
+        "decorMantelHeight"
+      ],
+      "off": {
+        "decorMantel": "none",
+        "decorMantelSize": "auto",
+        "decorMantelHeight": "0px"
+      },
+      "variants": {}
+    },
+    "pattern": {
+      "label": "Wallpaper",
+      "tokens": [
+        "decorPattern",
+        "decorPatternSize"
+      ],
+      "off": {
+        "decorPattern": "none",
+        "decorPatternSize": "auto"
+      },
+      "variants": {}
+    }
+  }
 }
