@@ -3,7 +3,7 @@
 
 FROM rust:1-bookworm AS build
 RUN cargo install --git https://github.com/journey-to-code-org/open.blog \
-    --rev 65373fd55d0be0835f512ccd452a4770f9db3c11 openblog-cli
+    --rev df8e3f5e673929864a846ed300496b4881bbb951 openblog-cli
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates nodejs npm \
