@@ -8,7 +8,14 @@ REPO=https://github.com/mnichols08/grammis-house.git
 SITE=/data/site
 
 if [ ! -d "$SITE/.git" ]; then
-    git clone "$REPO" "$SITE"
+    # The folder may already exist without a checkout (a partial earlier run), so initialize it in place.
+    # Admin's private files live in .openblog/, which is gitignored and left alone.
+    mkdir -p "$SITE"
+    cd "$SITE"
+    git init -q
+    git remote add origin "$REPO"
+    git fetch -q origin main
+    git checkout -q -f -B main origin/main
 fi
 cd "$SITE"
 
