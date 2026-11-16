@@ -228,5 +228,19 @@
         "end": "11-30"
       }
     ]
+  },
+  "studio": {
+    "words": {
+      "vars": {
+        "helper": "Mikey",
+        "owner": "Grammi"
+      },
+      "text": {
+        "cards.signOff": "Love, {owner}",
+        "recipe.notesHeading": "{owner}'s notes",
+        "decorations.everyday": "Your house is wearing its everyday look: {theme}.",
+        "decorations.decorated": "Your house is decorated for {theme}."
+      }
+    }
   }
 }
