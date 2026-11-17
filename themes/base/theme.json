@@ -1,5 +1,6 @@
 {
   "label": "Plain open.blog (not Grammi's)",
+  "hidden": true,
   "colorScheme": "light",
   "colors": {
     "light": {

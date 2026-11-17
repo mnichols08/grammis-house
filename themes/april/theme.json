@@ -74,5 +74,87 @@
   },
   "stylesheets": [
     "april.css"
-  ]
+  ],
+  "decorations": {
+    "garland": {
+      "label": "Garland",
+      "tokens": [
+        "decorGarland",
+        "decorGarlandHeight"
+      ],
+      "off": {
+        "decorGarland": "none",
+        "decorGarlandHeight": "0px"
+      },
+      "variants": {}
+    },
+    "banner": {
+      "label": "Banner",
+      "tokens": [
+        "decorBanner",
+        "decorBannerSize",
+        "decorBannerHeight",
+        "decorBannerRepeat"
+      ],
+      "off": {
+        "decorBanner": "none",
+        "decorBannerSize": "auto",
+        "decorBannerHeight": "0px",
+        "decorBannerRepeat": "no-repeat"
+      },
+      "variants": {}
+    },
+    "corner": {
+      "label": "Corner piece",
+      "tokens": [
+        "decorCorner",
+        "decorCornerWidth",
+        "decorCornerHeight",
+        "decorCornerInset"
+      ],
+      "off": {
+        "decorCorner": "none",
+        "decorCornerWidth": "0px",
+        "decorCornerHeight": "0px",
+        "decorCornerInset": "auto"
+      },
+      "variants": {}
+    },
+    "mantel": {
+      "label": "Mantel",
+      "tokens": [
+        "decorMantel",
+        "decorMantelSize",
+        "decorMantelHeight"
+      ],
+      "off": {
+        "decorMantel": "none",
+        "decorMantelSize": "auto",
+        "decorMantelHeight": "0px"
+      },
+      "variants": {}
+    },
+    "pattern": {
+      "label": "Wallpaper",
+      "tokens": [
+        "decorPattern",
+        "decorPatternSize"
+      ],
+      "off": {
+        "decorPattern": "none",
+        "decorPatternSize": "auto"
+      },
+      "variants": {}
+    },
+    "weather": {
+      "label": "Falling petals",
+      "tokens": [
+        "weather"
+      ],
+      "off": {
+        "weather": "none"
+      },
+      "variants": {}
+    }
+  }
 }

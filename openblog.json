@@ -230,6 +230,7 @@
     ]
   },
   "studio": {
+    "onboarding": "on",
     "words": {
       "vars": {
         "helper": "Mikey",

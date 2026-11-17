@@ -1,13 +1,14 @@
-"""Declare each Christmas look's decorations as pieces (open.blog Studio slice 3b).
+"""Declare every look's decorations as pieces (open.blog Studio slice 3b).
 
-Studio's "What's hanging" lets Grammi take one decoration down, or swap it for the same piece from
-another Christmas look. This writes the `decorations` manifest into each Christmas theme.json from
-the tokens `decorate.py` already made, so run it after that script:
+Studio's "What's hanging" lets Grammi take one decoration down in any look. The Christmas looks
+also offer each other's version of a piece. This writes the `decorations` manifest into each
+theme.json from the tokens `decorate.py` already made, so run it after that script:
 
-    python3 scripts/decorate.py && python3 scripts/decor_pieces.py
+    python3 scripts/decorate.py --all && python3 scripts/decor_pieces.py
 
 Each piece owns its picture and size tokens; "off" is the house's empty value for each (from
-themes/grammis), and every other Christmas look's version of the piece is offered as a variant.
+themes/grammis). Only the looks in LOOKS swap versions: a version carries its whole picture, so
+offering every look's to every other would put a dozen copies of each picture in every theme.
 """
 
 import json
@@ -36,11 +37,18 @@ LOOKS = {
     },
 }
 
-# Snow: christmas draws it in snow.js (the ghSnow token); the toy shelf uses the house weather.
-SNOW = {
-    "christmas": ("ghSnow", "on"),
-    "christmas-toyshelf": ("weather", "snow"),
+# What falls on the home page. Most looks use the house weather (the `weather` token); christmas
+# draws its own snow (snow.js, ghSnow) and thanksgiving its own leaves (leaves.js, ghLeaves).
+OWN_WEATHER = {
+    "christmas": ("snow", "Snow", "ghSnow"),
+    "thanksgiving": ("leaves", "Falling leaves", "ghLeaves"),
 }
+WEATHER = {
+    "snow": "Snow", "leaves": "Falling leaves", "hearts": "Falling hearts",
+    "petals": "Falling petals", "clover": "Falling clovers", "confetti": "Confetti",
+}
+# Never offered: the engine's plain theme and the bare house have nothing hanging.
+SKIP = {"base", "grammis"}
 
 
 def load(name):
@@ -49,7 +57,8 @@ def load(name):
 
 def main():
     house = load("grammis")["tokens"]
-    themes = {name: load(name) for name in LOOKS}
+    names = sorted(p.name for p in THEMES.iterdir() if (p / "theme.json").is_file() and p.name not in SKIP)
+    themes = {name: load(name) for name in names}
     for name, theme in themes.items():
         tokens = theme.setdefault("tokens", {})
         pieces = {}
@@ -58,7 +67,7 @@ def main():
                 continue
             variants = {}
             for other, words in LOOKS.items():
-                if other == name:
+                if other == name or name not in LOOKS:
                     continue
                 theirs = themes[other]["tokens"]
                 if theirs.get(owned[0], "none") == "none":
@@ -70,9 +79,16 @@ def main():
                 "off": {t: house[t] for t in owned},
                 "variants": variants,
             }
-        token, on = SNOW[name]
-        tokens.setdefault(token, on)
-        pieces["snow"] = {"label": "Snow", "tokens": [token], "off": {token: "none"}, "variants": {}}
+        if name in OWN_WEATHER:
+            piece, label, token = OWN_WEATHER[name]
+            tokens.setdefault(token, "on")
+            pieces[piece] = {"label": label, "tokens": [token], "off": {token: "none"}, "variants": {}}
+        elif tokens.get("weather", "none") in WEATHER:
+            kind = tokens["weather"]
+            piece = "snow" if kind == "snow" else "weather"
+            pieces[piece] = {"label": WEATHER[kind], "tokens": ["weather"], "off": {"weather": "none"}, "variants": {}}
+        if not pieces:
+            continue
         theme["decorations"] = pieces
         (THEMES / name / "theme.json").write_text(json.dumps(theme, indent=2) + "\n")
         print(f"{name}: {', '.join(pieces)}")
