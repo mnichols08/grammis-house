@@ -1,5 +1,7 @@
 {
   "label": "Series: garden journal",
+  "hidden": true,
+  "group": "Collections",
   "extends": "grammis",
   "colorScheme": "light",
   "colors": {

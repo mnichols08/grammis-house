@@ -1,5 +1,6 @@
 {
   "label": "Family wall (the fridge)",
+  "hidden": true,
   "extends": "grammis",
   "colorScheme": "light",
   "colors": {

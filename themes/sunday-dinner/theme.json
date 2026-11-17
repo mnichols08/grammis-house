@@ -1,5 +1,7 @@
 {
   "label": "Series: Sunday dinner",
+  "hidden": true,
+  "group": "Collections",
   "extends": "grammis",
   "colorScheme": "light",
   "colors": {

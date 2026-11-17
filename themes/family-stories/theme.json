@@ -1,5 +1,7 @@
 {
   "label": "Series: family stories",
+  "hidden": true,
+  "group": "Collections",
   "extends": "grammis",
   "colorScheme": "light",
   "colors": {
