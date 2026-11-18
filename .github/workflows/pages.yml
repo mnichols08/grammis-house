@@ -24,10 +24,11 @@ permissions:
 
 # The open.blog engine this site was tested with. Grammi's site is a real reader-facing
 # site, so it upgrades on purpose: change this, build locally, then push.
-# This is main after journey-to-code-org/open.blog#711 (v0.58.0 plus the look fixes from the
-# audit of 16 November: #708, #709, #710, #711). Point it at the next release when there is one.
+# This is main after journey-to-code-org/open.blog#717 (v0.58.0, the look fixes from the audit of
+# 16 November, and a component's choices read from a file, which the Parlor's list of games needs).
+# Point it at the next release when there is one.
 env:
-  OPENBLOG_REV: e5e3e6ac935c2370da17e2aea38f6938883ebdce
+  OPENBLOG_REV: 49c0d427622c8fa3e5047f03703038c6e62c85a1
   # Notes on recipes (hosted comments) and greeting cards run on Netlify. They're off until scripts/setup-family-service.sh
   # has been run: it sets the repository variable NETLIFY_SITE_ID and the secret NETLIFY_AUTH_TOKEN.
   NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
