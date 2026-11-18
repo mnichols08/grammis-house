@@ -251,7 +251,7 @@ turned on, and everything else works as before.
 ## Running it
 
 ```sh
-cargo install --git https://github.com/journey-to-code-org/open.blog --rev e5e3e6ac935c2370da17e2aea38f6938883ebdce openblog-cli
+cargo install --git https://github.com/journey-to-code-org/open.blog --rev 49c0d427622c8fa3e5047f03703038c6e62c85a1 openblog-cli
 openblog serve --drafts           # http://localhost:8080/grammis-house/ (drafts included)
 openblog user add grammi          # once, to create a login
 openblog serve --admin            # editor at http://localhost:8080/admin
