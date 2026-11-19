@@ -58,8 +58,9 @@ by itself. Open **Front page**, then the sign, to change it:
 - **The advent calendar** shows up on November 20: 24 doors, one to open each day from December 1.
   Behind a door is your post for that day if you've written one (date it that day and give it the
   tag `advent`), or something to do together ("Bake a batch of cookies and share half").
-- **The Christmas tree** (Front page → Add a section → Christmas tree): choose what hangs on each of
-  twelve branches and what goes on top.
+- **The Christmas tree** (Front page → Add a section → Christmas tree): hang ornaments wherever you
+  like on a picture of the tree (tap one, then tap the tree; drag to move it), and choose what goes on
+  top. Up to forty.
 - **Gifts under the tree** (Add a section → Gifts under the tree; put it right after the tree and the boxes sit at its foot): the
   wrapped boxes people have left you, piled on the floor where each giver set theirs down (boxes can
   lean on each other, never cover one), and a form for leaving one. A gift is a note, or a card made right

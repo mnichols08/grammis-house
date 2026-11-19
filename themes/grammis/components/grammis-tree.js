@@ -26,7 +26,7 @@ const css = `@layer theme, base, components, utilities;
   .tree::before { z-index: 0; }
   .leaves { z-index: 3; }
   .lights, .topper, .orn { z-index: 4; }
-  .orn { position: absolute; width: 9%; aspect-ratio: 1; translate: -50% -50%; background: center / contain no-repeat; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.25)); }
+  .orn { position: absolute; left: var(--x); top: var(--y); width: 9%; aspect-ratio: 1; translate: -50% -50%; background: center / contain no-repeat; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.25)); }
   .topper { position: absolute; left: 50%; top: 3%; width: 15%; aspect-ratio: 1; translate: -50% -50%; background: center / contain no-repeat; }
   .lights { position: absolute; inset: 8% 6% 14%; pointer-events: none;
     background:
@@ -37,18 +37,6 @@ const css = `@layer theme, base, components, utilities;
   @keyframes twinkle { from { opacity: 0.45; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .lights { animation: none; opacity: 0.8; } }
   .under { min-height: 0.5rem; }
-  .orn[data-spot="spot1"] { left: 50%; top: 20%; }
-  .orn[data-spot="spot2"] { left: 40%; top: 33%; }
-  .orn[data-spot="spot3"] { left: 61%; top: 31%; }
-  .orn[data-spot="spot4"] { left: 28%; top: 50%; }
-  .orn[data-spot="spot5"] { left: 47%; top: 48%; }
-  .orn[data-spot="spot6"] { left: 70%; top: 52%; }
-  .orn[data-spot="spot7"] { left: 18%; top: 72%; }
-  .orn[data-spot="spot8"] { left: 37%; top: 69%; }
-  .orn[data-spot="spot9"] { left: 58%; top: 73%; }
-  .orn[data-spot="spot10"] { left: 80%; top: 70%; }
-  .orn[data-spot="spot11"] { left: 34%; top: 81%; }
-  .orn[data-spot="spot12"] { left: 64%; top: 82%; }
   .tree::before { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 300 360%27%3E%3Cpath d=%27M135 300h30v48h-30z%27 fill=%27%237a4a26%27/%3E%3C/svg%3E"); }
   .leaves { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 300 360%27%3E%3Cpath d=%27M150 18 222 128h-26l58 92h-30l66 92H10l66-92H46l58-92H78z%27 fill=%27%232f6b3f%27/%3E%3Cpath d=%27M150 18 186 72l-10 2 46 54h-26l-46-110zM150 128l58 92h-30l66 92h-40l-54-92z%27 fill=%27%233f8a52%27 opacity=%27.55%27/%3E%3Cpath d=%27M60 300q90 22 180-4M88 210q62 18 124-4M110 124q40 12 80-2%27 stroke=%27%23e8c45a%27 stroke-width=%273%27 fill=%27none%27 stroke-dasharray=%272 6%27 stroke-linecap=%27round%27/%3E%3C/svg%3E"); }
   .orn[data-kind="red-ball"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -14 24 26%27%3E%3Crect x=%27-3%27 y=%27-13%27 width=%276%27 height=%274%27 rx=%271%27 fill=%27%23c9a24a%27/%3E%3Ccircle r=%2710%27 fill=%27%23c8243c%27/%3E%3Ccircle cx=%27-4%27 cy=%27-4%27 r=%273%27 fill=%27%23fff%27 opacity=%27.45%27/%3E%3C/svg%3E"); }
@@ -70,7 +58,7 @@ const css = `@layer theme, base, components, utilities;
 
 export class GrammisTree extends HTMLElement {
   /** The attributes this element watches: attributeChangedCallback runs when one changes. */
-  static observedAttributes = ["topper", "nolights", "shows", "spot1", "spot2", "spot3", "spot4", "spot5", "spot6", "spot7", "spot8", "spot9", "spot10", "spot11", "spot12"];
+  static observedAttributes = ["topper", "nolights", "shows", "hung"];
   /** What framework adapters (@zubra/runtime/react, /vue) read to wrap this element. */
   static zubra = {
     tag,
@@ -78,18 +66,7 @@ export class GrammisTree extends HTMLElement {
       topper: { attribute: "topper", default: "star", required: false },
       nolights: { attribute: "nolights", default: false, required: false },
       shows: { attribute: "shows", default: "season", required: false },
-      spot1: { attribute: "spot1", default: "gold-ball", required: false },
-      spot2: { attribute: "spot2", default: "red-ball", required: false },
-      spot3: { attribute: "spot3", default: "candy-cane", required: false },
-      spot4: { attribute: "spot4", default: "bell", required: false },
-      spot5: { attribute: "spot5", default: "heart", required: false },
-      spot6: { attribute: "spot6", default: "blue-ball", required: false },
-      spot7: { attribute: "spot7", default: "snowflake", required: false },
-      spot8: { attribute: "spot8", default: "gingerbread", required: false },
-      spot9: { attribute: "spot9", default: "red-ball", required: false },
-      spot10: { attribute: "spot10", default: "gold-ball", required: false },
-      spot11: { attribute: "spot11", default: "pinecone", required: false },
-      spot12: { attribute: "spot12", default: "bird", required: false },
+      hung: { attribute: "hung", default: "gold-ball@50,20;red-ball@40,33;candy-cane@61,31;bell@28,50;heart@47,48;blue-ball@70,52;snowflake@18,72;gingerbread@37,69;red-ball@58,73;gold-ball@80,70;pinecone@34,81;bird@64,82", required: false },
     },
     events: [],
     slots: [],
@@ -101,7 +78,7 @@ export class GrammisTree extends HTMLElement {
   // ElementInternals: the element's form value and validity, and :state() for CSS.
   #internals = this.attachInternals();
   // The props, each starting at its default; #given has the ones set from outside.
-  #props = { topper: "star", nolights: false, shows: "season", spot1: "gold-ball", spot2: "red-ball", spot3: "candy-cane", spot4: "bell", spot5: "heart", spot6: "blue-ball", spot7: "snowflake", spot8: "gingerbread", spot9: "red-ball", spot10: "gold-ball", spot11: "pinecone", spot12: "bird" };
+  #props = { topper: "star", nolights: false, shows: "season", hung: "gold-ball@50,20;red-ball@40,33;candy-cane@61,31;bell@28,50;heart@47,48;blue-ball@70,52;snowflake@18,72;gingerbread@37,69;red-ball@58,73;gold-ball@80,70;pinecone@34,81;bird@64,82" };
   #given = new Set();
   // What brings the DOM up to date: one function for each spot that changes.
   #updates = [];
@@ -114,7 +91,7 @@ export class GrammisTree extends HTMLElement {
     super();
     // A property set before this class was defined sits on the element itself, hiding the
     // accessor below: take it over.
-    for (const prop of ["topper", "nolights", "shows", "spot1", "spot2", "spot3", "spot4", "spot5", "spot6", "spot7", "spot8", "spot9", "spot10", "spot11", "spot12"]) {
+    for (const prop of ["topper", "nolights", "shows", "hung"]) {
       if (Object.hasOwn(this, prop)) {
         const value = this[prop];
         delete this[prop];
@@ -158,135 +135,14 @@ export class GrammisTree extends HTMLElement {
     this.#requestUpdate();
   }
 
-  get spot1() {
-    reads?.push(() => this.#props.spot1); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot1;
+  get hung() {
+    reads?.push(() => this.#props.hung); // what reads it (a computed, an effect) depends on it
+    return this.#props.hung;
   }
-  set spot1(value) {
-    this.#given.add("spot1");
-    if (Object.is(value, this.#props.spot1)) return;
-    this.#props.spot1 = value;
-    this.#requestUpdate();
-  }
-
-  get spot2() {
-    reads?.push(() => this.#props.spot2); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot2;
-  }
-  set spot2(value) {
-    this.#given.add("spot2");
-    if (Object.is(value, this.#props.spot2)) return;
-    this.#props.spot2 = value;
-    this.#requestUpdate();
-  }
-
-  get spot3() {
-    reads?.push(() => this.#props.spot3); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot3;
-  }
-  set spot3(value) {
-    this.#given.add("spot3");
-    if (Object.is(value, this.#props.spot3)) return;
-    this.#props.spot3 = value;
-    this.#requestUpdate();
-  }
-
-  get spot4() {
-    reads?.push(() => this.#props.spot4); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot4;
-  }
-  set spot4(value) {
-    this.#given.add("spot4");
-    if (Object.is(value, this.#props.spot4)) return;
-    this.#props.spot4 = value;
-    this.#requestUpdate();
-  }
-
-  get spot5() {
-    reads?.push(() => this.#props.spot5); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot5;
-  }
-  set spot5(value) {
-    this.#given.add("spot5");
-    if (Object.is(value, this.#props.spot5)) return;
-    this.#props.spot5 = value;
-    this.#requestUpdate();
-  }
-
-  get spot6() {
-    reads?.push(() => this.#props.spot6); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot6;
-  }
-  set spot6(value) {
-    this.#given.add("spot6");
-    if (Object.is(value, this.#props.spot6)) return;
-    this.#props.spot6 = value;
-    this.#requestUpdate();
-  }
-
-  get spot7() {
-    reads?.push(() => this.#props.spot7); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot7;
-  }
-  set spot7(value) {
-    this.#given.add("spot7");
-    if (Object.is(value, this.#props.spot7)) return;
-    this.#props.spot7 = value;
-    this.#requestUpdate();
-  }
-
-  get spot8() {
-    reads?.push(() => this.#props.spot8); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot8;
-  }
-  set spot8(value) {
-    this.#given.add("spot8");
-    if (Object.is(value, this.#props.spot8)) return;
-    this.#props.spot8 = value;
-    this.#requestUpdate();
-  }
-
-  get spot9() {
-    reads?.push(() => this.#props.spot9); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot9;
-  }
-  set spot9(value) {
-    this.#given.add("spot9");
-    if (Object.is(value, this.#props.spot9)) return;
-    this.#props.spot9 = value;
-    this.#requestUpdate();
-  }
-
-  get spot10() {
-    reads?.push(() => this.#props.spot10); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot10;
-  }
-  set spot10(value) {
-    this.#given.add("spot10");
-    if (Object.is(value, this.#props.spot10)) return;
-    this.#props.spot10 = value;
-    this.#requestUpdate();
-  }
-
-  get spot11() {
-    reads?.push(() => this.#props.spot11); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot11;
-  }
-  set spot11(value) {
-    this.#given.add("spot11");
-    if (Object.is(value, this.#props.spot11)) return;
-    this.#props.spot11 = value;
-    this.#requestUpdate();
-  }
-
-  get spot12() {
-    reads?.push(() => this.#props.spot12); // what reads it (a computed, an effect) depends on it
-    return this.#props.spot12;
-  }
-  set spot12(value) {
-    this.#given.add("spot12");
-    if (Object.is(value, this.#props.spot12)) return;
-    this.#props.spot12 = value;
+  set hung(value) {
+    this.#given.add("hung");
+    if (Object.is(value, this.#props.hung)) return;
+    this.#props.hung = value;
     this.#requestUpdate();
   }
 
@@ -302,41 +158,8 @@ export class GrammisTree extends HTMLElement {
       case "shows":
         this.shows = raw ?? "season";
         break;
-      case "spot1":
-        this.spot1 = raw ?? "gold-ball";
-        break;
-      case "spot2":
-        this.spot2 = raw ?? "red-ball";
-        break;
-      case "spot3":
-        this.spot3 = raw ?? "candy-cane";
-        break;
-      case "spot4":
-        this.spot4 = raw ?? "bell";
-        break;
-      case "spot5":
-        this.spot5 = raw ?? "heart";
-        break;
-      case "spot6":
-        this.spot6 = raw ?? "blue-ball";
-        break;
-      case "spot7":
-        this.spot7 = raw ?? "snowflake";
-        break;
-      case "spot8":
-        this.spot8 = raw ?? "gingerbread";
-        break;
-      case "spot9":
-        this.spot9 = raw ?? "red-ball";
-        break;
-      case "spot10":
-        this.spot10 = raw ?? "gold-ball";
-        break;
-      case "spot11":
-        this.spot11 = raw ?? "pinecone";
-        break;
-      case "spot12":
-        this.spot12 = raw ?? "bird";
+      case "hung":
+        this.hung = raw ?? "gold-ball@50,20;red-ball@40,33;candy-cane@61,31;bell@28,50;heart@47,48;blue-ball@70,52;snowflake@18,72;gingerbread@37,69;red-ball@58,73;gold-ball@80,70;pinecone@34,81;bird@64,82";
         break;
     }
   }
@@ -399,22 +222,16 @@ export class GrammisTree extends HTMLElement {
 
     // ---- <script>
     const NAMES = {"none": "nothing", "red-ball": "a red ball", "gold-ball": "a gold ball", "blue-ball": "a blue ball", "candy-cane": "a candy cane", "gingerbread": "a gingerbread man", "snowflake": "a snowflake", "bell": "a bell", "pinecone": "a pinecone", "heart": "a felt heart", "bird": "a little red bird"}
-    const placed = computed(() => ([
-      ['spot1', element.spot1],
-      ['spot2', element.spot2],
-      ['spot3', element.spot3],
-      ['spot4', element.spot4],
-      ['spot5', element.spot5],
-      ['spot6', element.spot6],
-      ['spot7', element.spot7],
-      ['spot8', element.spot8],
-      ['spot9', element.spot9],
-      ['spot10', element.spot10],
-      ['spot11', element.spot11],
-      ['spot12', element.spot12],
-    ]
-      .map(([spot, kind]) => ({ spot, kind: NAMES[kind] && kind !== 'none' ? kind : '' }))
-      .filter((o) => o.kind)))
+    // What hangs where: `kind@x,y;kind@x,y`, each spot a percentage across and down the tree. Studio
+    // writes it from the picture she decorates; anything that isn't an ornament at a spot is skipped.
+    const placed = computed(() => (String(element.hung || '')
+      .split(';')
+      .map((item, at) => {
+        const found = /^([a-z0-9-]{1,40})@(\d{1,3}),(\d{1,3})$/.exec(item)
+        if (!found || !NAMES[found[1]] || found[1] === 'none') return null
+        return { id: `o${at}`, kind: found[1], x: `${Math.min(100, Number(found[2]))}%`, y: `${Math.min(100, Number(found[3]))}%` }
+      })
+      .filter(Boolean)))
     const crown = computed(() => (['star', 'bow', 'snowflake'].includes(element.topper) ? element.topper : element.topper === 'none' ? '' : 'star'))
     const lit = computed(() => (!(element.nolights === true || element.nolights === 'true' || element.nolights === '')))
     const said = (() => {
@@ -466,17 +283,18 @@ export class GrammisTree extends HTMLElement {
         ];
         return { nodes: branch2, update() { for (const update of updates) update(); } };
       }, null]),
-      // <zb-each items={placed} as="o" key={o.spot}>
-      $list(stand.children[0].childNodes[9], stand.children[0].childNodes[10], () => placed.value, (o, index) => o.spot, (o, index) => {
+      // <zb-each items={placed} as="o" key={o.id}>
+      $list(stand.children[0].childNodes[9], stand.children[0].childNodes[10], () => placed.value, (o, index) => o.id, (o, index) => {
         const row = clone(`
         <span class="orn" aria-hidden="true"></span>
       `);
         const orn = row.children[0];
         const updates2 = [
-          bind(() => o.spot, (value) => attribute(orn, "data-spot", value)),
           bind(() => o.kind, (value) => attribute(orn, "data-kind", value)),
+          bind(() => o.x, (value) => setStyle(orn, "--x", value)),
+          bind(() => o.y, (value) => setStyle(orn, "--y", value)),
         ];
-        return { nodes: row, update(next, at) { o = next; index = at; for (const update of updates2) update(); } };
+        return { nodes: row, update(next, at2) { o = next; index = at2; for (const update of updates2) update(); } };
       }),
     ];
     return content;
@@ -529,6 +347,12 @@ function attribute(node, name, value) {
   } else {
     node.setAttribute(name, value);
   }
+}
+
+/** One CSS property from a value: null, false and "" remove it. */
+function setStyle(node, property, value) {
+  if (value == null || value === false || value === "") node.style.removeProperty(property);
+  else node.style.setProperty(property, String(value));
 }
 
 /** Puts a node in place (the platform's insertBefore, not one an element overrides for its slots). */
