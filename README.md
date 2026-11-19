@@ -63,10 +63,11 @@ by itself. Open **Front page**, then the sign, to change it:
 - **Gifts under the tree** (Add a section → Gifts under the tree; put it right after the tree and the boxes sit at its foot): the
   wrapped boxes people have left you, piled on the floor where each giver set theirs down (boxes can
   lean on each other, never cover one), and a form for leaving one. A gift is a note, or a card made right
-  there (a design, a few words, up to eight stickers), with a choice of wrapping paper. A name shows on
+  there (a design, a few words, up to eight stickers), with a choice of wrapping paper and a bow. A name shows on
   a box only when the giver ticks it and you allow it in **Gifts**; what a gift says is never on the
   site. Open them in **Gifts** from midnight on Christmas morning. The form asks for the family
-  password unless you switch on **Let anyone leave you a gift**. The section stays hidden until Mikey
+  password unless you switch on **Let anyone leave you a gift**. Nothing shows, and nobody can leave a gift, until you turn on **My tree is ready for gifts** in
+  **Gifts**: decorate first, then open up. The section also stays hidden until Mikey
   fills in **Where gifts go** (`https://<the Netlify site>/api/gifts`) and sets the service up:
   [open.blog's gifts guide](https://github.com/journey-to-code-org/open.blog/blob/main/docs/gifts.md).
 - **Write to Grammi.** A postcard on the front page opens the family's email with a note to you

@@ -26,7 +26,21 @@ const css = `@layer theme, base, components, utilities;
     background: radial-gradient(120% 70% at 50% 100%, color-mix(in srgb, var(--primary, #a11224) 16%, transparent), transparent 70%); }
   .floor[data-placing="true"] { touch-action: none; cursor: crosshair; outline: 2px dashed var(--border, #8d897c); outline-offset: -2px; }
   .box { position: absolute; left: var(--x); top: var(--y); width: var(--w); z-index: var(--z); aspect-ratio: 1 / 0.88; translate: -50% -100%; border-radius: 3px; box-shadow: 0 3px 4px -2px rgb(0 0 0 / 0.55); pointer-events: none;
-    background: linear-gradient(90deg, transparent 42%, #f6e3a1 42% 58%, transparent 58%), linear-gradient(transparent 38%, #f6e3a1 38% 52%, transparent 52%), var(--paper, #c8243c); }
+    background: linear-gradient(90deg, transparent 42%, var(--bow, #f2c14e) 42% 58%, transparent 58%), linear-gradient(transparent 38%, var(--bow, #f2c14e) 38% 52%, transparent 52%), var(--paper, #c8243c); }
+  /* The bow: two loops and a knot on the lid, in the ribbon's colour. "No bow" is a box left plain. */
+  .box::after { content: ""; position: absolute; left: 50%; bottom: 92%; width: 70%; aspect-ratio: 2 / 1; translate: -50% 0; background: var(--bow, #f2c14e);
+    filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.4));
+    -webkit-mask: var(--bow-shape) center / contain no-repeat; mask: var(--bow-shape) center / contain no-repeat; }
+  .floor, .ribbon { --bow-shape: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 50%27%3E%3Cpath d=%27M50 42C22 4 2 6 4 28 6 46 34 48 50 42ZM50 42C78 4 98 6 96 28 94 46 66 48 50 42Z%27/%3E%3Ccircle cx=%2750%27 cy=%2740%27 r=%279%27/%3E%3C/svg%3E"); }
+  .box[data-bow="gold"], .ribbon[data-bow="gold"] { --bow: #f2c14e; }
+  .box[data-bow="red"], .ribbon[data-bow="red"] { --bow: #b3142a; }
+  .box[data-bow="green"], .ribbon[data-bow="green"] { --bow: #1f5a30; }
+  .box[data-bow="white"], .ribbon[data-bow="white"] { --bow: #ffffff; }
+  .box[data-bow="blue"], .ribbon[data-bow="blue"] { --bow: #1f4f9a; }
+  .box[data-bow="none"] { --bow: transparent; }
+  .box[data-bow="none"]::after { display: none; }
+  .ribbon::before { content: ""; width: 1.8rem; height: 0.9rem; background: var(--bow, transparent); filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.7));
+    -webkit-mask: var(--bow-shape) center / contain no-repeat; mask: var(--bow-shape) center / contain no-repeat; }
   .box[data-mine="true"] { outline: 3px dashed #1f2633; outline-offset: 2px; box-shadow: 0 0 0 5px #ffffff, 0 3px 4px -2px rgb(0 0 0 / 0.55); }
   .box[data-wrap="red"], .paper[data-wrap="red"] { --paper: #c8243c; }
   .box[data-wrap="green"], .paper[data-wrap="green"] { --paper: #2f6b3f; }
@@ -216,6 +230,7 @@ export class GiftMaker extends HTMLElement {
 
     // ---- <script>
     const WRAPS = [['red', 'Red'], ['green', 'Green'], ['gold', 'Gold'], ['blue', 'Blue'], ['plaid', 'Plaid'], ['stripes', 'Stripes']]
+    const BOWS = [['gold', 'Gold'], ['red', 'Red'], ['green', 'Green'], ['white', 'White'], ['blue', 'Blue'], ['none', 'No bow']]
     const STICKER_NAMES = [['star', 'Star'], ['heart', 'Heart'], ['snowflake', 'Snowflake'], ['candy-cane', 'Candy cane'], ['bell', 'Bell'], ['mitten', 'Mitten'], ['cookie', 'Cookie'], ['ornament', 'Ornament'], ['holly', 'Holly'], ['gift', 'Gift']]
     // Where each sticker lands, in the order they're added: the corners first, then the edges.
     const SPOTS = [[6, 8], [94, 8], [6, 92], [94, 92], [50, 4], [50, 96], [4, 50], [96, 50]]
@@ -330,7 +345,7 @@ export class GiftMaker extends HTMLElement {
           y = clamp(y, 0, 100)
           if (!moved) break
         }
-        down.push({ id: gift.id, wrap: gift.wrap, mine: gift.mine === true, from: gift.from || '', x, y, w })
+        down.push({ id: gift.id, wrap: gift.wrap, bow: gift.bow || 'gold', mine: gift.mine === true, from: gift.from || '', x, y, w })
       }
       return down
     }
@@ -355,11 +370,12 @@ export class GiftMaker extends HTMLElement {
     const token = state2('')
     const spot = state2({ x: 50, y: 70 })
     const paper = state2('red')
+    const ribbon = state2('gold')
     const tucked = state2(false)
 
     const count = () => (gifts.value.length === 0 ? 'Nothing under the tree yet. Yours could be the first.' : gifts.value.length === 1 ? 'One gift is under the tree.' : `${gifts.value.length} gifts are under the tree.`)
     const pile = () => settle(gifts.value)
-    const withMine = () => settle([...gifts.value, { id: 'yours', wrap: paper.value, mine: true, spot: spot.value }])
+    const withMine = () => settle([...gifts.value, { id: 'yours', wrap: paper.value, bow: ribbon.value, mine: true, spot: spot.value }])
     // Who the named ones are from, said once under the pile: boxes this small can't carry a name.
     const fromWhom = () => {
       const names = [...new Set(gifts.value.map((gift) => gift.from).filter(Boolean))]
@@ -401,6 +417,7 @@ export class GiftMaker extends HTMLElement {
     const choose = (e) => {
       if (e.target.name === 'kind') kind.value = e.target.value
       if (e.target.name === 'wrap') paper.value = e.target.value
+      if (e.target.name === 'bow') ribbon.value = e.target.value
       if (problem.value) problem.value = ''
       redraw(e.currentTarget)
     }
@@ -419,6 +436,7 @@ export class GiftMaker extends HTMLElement {
       'family-code': 'That isn’t the family password. Ask Grammi for it.',
       'slow-down': 'That’s a lot of gifts in one hour. Try again a little later.',
       'tree-full': 'The tree is full for this year. Thank you for thinking of her.',
+      'not-ready': 'Grammi is still decorating. Come back soon.',
       token: 'That took a while. Press the button once more.',
       'from-length': 'Add your name, 40 letters at most.',
       'note-length': 'Write your note, 1,000 letters at most.',
@@ -443,7 +461,7 @@ export class GiftMaker extends HTMLElement {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             code: String(data.get('code') || ''), token: token.value, website: String(data.get('website') || ''), from,
-            showName: data.get('showName') === 'on', kind: kind.value, wrap: String(data.get('wrap') || 'red'), spot: spot.value,
+            showName: data.get('showName') === 'on', kind: kind.value, wrap: String(data.get('wrap') || 'red'), bow: String(data.get('bow') || 'gold'), spot: spot.value,
             ...(kind.value === 'note' ? { note } : { card }),
           }),
         })
@@ -452,9 +470,10 @@ export class GiftMaker extends HTMLElement {
           problem.value = WHY[answer.error] || 'That didn’t go under the tree. Try again in a minute.'
           if (answer.error === 'token') { try { token.value = (await (await fetch(`${base.value}/token`)).json()).token || '' } catch (_) {} }
         } else {
-          if (answer.gift) gifts.value = [...gifts.value, { ...answer.gift, spot: answer.gift.spot || spot.value }]
+          if (answer.gift) gifts.value = [...gifts.value, { ...answer.gift, bow: answer.gift.bow || ribbon.value, spot: answer.gift.spot || spot.value }]
           spot.value = { x: 50, y: 70 }
           paper.value = 'red'
+          ribbon.value = 'gold'
           said.value = 'Your gift is under the tree. Grammi opens it on Christmas morning.'
           open.value = false
           stuck.value = []
@@ -492,6 +511,8 @@ export class GiftMaker extends HTMLElement {
         const reply = await fetch(`${base.value}/tree`)
         if (!reply.ok) return
         const tree = await reply.json()
+        // Grammi says when her tree is ready for gifts; until then this stays off the page.
+        if (tree.ready === false) return
         gifts.value = Array.isArray(tree.gifts) ? tree.gifts.slice(0, 200) : []
         asks.value = tree.anyone !== true
         state.value = 'shown'
@@ -556,6 +577,12 @@ export class GiftMaker extends HTMLElement {
         </div>
       </fieldset>
       <fieldset>
+        <legend>A bow on top</legend>
+        <div class="choices">
+          <!--each--><!--/each-->
+        </div>
+      </fieldset>
+      <fieldset>
         <legend>Where it goes under the tree</legend>
         <p class="help">Yours is the box with the dotted edge. Tap or drag on the floor to set it down, or use the buttons. It can lean on another gift, but not cover it.</p>
         <div class="floor" data-placing="true" role="img" aria-label="The gifts under the tree, with yours among them">
@@ -606,7 +633,7 @@ export class GiftMaker extends HTMLElement {
       const handler = unstick;
       if (typeof handler === "function") handler.call(clear, event);
     });
-    const floor2 = form2.children[7].children[2];
+    const floor2 = form2.children[8].children[2];
     floor2.addEventListener("pointerdown", (event) => {
       const handler = point;
       if (typeof handler === "function") handler.call(floor2, event);
@@ -615,17 +642,17 @@ export class GiftMaker extends HTMLElement {
       const handler = point;
       if (typeof handler === "function") handler.call(floor2, event);
     });
-    const button2 = form2.children[7].children[3].children[0];
+    const button2 = form2.children[8].children[3].children[0];
     button2.addEventListener("click", () => nudge(-6, 0));
-    const button3 = form2.children[7].children[3].children[1];
+    const button3 = form2.children[8].children[3].children[1];
     button3.addEventListener("click", () => nudge(6, 0));
-    const button4 = form2.children[7].children[3].children[2];
+    const button4 = form2.children[8].children[3].children[2];
     button4.addEventListener("click", () => nudge(0, -15));
-    const button5 = form2.children[7].children[3].children[3];
+    const button5 = form2.children[8].children[3].children[3];
     button5.addEventListener("click", () => nudge(0, 15));
-    const field2 = form2.children[8];
-    const problem2 = form2.children[10];
-    const send2 = form2.children[11];
+    const field2 = form2.children[9];
+    const problem2 = form2.children[11];
+    const send2 = form2.children[12];
     this.#updates = [
       bind(() => state.value, (value) => attribute(under, "data-state", value)),
       bind(() => tucked.value ? "true" : "false", (value) => attribute(under, "data-tucked", value)),
@@ -642,6 +669,7 @@ export class GiftMaker extends HTMLElement {
         const box2 = row.children[0];
         const updates = [
           bind(() => b.wrap, (value) => attribute(box2, "data-wrap", value)),
+          bind(() => b.bow, (value) => attribute(box2, "data-bow", value)),
           bind(() => left(b), (value) => setStyle(box2, "--x", value)),
           bind(() => foot(b), (value) => setStyle(box2, "--y", value)),
           bind(() => wide(b), (value) => setStyle(box2, "--w", value)),
@@ -701,21 +729,39 @@ export class GiftMaker extends HTMLElement {
         ];
         return { nodes: row4, update(next5, at4) { w = next5; index5 = at4; for (const update of updates4) update(); } };
       }),
-      // <zb-each items={withMine()} as="b" key={b.id}>
-      $list(floor2.childNodes[1], floor2.childNodes[2], () => withMine(), (b, index6) => b.id, (b, index6) => {
+      // <zb-each items={BOWS} as="w" key={w[0]}>
+      $list(form2.children[7].children[1].childNodes[1], form2.children[7].children[1].childNodes[2], () => BOWS, (w, index6) => w[0], (w, index6) => {
         const row5 = clone(`
+            <label class="choice ribbon"><input type="radio" name="bow"><!--text--></label>
+          `);
+        const choice2 = row5.children[0];
+        const input3 = choice2.children[0];
+        const wText2 = new Text();
+        choice2.childNodes[1].replaceWith(wText2);
+        const updates5 = [
+          bind(() => w[0], (value) => attribute(choice2, "data-bow", value)),
+          bind(() => w[0], (value) => setValue(input3, value)),
+          bind(() => w[0] === "gold", (value) => input3.toggleAttribute("checked", Boolean(value))),
+          bind(() => ` ${(w[1]) ?? ""}`, (value) => (wText2.data = value)),
+        ];
+        return { nodes: row5, update(next6, at5) { w = next6; index6 = at5; for (const update of updates5) update(); } };
+      }),
+      // <zb-each items={withMine()} as="b" key={b.id}>
+      $list(floor2.childNodes[1], floor2.childNodes[2], () => withMine(), (b, index7) => b.id, (b, index7) => {
+        const row6 = clone(`
             <span class="box"></span>
           `);
-        const box3 = row5.children[0];
-        const updates5 = [
+        const box3 = row6.children[0];
+        const updates6 = [
           bind(() => b.wrap, (value) => attribute(box3, "data-wrap", value)),
+          bind(() => b.bow, (value) => attribute(box3, "data-bow", value)),
           bind(() => b.mine ? "true" : "false", (value) => attribute(box3, "data-mine", value)),
           bind(() => left(b), (value) => setStyle(box3, "--x", value)),
           bind(() => foot(b), (value) => setStyle(box3, "--y", value)),
           bind(() => wide(b), (value) => setStyle(box3, "--w", value)),
           bind(() => near(b), (value) => setStyle(box3, "--z", value)),
         ];
-        return { nodes: row5, update(next6, at5) { b = next6; index6 = at5; for (const update of updates5) update(); } };
+        return { nodes: row6, update(next7, at6) { b = next7; index7 = at6; for (const update of updates6) update(); } };
       }),
       bind(() => !(asks.value), (value) => field2.toggleAttribute("hidden", Boolean(value))),
       bind(() => problem.value ?? "", (value) => (problem2.textContent = value)),

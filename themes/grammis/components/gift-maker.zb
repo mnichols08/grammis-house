@@ -21,6 +21,7 @@
   import { onMount } from '@zubra/runtime'
 
   const WRAPS = [['red', 'Red'], ['green', 'Green'], ['gold', 'Gold'], ['blue', 'Blue'], ['plaid', 'Plaid'], ['stripes', 'Stripes']]
+  const BOWS = [['gold', 'Gold'], ['red', 'Red'], ['green', 'Green'], ['white', 'White'], ['blue', 'Blue'], ['none', 'No bow']]
   const STICKER_NAMES = [['star', 'Star'], ['heart', 'Heart'], ['snowflake', 'Snowflake'], ['candy-cane', 'Candy cane'], ['bell', 'Bell'], ['mitten', 'Mitten'], ['cookie', 'Cookie'], ['ornament', 'Ornament'], ['holly', 'Holly'], ['gift', 'Gift']]
   // Where each sticker lands, in the order they're added: the corners first, then the edges.
   const SPOTS = [[6, 8], [94, 8], [6, 92], [94, 92], [50, 4], [50, 96], [4, 50], [96, 50]]
@@ -135,7 +136,7 @@
         y = clamp(y, 0, 100)
         if (!moved) break
       }
-      down.push({ id: gift.id, wrap: gift.wrap, mine: gift.mine === true, from: gift.from || '', x, y, w })
+      down.push({ id: gift.id, wrap: gift.wrap, bow: gift.bow || 'gold', mine: gift.mine === true, from: gift.from || '', x, y, w })
     }
     return down
   }
@@ -160,11 +161,12 @@
   let token = ''
   let spot = { x: 50, y: 70 }
   let paper = 'red'
+  let ribbon = 'gold'
   let tucked = false
 
   const count = () => (gifts.length === 0 ? 'Nothing under the tree yet. Yours could be the first.' : gifts.length === 1 ? 'One gift is under the tree.' : `${gifts.length} gifts are under the tree.`)
   const pile = () => settle(gifts)
-  const withMine = () => settle([...gifts, { id: 'yours', wrap: paper, mine: true, spot }])
+  const withMine = () => settle([...gifts, { id: 'yours', wrap: paper, bow: ribbon, mine: true, spot }])
   // Who the named ones are from, said once under the pile: boxes this small can't carry a name.
   const fromWhom = () => {
     const names = [...new Set(gifts.map((gift) => gift.from).filter(Boolean))]
@@ -206,6 +208,7 @@
   const choose = (e) => {
     if (e.target.name === 'kind') kind = e.target.value
     if (e.target.name === 'wrap') paper = e.target.value
+    if (e.target.name === 'bow') ribbon = e.target.value
     if (problem) problem = ''
     redraw(e.currentTarget)
   }
@@ -224,6 +227,7 @@
     'family-code': 'That isn’t the family password. Ask Grammi for it.',
     'slow-down': 'That’s a lot of gifts in one hour. Try again a little later.',
     'tree-full': 'The tree is full for this year. Thank you for thinking of her.',
+    'not-ready': 'Grammi is still decorating. Come back soon.',
     token: 'That took a while. Press the button once more.',
     'from-length': 'Add your name, 40 letters at most.',
     'note-length': 'Write your note, 1,000 letters at most.',
@@ -248,7 +252,7 @@
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           code: String(data.get('code') || ''), token, website: String(data.get('website') || ''), from,
-          showName: data.get('showName') === 'on', kind, wrap: String(data.get('wrap') || 'red'), spot,
+          showName: data.get('showName') === 'on', kind, wrap: String(data.get('wrap') || 'red'), bow: String(data.get('bow') || 'gold'), spot,
           ...(kind === 'note' ? { note } : { card }),
         }),
       })
@@ -257,9 +261,10 @@
         problem = WHY[answer.error] || 'That didn’t go under the tree. Try again in a minute.'
         if (answer.error === 'token') { try { token = (await (await fetch(`${base}/token`)).json()).token || '' } catch (_) {} }
       } else {
-        if (answer.gift) gifts = [...gifts, { ...answer.gift, spot: answer.gift.spot || spot }]
+        if (answer.gift) gifts = [...gifts, { ...answer.gift, bow: answer.gift.bow || ribbon, spot: answer.gift.spot || spot }]
         spot = { x: 50, y: 70 }
         paper = 'red'
+        ribbon = 'gold'
         said = 'Your gift is under the tree. Grammi opens it on Christmas morning.'
         open = false
         stuck = []
@@ -297,6 +302,8 @@
       const reply = await fetch(`${base}/tree`)
       if (!reply.ok) return
       const tree = await reply.json()
+      // Grammi says when her tree is ready for gifts; until then this stays off the page.
+      if (tree.ready === false) return
       gifts = Array.isArray(tree.gifts) ? tree.gifts.slice(0, 200) : []
       asks = tree.anyone !== true
       state = 'shown'
@@ -318,7 +325,21 @@
     background: radial-gradient(120% 70% at 50% 100%, color-mix(in srgb, var(--primary, #a11224) 16%, transparent), transparent 70%); }
   .floor[data-placing="true"] { touch-action: none; cursor: crosshair; outline: 2px dashed var(--border, #8d897c); outline-offset: -2px; }
   .box { position: absolute; left: var(--x); top: var(--y); width: var(--w); z-index: var(--z); aspect-ratio: 1 / 0.88; translate: -50% -100%; border-radius: 3px; box-shadow: 0 3px 4px -2px rgb(0 0 0 / 0.55); pointer-events: none;
-    background: linear-gradient(90deg, transparent 42%, #f6e3a1 42% 58%, transparent 58%), linear-gradient(transparent 38%, #f6e3a1 38% 52%, transparent 52%), var(--paper, #c8243c); }
+    background: linear-gradient(90deg, transparent 42%, var(--bow, #f2c14e) 42% 58%, transparent 58%), linear-gradient(transparent 38%, var(--bow, #f2c14e) 38% 52%, transparent 52%), var(--paper, #c8243c); }
+  /* The bow: two loops and a knot on the lid, in the ribbon's colour. "No bow" is a box left plain. */
+  .box::after { content: ""; position: absolute; left: 50%; bottom: 92%; width: 70%; aspect-ratio: 2 / 1; translate: -50% 0; background: var(--bow, #f2c14e);
+    filter: drop-shadow(0 1px 0 rgb(0 0 0 / 0.4));
+    -webkit-mask: var(--bow-shape) center / contain no-repeat; mask: var(--bow-shape) center / contain no-repeat; }
+  .floor, .ribbon { --bow-shape: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 50%27%3E%3Cpath d=%27M50 42C22 4 2 6 4 28 6 46 34 48 50 42ZM50 42C78 4 98 6 96 28 94 46 66 48 50 42Z%27/%3E%3Ccircle cx=%2750%27 cy=%2740%27 r=%279%27/%3E%3C/svg%3E"); }
+  .box[data-bow="gold"], .ribbon[data-bow="gold"] { --bow: #f2c14e; }
+  .box[data-bow="red"], .ribbon[data-bow="red"] { --bow: #b3142a; }
+  .box[data-bow="green"], .ribbon[data-bow="green"] { --bow: #1f5a30; }
+  .box[data-bow="white"], .ribbon[data-bow="white"] { --bow: #ffffff; }
+  .box[data-bow="blue"], .ribbon[data-bow="blue"] { --bow: #1f4f9a; }
+  .box[data-bow="none"] { --bow: transparent; }
+  .box[data-bow="none"]::after { display: none; }
+  .ribbon::before { content: ""; width: 1.8rem; height: 0.9rem; background: var(--bow, transparent); filter: drop-shadow(0 0 1px rgb(0 0 0 / 0.7));
+    -webkit-mask: var(--bow-shape) center / contain no-repeat; mask: var(--bow-shape) center / contain no-repeat; }
   .box[data-mine="true"] { outline: 3px dashed #1f2633; outline-offset: 2px; box-shadow: 0 0 0 5px #ffffff, 0 3px 4px -2px rgb(0 0 0 / 0.55); }
   .box[data-wrap="red"], .paper[data-wrap="red"] { --paper: #c8243c; }
   .box[data-wrap="green"], .paper[data-wrap="green"] { --paper: #2f6b3f; }
@@ -360,7 +381,7 @@
     <p class="count">{count()}</p>
     <div class="floor" role="img" aria-label={count()} hidden={open}>
       <zb-each items={pile()} as="b" key={b.id}>
-        <span class="box" data-wrap={b.wrap} style:--x={left(b)} style:--y={foot(b)} style:--w={wide(b)} style:--z={near(b)}></span>
+        <span class="box" data-wrap={b.wrap} data-bow={b.bow} style:--x={left(b)} style:--y={foot(b)} style:--w={wide(b)} style:--z={near(b)}></span>
       </zb-each>
     </div>
     <p class="names">{fromWhom()}</p>
@@ -417,11 +438,19 @@
         </div>
       </fieldset>
       <fieldset>
+        <legend>A bow on top</legend>
+        <div class="choices">
+          <zb-each items={BOWS} as="w" key={w[0]}>
+            <label class="choice ribbon" data-bow={w[0]}><input type="radio" name="bow" value={w[0]} checked={w[0] === 'gold'} /> {w[1]}</label>
+          </zb-each>
+        </div>
+      </fieldset>
+      <fieldset>
         <legend>Where it goes under the tree</legend>
         <p class="help">Yours is the box with the dotted edge. Tap or drag on the floor to set it down, or use the buttons. It can lean on another gift, but not cover it.</p>
         <div class="floor" data-placing="true" role="img" aria-label="The gifts under the tree, with yours among them" onpointerdown={point} onpointermove={point}>
           <zb-each items={withMine()} as="b" key={b.id}>
-            <span class="box" data-wrap={b.wrap} data-mine={b.mine ? 'true' : 'false'} style:--x={left(b)} style:--y={foot(b)} style:--w={wide(b)} style:--z={near(b)}></span>
+            <span class="box" data-wrap={b.wrap} data-bow={b.bow} data-mine={b.mine ? 'true' : 'false'} style:--x={left(b)} style:--y={foot(b)} style:--w={wide(b)} style:--z={near(b)}></span>
           </zb-each>
         </div>
         <div class="nudges">
