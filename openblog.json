@@ -140,7 +140,8 @@
     "sessionHours": 12,
     "secureCookies": false,
     "maxUploadMb": 10,
-    "trustedProxies": []
+    "trustedProxies": [],
+    "signInUrl": "https://grammis-house-admin.up.railway.app/admin/"
   },
   "publish": {
     "remote": "origin",
