@@ -58,6 +58,16 @@ by itself. Open **Front page**, then the sign, to change it:
 - **The advent calendar** shows up on November 20: 24 doors, one to open each day from December 1.
   Behind a door is your post for that day if you've written one (date it that day and give it the
   tag `advent`), or something to do together ("Bake a batch of cookies and share half").
+- **The Christmas tree** (Front page → Add a section → Christmas tree): choose what hangs on each of
+  twelve branches and what goes on top.
+- **Gifts under the tree** (Add a section → Gifts under the tree; put it right under the tree): the
+  wrapped boxes people have left you, and a form for leaving one. A gift is a note, or a card made right
+  there (a design, a few words, up to eight stickers), with a choice of wrapping paper. A name shows on
+  a box only when the giver ticks it and you allow it in **Gifts**; what a gift says is never on the
+  site. Open them in **Gifts** from midnight on Christmas morning. The form asks for the family
+  password unless you switch on **Let anyone leave you a gift**. The section stays hidden until Mikey
+  fills in **Where gifts go** (`https://<the Netlify site>/api/gifts`) and sets the service up:
+  [open.blog's gifts guide](https://github.com/journey-to-code-org/open.blog/blob/main/docs/gifts.md).
 - **Write to Grammi.** A postcard on the front page opens the family's email with a note to you
   already addressed. Fill in **Your email address** on it (Front page → Write to Grammi); it stays
   hidden until you do. Put your favorite notes on **The Family Wall** page, the fridge: each note
