@@ -11,32 +11,35 @@ every month of the year, with Thanksgiving and Christmas the biggest of all.
 
 Everything is done in the editor in your web browser. You never have to touch a file.
 
-1. Open the editor (`/admin`) and sign in.
-2. **Posts** lists every recipe. Tap one to open it. It reads like a word processor:
+1. Open the editor (`/admin`) and sign in. The first time, it walks you through getting started;
+   you can skip any part and come back to it from the menu under your name.
+2. **Posts** lists every recipe. Tap one to open it:
    - Under **Ingredients**, start each line with the amount (`2 cups flour`). That lets
-     the family make half or double a recipe with one tap.
+     the family make half or double a recipe with one tap. **Add an ingredient** adds a line.
    - Under **Steps**, write times the way you'd say them (`bake for 45 minutes`). Readers
-     get a timer button for each one.
-3. **Settings** (above the recipe) holds servings, prep and cook time, and the photo.
-   It also has **Draft / Published**: a recipe stays private until you switch it to
-   Published.
-4. **Save**, then **Publish** (top right) to put it on the site.
-5. **New recipe** on the Overview screen starts a new one with everything ready to fill in.
+     get a timer button for each one. **Add a step** adds one.
+3. **About this post** (under the recipe) holds servings, prep and cook time, and the photo.
+4. **See how it looks** shows the recipe as the family will see it. The button beside it puts
+   your changes on the site (**Update** on a recipe that's already published).
+5. **Write something new** on Home starts a new recipe with everything ready to fill in.
 
-**Changing the decorations:** open **Seasons**. The top says what's up today and when it changes.
-- **Change the decorations with the calendar** on: each season goes up and comes down on its
-  own days. Change a day with the month and day lists, or **Add a season** for a new holiday.
-- Switched off: pick what the site wears under **Your site wears**, and it stays up until you change it.
+**Changing the decorations:** open **Decorations**. The top says what's up today and when it changes.
+- **Put (a look) up now** hangs a look today and hands back to your calendar afterwards.
+- **What's hanging** takes one decoration down (the garland, the banner, the falling leaves) or
+  puts it back, in any look. Each switch goes on your site straight away.
+- **Your calendar**, with **Change by itself with the calendar** on: each season goes up and comes
+  down on its own days. Tap a season to change its days, or **Add a season** for a new holiday.
+- Switched off: pick what the site wears under **Every day**, and it stays up until you change it.
 
-Then **Save seasons** and **Publish**.
+Then **Save**.
 
 **Dressing up a recipe collection:** every collection (Thanksgiving, Christmas, or a new one) can
-wear its own look, whatever month it is. Open the collection under **Series**, pick its **Theme**,
-then **Save** and **Publish**. The looks made for collections all start with "Series:" (Recipe box,
+wear its own look, whatever month it is. Open the collection under **Collections**, pick its look,
+then save it. The looks made for collections all start with "Series:" (Recipe box,
 Family stories, Garden journal, Baking day, Letters to the grandkids, Sunday dinner).
 
 **The countdown sign** under the garland counts down to whichever holiday comes next, all year,
-by itself. Open **Landing page**, then the sign, to change it:
+by itself. Open **Front page**, then the sign, to change it:
 - **Counting down to**: a holiday, or **A day of my own** for an anniversary, a birthday, a visit.
   Then fill in **Your day's name** ("our anniversary") and **Its date** from the calendar. For a day
   that comes every year, pick the very first one (the wedding day) and the sign says "the 41st!".
@@ -56,7 +59,7 @@ by itself. Open **Landing page**, then the sign, to change it:
   Behind a door is your post for that day if you've written one (date it that day and give it the
   tag `advent`), or something to do together ("Bake a batch of cookies and share half").
 - **Write to Grammi.** A postcard on the front page opens the family's email with a note to you
-  already addressed. Fill in **Your email address** on it (Landing page → Write to Grammi); it stays
+  already addressed. Fill in **Your email address** on it (Front page → Write to Grammi); it stays
   hidden until you do. Put your favorite notes on **The Family Wall** page, the fridge: each note
   is a quote (the **"** button in the editor), with who it's from on the last line.
 - **Quizzes.** "How well do you know Grammi's kitchen?" is a draft with three questions to fill
@@ -74,15 +77,15 @@ by itself. Open **Landing page**, then the sign, to change it:
   `bash scripts/setup-family-service.sh` once; after that every recipe has notes at the bottom, and new
   ones wait for you in **Moderation inbox** until you approve them.
 
-**Making a new look in your own words:** open **Design a theme** and describe it, like
-"Warm like my kitchen at Christmas, deep red and pine green, big easy-to-read writing", or tap
-one of the ideas. Pick what to **Start from** (Christmas keeps its lights and wreath, Thanksgiving
-its leaves). The Assistant makes a theme and you see your own site in it. Say what to change
-("a little warmer"), give it a name, and **Save this theme**. Saving doesn't change your site:
-put the new theme on from **Seasons**, for the whole site or as its own season. However the
-Assistant picks colours, the writing is always made dark or light enough to read easily.
+**Changing a look's colors in your own words:** open **Look**, then **Describe a new look**, and
+describe it, like "Warm like my kitchen at Christmas, deep red and pine green, big easy-to-read
+writing", or tap one of the ideas. Pick what to **Start from**: the new look keeps that look's
+decorations (Christmas its lights and wreath, Thanksgiving its leaves) and changes the colors and
+lettering. **Draft a look**, then **See it on your front page**. Say what to change ("a little
+warmer"), give it a name, and **Save this look**. Saving doesn't change your site: **Put it up now**
+hangs it today. The writing is always made dark or light enough to read easily.
 
-**Customize look** lets you make the writing bigger or smaller, or roomier, for the whole
+**Look** lets you make the writing bigger or smaller, or roomier, for the whole
 site. The holiday colors come from the decorations, so that screen leaves them alone on purpose.
 
 ## How the decorating works
@@ -130,7 +133,7 @@ and recipe pages stay quiet because people are cooking. Phones get the garland, 
 
 **The house decorates itself.** This is open.blog's `seasons` setting in `openblog.json`
 (added in [open.blog#649](https://github.com/journey-to-code-org/open.blog/pull/649)), edited on
-Admin's **Seasons** screen:
+Studio's **Decorations** screen:
 
 | Season | Up | Down | What's up | Weather |
 | --- | --- | --- | --- | --- |
@@ -180,9 +183,10 @@ corner piece: those only go on the home page's welcome card):
    (hearts, eggs, apples, teacups, ...). Then run `python3 scripts/draw_themes.py <season>` and
    `python3 scripts/decorate.py <season>`. (Or copy a theme folder and draw `decor/` by hand:
    any of the five pieces; leave one out and it isn't hung.)
-2. Add it on the **Seasons** screen (or as a window under `seasons` in `openblog.json`).
-3. Add `content/series/<season>.md` with `theme: <season>` for that holiday's recipes.
-4. The countdown sign knows New Year's, Valentine's, St. Patrick's, Easter, Mother's and
+2. Run `python3 scripts/decor_pieces.py` so its decorations can be switched in **What's hanging**.
+3. Add it under **Decorations › Your calendar** (or as a window under `seasons` in `openblog.json`).
+4. Add `content/series/<season>.md` with `theme: <season>` for that holiday's recipes.
+5. The countdown sign knows New Year's, Valentine's, St. Patrick's, Easter, Mother's and
    Father's Day, the Fourth of July, Labor Day, Halloween, Thanksgiving and Christmas. For another, teach `themes/grammis/components/holiday-countdown.zb` its date and add it to the sign's **Which holiday** choices in `theme.json` (see below).
 
 ## Components (Zubra)
@@ -193,11 +197,11 @@ theme, which declares each one under `components` in its `theme.json`
 ([open.blog#651](https://github.com/journey-to-code-org/open.blog/pull/651)). Every season extends
 `grammis`, so every season offers them.
 
-**Grammi places them herself.** On **Landing page → Add a section**, the theme's components are
+**Grammi places them herself.** On **Front page → Add a section**, the theme's components are
 listed after the built-in sections ("Countdown sign: a little hanging sign that counts the days until
 a holiday"). The form comes from the settings the theme declares (for the sign, **Which holiday**:
 whichever comes next, or one of eleven holidays). She can move, hide or delete it like any other section. The preview
-shows the component's one-line fallback, because Admin's preview runs no scripts.
+shows the component's one-line fallback, because Studio's preview runs no scripts.
 
 To add a component:
 
@@ -212,11 +216,11 @@ To add a component:
 2. Declare it in `themes/grammis/theme.json` under `components`: a `label` and `description` in
    plain words, the `script`, the `source` (the `.zb`), a one-line `fallback`, and its settings
    (`text`, `choice`, `number` or `toggle`, each with a `label`). Add the `.css` to `stylesheets`.
-3. `openblog check`. It now shows up in Admin's **Add a section**.
+3. `openblog check`. It now shows up in Studio's **Add a section**.
 
 **Rendered ahead** ([open.blog#652](https://github.com/journey-to-code-org/open.blog/pull/652)): when the
 `zubra` command is installed, `openblog build` puts each component's HTML into the page, so the sign is
-there before its script runs, for readers without JavaScript, and in Admin's preview. The deploy workflow
+there before its script runs, for readers without JavaScript, and in Studio's preview. The deploy workflow
 installs it. Locally, run `npm i -g @zubra/compiler@5.8.0`, or set
 `OPENBLOG_ZUBRA="npx -y @zubra/compiler@5.8.0"`. Without it, the sign still appears once its script runs.
 
@@ -227,10 +231,10 @@ Anything only the browser knows (like today's date) is left for the script. That
 that [Zubra UI](https://github.com/journey-to-code-org/zubra-ui) components read. That means any Zubra UI
 component dropped in here follows the current season, in light and dark.
 
-Admin's **Publish** button commits only `content`, `static`, `openblog.json`, `themes` and
+Studio sends out only `content`, `static`, `openblog.json`, `themes` and
 `.github`, so commit changes to `components/` and `scripts/` with git.
 
-## The Assistant (for Design a theme)
+## The writing helper (for Describe a new look)
 
 `openblog.json` already sets the provider (`knowledgeChecks`: Anthropic, `claude-sonnet-5-5`). The
 key is never stored in the repository: set it where the editor runs.
@@ -241,17 +245,27 @@ openblog serve --admin
 ```
 
 Grammi's description, the site's title and the name of the theme she starts from are sent to the
-provider, and nothing else from the site. Without a key, **Design a theme** says the Assistant isn't
-set up, and everything else works as before.
+provider, and nothing else from the site. Without a key, **Describe a new look** says the writing helper isn't
+turned on, and everything else works as before.
 
 ## Running it
 
 ```sh
-cargo install --git https://github.com/journey-to-code-org/open.blog --rev d18b32aa49904c9425d19b5bf9b5e210384a65af openblog-cli
+cargo install --git https://github.com/journey-to-code-org/open.blog --rev 49c0d427622c8fa3e5047f03703038c6e62c85a1 openblog-cli
 openblog serve --drafts           # http://localhost:8080/grammis-house/ (drafts included)
 openblog user add grammi          # once, to create a login
 openblog serve --admin            # editor at http://localhost:8080/admin
 ```
+
+The editor Grammi uses runs on Railway (`Dockerfile.admin`). Its variables:
+
+| Variable | What it does |
+| --- | --- |
+| `GITHUB_TOKEN` | Lets the editor send her changes to this repository (required) |
+| `OPENBLOG_ADMIN_USER`, `OPENBLOG_ADMIN_PASSWORD` | Makes her login, or resets its password, each time the service starts |
+| `ANTHROPIC_API_KEY` | Turns on the writing helper, so getting started never asks her for a key |
+| `OPENBLOG_STUDIO_ONBOARDING` | `rehearse` to try getting started as her without keeping anything, then `on` (or unset: `openblog.json` says `on`) |
+| `OPENBLOG_BEHIND_PROXY` | Secure sign-in cookies behind Railway's HTTPS; the entrypoint sets it to `1` unless you set it |
 
 The site deploys to GitHub Pages on every push to `main` (Settings → Pages → Source: **GitHub
 Actions**). The workflow pins the open.blog version (`OPENBLOG_REV`), so upgrades happen on purpose.

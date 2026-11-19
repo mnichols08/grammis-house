@@ -6,7 +6,7 @@ FROM rust:1-bookworm AS build
 RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/*
 RUN npm install --global @zubra/compiler@5.8.0
 RUN cargo install --git https://github.com/journey-to-code-org/open.blog \
-    --rev 65373fd55d0be0835f512ccd452a4770f9db3c11 openblog-cli
+    --rev 49c0d427622c8fa3e5047f03703038c6e62c85a1 openblog-cli
 WORKDIR /site
 COPY . .
 RUN openblog build

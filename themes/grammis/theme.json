@@ -110,7 +110,9 @@
     "components/holiday-countdown.css",
     "components/family-birthday.css",
     "components/advent-calendar.css",
-    "components/family-mailbox.css"
+    "components/grammis-tree.css",
+    "components/family-mailbox.css",
+    "components/card-room.css"
   ],
   "scripts": [
     "weather.js"
@@ -358,6 +360,738 @@
           "label": "The email's subject",
           "default": "A note for Grammi",
           "maxLength": 80
+        }
+      ]
+    },
+    "grammis-tree": {
+      "label": "Christmas tree",
+      "description": "A tree you decorate yourself: choose what hangs on each of twelve branches and what goes on top.",
+      "script": "components/grammis-tree.js",
+      "source": "components/grammis-tree.zb",
+      "fallback": "Grammi's Christmas tree stands here in December.",
+      "props": [
+        {
+          "name": "topper",
+          "type": "choice",
+          "label": "On top",
+          "default": "star",
+          "choices": [
+            {
+              "value": "star",
+              "label": "A gold star"
+            },
+            {
+              "value": "bow",
+              "label": "A red bow"
+            },
+            {
+              "value": "snowflake",
+              "label": "A snowflake"
+            },
+            {
+              "value": "none",
+              "label": "Nothing on top"
+            }
+          ]
+        },
+        {
+          "name": "nolights",
+          "type": "toggle",
+          "label": "Leave the lights off",
+          "help": "The lights twinkle softly. Readers who turn off motion see them still."
+        },
+        {
+          "name": "shows",
+          "type": "choice",
+          "label": "When it's on the page",
+          "default": "season",
+          "choices": [
+            {
+              "value": "season",
+              "label": "From November 20 to January 6"
+            },
+            {
+              "value": "always",
+              "label": "All year"
+            }
+          ]
+        },
+        {
+          "name": "spot1",
+          "type": "choice",
+          "label": "Near the top",
+          "default": "gold-ball",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot2",
+          "type": "choice",
+          "label": "Upper branches, left",
+          "default": "red-ball",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot3",
+          "type": "choice",
+          "label": "Upper branches, right",
+          "default": "candy-cane",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot4",
+          "type": "choice",
+          "label": "Middle, far left",
+          "default": "bell",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot5",
+          "type": "choice",
+          "label": "Middle",
+          "default": "heart",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot6",
+          "type": "choice",
+          "label": "Middle, far right",
+          "default": "blue-ball",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot7",
+          "type": "choice",
+          "label": "Lower, far left",
+          "default": "snowflake",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot8",
+          "type": "choice",
+          "label": "Lower, left of center",
+          "default": "gingerbread",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot9",
+          "type": "choice",
+          "label": "Lower, right of center",
+          "default": "red-ball",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot10",
+          "type": "choice",
+          "label": "Lower, far right",
+          "default": "gold-ball",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot11",
+          "type": "choice",
+          "label": "Bottom branches, left",
+          "default": "pinecone",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        },
+        {
+          "name": "spot12",
+          "type": "choice",
+          "label": "Bottom branches, right",
+          "default": "bird",
+          "choices": [
+            {
+              "value": "none",
+              "label": "Nothing here"
+            },
+            {
+              "value": "red-ball",
+              "label": "Red ball"
+            },
+            {
+              "value": "gold-ball",
+              "label": "Gold ball"
+            },
+            {
+              "value": "blue-ball",
+              "label": "Blue ball"
+            },
+            {
+              "value": "candy-cane",
+              "label": "Candy cane"
+            },
+            {
+              "value": "gingerbread",
+              "label": "Gingerbread man"
+            },
+            {
+              "value": "snowflake",
+              "label": "Snowflake"
+            },
+            {
+              "value": "bell",
+              "label": "Bell"
+            },
+            {
+              "value": "pinecone",
+              "label": "Pinecone"
+            },
+            {
+              "value": "heart",
+              "label": "Felt heart"
+            },
+            {
+              "value": "bird",
+              "label": "Little red bird"
+            }
+          ]
+        }
+      ]
+    },
+    "card-room": {
+      "label": "Parlor",
+      "description": "Play one of the parlor's games right on the page, and a button to challenge you to a game.",
+      "script": "components/card-room.js",
+      "source": "components/card-room.zb",
+      "fallback": "A game table sits here: play one of the parlor's games, or send a challenge.",
+      "props": [
+        {
+          "name": "server",
+          "type": "text",
+          "label": "Parlor address",
+          "required": true,
+          "maxLength": 200,
+          "help": "Where your parlor runs, like https://your-card-room.up.railway.app"
+        },
+        {
+          "name": "game",
+          "type": "choice",
+          "label": "Game",
+          "default": "both",
+          "choices": [
+            {
+              "value": "both",
+              "label": "Palace and Spades"
+            },
+            {
+              "value": "palace",
+              "label": "Palace"
+            },
+            {
+              "value": "spades",
+              "label": "Spades"
+            }
+          ],
+          "choicesFrom": "components/card-room.games.json"
+        },
+        {
+          "name": "challenge",
+          "type": "text",
+          "label": "Challenge link code",
+          "maxLength": 40,
+          "help": "The end of your challenge link, after ?challenge=. Leave it empty for no Challenge button."
+        },
+        {
+          "name": "who",
+          "type": "text",
+          "label": "Your name on the button",
+          "maxLength": 30,
+          "default": "me",
+          "help": "Shown as “Challenge Grammi to Palace”."
         }
       ]
     }

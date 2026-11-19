@@ -140,7 +140,8 @@
     "sessionHours": 12,
     "secureCookies": false,
     "maxUploadMb": 10,
-    "trustedProxies": []
+    "trustedProxies": [],
+    "signInUrl": "https://grammis-house-admin.up.railway.app/admin/"
   },
   "publish": {
     "remote": "origin",
@@ -228,5 +229,20 @@
         "end": "11-30"
       }
     ]
+  },
+  "studio": {
+    "onboarding": "on",
+    "words": {
+      "vars": {
+        "helper": "Mikey",
+        "owner": "Grammi"
+      },
+      "text": {
+        "cards.signOff": "Love, {owner}",
+        "recipe.notesHeading": "{owner}'s notes",
+        "decorations.everyday": "Your house is wearing its everyday look: {theme}.",
+        "decorations.decorated": "Your house is decorated for {theme}."
+      }
+    }
   }
 }

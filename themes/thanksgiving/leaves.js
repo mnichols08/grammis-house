@@ -8,7 +8,10 @@ const MAPLE = "M0-11L2.6-5.5 7.5-7.6 5.6-2.2 10.5-.4 5.2 2.4 6.2 7.2 0 4.6-6.2 7
 const OAK = "M0-11C3.5-10 1.8-7.4 4.6-6.6 8.4-5.6 4.6-2.8 6.6-1 9.4 1.2 4.8 2.8 5.6 4.8 6.4 7.6 2 7.4 0 10.6-2 7.4-6.4 7.6-5.6 4.8-4.8 2.8-9.4 1.2-6.6-1-4.6-2.8-8.4-5.6-4.6-6.6-1.8-7.4-3.5-10 0-11Z";
 const COLORS = ["#9b1d33", "#c4561c", "#e0a12e", "#b8371f", "#7a8a3a", "#d9822b"];
 
-if (!reduce && home && !document.querySelector(".gh-weather")) {
+// "Falling leaves" in What's hanging turns this off (the ghLeaves token).
+const falling = getComputedStyle(document.documentElement).getPropertyValue("--ob-gh-leaves").trim() !== "none";
+
+if (!reduce && home && falling && !document.querySelector(".gh-weather")) {
   const sky = document.createElement("div");
   sky.className = "gh-weather";
   sky.setAttribute("aria-hidden", "true");

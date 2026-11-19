@@ -1,5 +1,7 @@
 {
   "label": "Series: baking day",
+  "hidden": true,
+  "group": "Collections",
   "extends": "grammis",
   "colorScheme": "light",
   "colors": {
@@ -66,5 +68,45 @@
   },
   "stylesheets": [
     "baking-day.css"
-  ]
+  ],
+  "decorations": {
+    "garland": {
+      "label": "Garland",
+      "tokens": [
+        "decorGarland",
+        "decorGarlandHeight"
+      ],
+      "off": {
+        "decorGarland": "none",
+        "decorGarlandHeight": "0px"
+      },
+      "variants": {}
+    },
+    "mantel": {
+      "label": "Mantel",
+      "tokens": [
+        "decorMantel",
+        "decorMantelSize",
+        "decorMantelHeight"
+      ],
+      "off": {
+        "decorMantel": "none",
+        "decorMantelSize": "auto",
+        "decorMantelHeight": "0px"
+      },
+      "variants": {}
+    },
+    "pattern": {
+      "label": "Wallpaper",
+      "tokens": [
+        "decorPattern",
+        "decorPatternSize"
+      ],
+      "off": {
+        "decorPattern": "none",
+        "decorPatternSize": "auto"
+      },
+      "variants": {}
+    }
+  }
 }
