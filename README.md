@@ -60,7 +60,7 @@ by itself. Open **Front page**, then the sign, to change it:
   tag `advent`), or something to do together ("Bake a batch of cookies and share half").
 - **The Christmas tree** (Front page → Add a section → Christmas tree): choose what hangs on each of
   twelve branches and what goes on top.
-- **Gifts under the tree** (Add a section → Gifts under the tree; put it right under the tree): the
+- **Gifts under the tree** (Add a section → Gifts under the tree; put it right after the tree and the boxes sit at its foot): the
   wrapped boxes people have left you, piled on the floor where each giver set theirs down (boxes can
   lean on each other, never cover one), and a form for leaving one. A gift is a note, or a card made right
   there (a design, a few words, up to eight stickers), with a choice of wrapping paper. A name shows on

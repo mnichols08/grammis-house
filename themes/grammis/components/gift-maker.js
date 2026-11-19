@@ -34,6 +34,10 @@ const css = `@layer theme, base, components, utilities;
   .box[data-wrap="blue"], .paper[data-wrap="blue"] { --paper: #2f5fa8; }
   .box[data-wrap="plaid"], .paper[data-wrap="plaid"] { --paper: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.25) 0 4px, transparent 4px 10px), repeating-linear-gradient(90deg, #2f6b3f 0 6px, #a11224 6px 14px); }
   .box[data-wrap="stripes"], .paper[data-wrap="stripes"] { --paper: repeating-linear-gradient(-45deg, #c8243c 0 6px, #ffffff 6px 12px); }
+  /* At the tree's foot: the floor comes first and reaches up to the trunk; the words follow it. */
+  .under[data-state="shown"][data-tucked="true"] { display: flex; flex-direction: column; margin-top: 0; }
+  .under[data-tucked="true"] > .floor { order: -1; z-index: 2; background: none; overflow: visible;
+    margin-top: calc(-1 * (var(--tuck, 0px) + min(34vw, 11.5rem))); }
   .names { margin: 0.2rem 0; text-align: center; font-size: 0.95rem; overflow-wrap: anywhere; }
   .nudges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .nudges button { min-height: 44px; padding: 0.4rem 0.7rem; font: inherit; border-radius: 8px; cursor: pointer; background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border: 2px solid var(--border, #b9b4a6); }
@@ -351,6 +355,7 @@ export class GiftMaker extends HTMLElement {
     const token = state2('')
     const spot = state2({ x: 50, y: 70 })
     const paper = state2('red')
+    const tucked = state2(false)
 
     const count = () => (gifts.value.length === 0 ? 'Nothing under the tree yet. Yours could be the first.' : gifts.value.length === 1 ? 'One gift is under the tree.' : `${gifts.value.length} gifts are under the tree.`)
     const pile = () => settle(gifts.value)
@@ -462,6 +467,20 @@ export class GiftMaker extends HTMLElement {
       busy.value = false
     }
 
+    // When the Christmas tree is the section right above, the pile is drawn at its foot: the floor is
+    // pulled up over the gap so the boxes sit around the trunk. Measured again when the page resizes.
+    const tuck = () => {
+      const root = document.querySelector('gift-maker')
+      const tree = document.querySelector('grammis-tree .tree')
+      if (!root || !tree) return
+      const above = tree.getBoundingClientRect()
+      const here = root.getBoundingClientRect()
+      const gap = here.top - above.bottom
+      if (!above.height || gap < -4 || gap > 160) { tucked.value = false; return }
+      root.style.setProperty('--tuck', `${Math.round(gap)}px`)
+      tucked.value = true
+    }
+
     onMount(async () => {
       if (!usable.value) return
       const now = new Date()
@@ -476,6 +495,8 @@ export class GiftMaker extends HTMLElement {
         gifts.value = Array.isArray(tree.gifts) ? tree.gifts.slice(0, 200) : []
         asks.value = tree.anyone !== true
         state.value = 'shown'
+        requestAnimationFrame(tuck)
+        addEventListener('resize', tuck)
       } catch (_) {}
     })
 
@@ -607,6 +628,7 @@ export class GiftMaker extends HTMLElement {
     const send2 = form2.children[11];
     this.#updates = [
       bind(() => state.value, (value) => attribute(under, "data-state", value)),
+      bind(() => tucked.value ? "true" : "false", (value) => attribute(under, "data-tucked", value)),
       bind(() => element.heading, (value) => attribute(under, "aria-label", value)),
       bind(() => element.heading ?? "", (value) => (heading2.textContent = value)),
       bind(() => (count()) ?? "", (value) => (count2.textContent = value)),

@@ -160,6 +160,7 @@
   let token = ''
   let spot = { x: 50, y: 70 }
   let paper = 'red'
+  let tucked = false
 
   const count = () => (gifts.length === 0 ? 'Nothing under the tree yet. Yours could be the first.' : gifts.length === 1 ? 'One gift is under the tree.' : `${gifts.length} gifts are under the tree.`)
   const pile = () => settle(gifts)
@@ -271,6 +272,20 @@
     busy = false
   }
 
+  // When the Christmas tree is the section right above, the pile is drawn at its foot: the floor is
+  // pulled up over the gap so the boxes sit around the trunk. Measured again when the page resizes.
+  const tuck = () => {
+    const root = document.querySelector('gift-maker')
+    const tree = document.querySelector('grammis-tree .tree')
+    if (!root || !tree) return
+    const above = tree.getBoundingClientRect()
+    const here = root.getBoundingClientRect()
+    const gap = here.top - above.bottom
+    if (!above.height || gap < -4 || gap > 160) { tucked = false; return }
+    root.style.setProperty('--tuck', `${Math.round(gap)}px`)
+    tucked = true
+  }
+
   onMount(async () => {
     if (!usable) return
     const now = new Date()
@@ -285,6 +300,8 @@
       gifts = Array.isArray(tree.gifts) ? tree.gifts.slice(0, 200) : []
       asks = tree.anyone !== true
       state = 'shown'
+      requestAnimationFrame(tuck)
+      addEventListener('resize', tuck)
     } catch (_) {}
   })
 </script>
@@ -309,6 +326,10 @@
   .box[data-wrap="blue"], .paper[data-wrap="blue"] { --paper: #2f5fa8; }
   .box[data-wrap="plaid"], .paper[data-wrap="plaid"] { --paper: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.25) 0 4px, transparent 4px 10px), repeating-linear-gradient(90deg, #2f6b3f 0 6px, #a11224 6px 14px); }
   .box[data-wrap="stripes"], .paper[data-wrap="stripes"] { --paper: repeating-linear-gradient(-45deg, #c8243c 0 6px, #ffffff 6px 12px); }
+  /* At the tree's foot: the floor comes first and reaches up to the trunk; the words follow it. */
+  .under[data-state="shown"][data-tucked="true"] { display: flex; flex-direction: column; margin-top: 0; }
+  .under[data-tucked="true"] > .floor { order: -1; z-index: 2; background: none; overflow: visible;
+    margin-top: calc(-1 * (var(--tuck, 0px) + min(34vw, 11.5rem))); }
   .names { margin: 0.2rem 0; text-align: center; font-size: 0.95rem; overflow-wrap: anywhere; }
   .nudges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .nudges button { min-height: 44px; padding: 0.4rem 0.7rem; font: inherit; border-radius: 8px; cursor: pointer; background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border: 2px solid var(--border, #b9b4a6); }
@@ -334,7 +355,7 @@
   .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
 </style>
 <gift-maker service="" heading="Under the tree" shows="season">
-  <section class="under" data-state={state} aria-label={heading}>
+  <section class="under" data-state={state} data-tucked={tucked ? 'true' : 'false'} aria-label={heading}>
     <h2 class="heading">{heading}</h2>
     <p class="count">{count()}</p>
     <div class="floor" role="img" aria-label={count()} hidden={open}>
