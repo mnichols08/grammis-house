@@ -18,7 +18,14 @@ const css = `@layer theme, base, components, utilities;
   .stand { display: none; }
   .stand[data-state="shown"] { display: block; }
   .stand { max-width: 26rem; margin: 1.5rem auto; text-align: center; }
-  .tree { position: relative; width: 100%; aspect-ratio: 300 / 360; background: center / contain no-repeat; }
+  /* Three layers, so gifts set down at the tree's foot go in front of the trunk and under the
+     branches: the trunk at the back, then whatever the page puts there, then the branches and
+     everything hung on them. None of these makes a layer of its own for the others to be trapped in. */
+  .tree { position: relative; width: 100%; aspect-ratio: 300 / 360; }
+  .tree::before, .leaves { content: ""; position: absolute; inset: 0; background: center / contain no-repeat; pointer-events: none; }
+  .tree::before { z-index: 0; }
+  .leaves { z-index: 3; }
+  .lights, .topper, .orn { z-index: 4; }
   .orn { position: absolute; width: 9%; aspect-ratio: 1; translate: -50% -50%; background: center / contain no-repeat; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 0.25)); }
   .topper { position: absolute; left: 50%; top: 3%; width: 15%; aspect-ratio: 1; translate: -50% -50%; background: center / contain no-repeat; }
   .lights { position: absolute; inset: 8% 6% 14%; pointer-events: none;
@@ -42,7 +49,8 @@ const css = `@layer theme, base, components, utilities;
   .orn[data-spot="spot10"] { left: 80%; top: 70%; }
   .orn[data-spot="spot11"] { left: 34%; top: 81%; }
   .orn[data-spot="spot12"] { left: 64%; top: 82%; }
-  .tree { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 300 360%27%3E%3Cpath d=%27M135 300h30v48h-30z%27 fill=%27%237a4a26%27/%3E%3Cpath d=%27M150 18 222 128h-26l58 92h-30l66 92H10l66-92H46l58-92H78z%27 fill=%27%232f6b3f%27/%3E%3Cpath d=%27M150 18 186 72l-10 2 46 54h-26l-46-110zM150 128l58 92h-30l66 92h-40l-54-92z%27 fill=%27%233f8a52%27 opacity=%27.55%27/%3E%3Cpath d=%27M60 300q90 22 180-4M88 210q62 18 124-4M110 124q40 12 80-2%27 stroke=%27%23e8c45a%27 stroke-width=%273%27 fill=%27none%27 stroke-dasharray=%272 6%27 stroke-linecap=%27round%27/%3E%3C/svg%3E"); }
+  .tree::before { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 300 360%27%3E%3Cpath d=%27M135 300h30v48h-30z%27 fill=%27%237a4a26%27/%3E%3C/svg%3E"); }
+  .leaves { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 300 360%27%3E%3Cpath d=%27M150 18 222 128h-26l58 92h-30l66 92H10l66-92H46l58-92H78z%27 fill=%27%232f6b3f%27/%3E%3Cpath d=%27M150 18 186 72l-10 2 46 54h-26l-46-110zM150 128l58 92h-30l66 92h-40l-54-92z%27 fill=%27%233f8a52%27 opacity=%27.55%27/%3E%3Cpath d=%27M60 300q90 22 180-4M88 210q62 18 124-4M110 124q40 12 80-2%27 stroke=%27%23e8c45a%27 stroke-width=%273%27 fill=%27none%27 stroke-dasharray=%272 6%27 stroke-linecap=%27round%27/%3E%3C/svg%3E"); }
   .orn[data-kind="red-ball"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -14 24 26%27%3E%3Crect x=%27-3%27 y=%27-13%27 width=%276%27 height=%274%27 rx=%271%27 fill=%27%23c9a24a%27/%3E%3Ccircle r=%2710%27 fill=%27%23c8243c%27/%3E%3Ccircle cx=%27-4%27 cy=%27-4%27 r=%273%27 fill=%27%23fff%27 opacity=%27.45%27/%3E%3C/svg%3E"); }
   .orn[data-kind="gold-ball"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -14 24 26%27%3E%3Crect x=%27-3%27 y=%27-13%27 width=%276%27 height=%274%27 rx=%271%27 fill=%27%23a9883a%27/%3E%3Ccircle r=%2710%27 fill=%27%23e0a12e%27/%3E%3Cpath d=%27M-10 0h20%27 stroke=%27%23fff3c4%27 stroke-width=%272%27/%3E%3Ccircle cx=%27-4%27 cy=%27-4%27 r=%273%27 fill=%27%23fff%27 opacity=%27.5%27/%3E%3C/svg%3E"); }
   .orn[data-kind="blue-ball"] { background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%27-12 -14 24 26%27%3E%3Crect x=%27-3%27 y=%27-13%27 width=%276%27 height=%274%27 rx=%271%27 fill=%27%23c9a24a%27/%3E%3Ccircle r=%2710%27 fill=%27%232f6fd0%27/%3E%3Cpath d=%27M-9-4q9 6 18 0M-9 4q9 6 18 0%27 stroke=%27%23cfe0ff%27 stroke-width=%271.6%27 fill=%27none%27/%3E%3C/svg%3E"); }
@@ -432,6 +440,7 @@ export class GrammisTree extends HTMLElement {
     const content = clone(`
   <figure class="stand" role="img">
     <div class="tree">
+      <span class="leaves" aria-hidden="true"></span>
       <!--if--><!--/if-->
       <!--if--><!--/if-->
       <!--each--><!--/each-->
@@ -444,12 +453,12 @@ export class GrammisTree extends HTMLElement {
       bind(() => state.value, (value) => attribute(stand, "data-state", value)),
       bind(() => said, (value) => attribute(stand, "aria-label", value)),
       // <zb-if test={lit}>
-      when(stand.children[0].childNodes[1], stand.children[0].childNodes[2], () => lit.value, [() => {
+      when(stand.children[0].childNodes[3], stand.children[0].childNodes[4], () => lit.value, [() => {
         const branch = clone(`<span class="lights" aria-hidden="true"></span>`);
         return { nodes: branch, update() { } };
       }, null]),
       // <zb-if test={crown}>
-      when(stand.children[0].childNodes[4], stand.children[0].childNodes[5], () => crown.value, [() => {
+      when(stand.children[0].childNodes[6], stand.children[0].childNodes[7], () => crown.value, [() => {
         const branch2 = clone(`<span class="topper" aria-hidden="true"></span>`);
         const topper2 = branch2.children[0];
         const updates = [
@@ -458,7 +467,7 @@ export class GrammisTree extends HTMLElement {
         return { nodes: branch2, update() { for (const update of updates) update(); } };
       }, null]),
       // <zb-each items={placed} as="o" key={o.spot}>
-      $list(stand.children[0].childNodes[7], stand.children[0].childNodes[8], () => placed.value, (o, index) => o.spot, (o, index) => {
+      $list(stand.children[0].childNodes[9], stand.children[0].childNodes[10], () => placed.value, (o, index) => o.spot, (o, index) => {
         const row = clone(`
         <span class="orn" aria-hidden="true"></span>
       `);
