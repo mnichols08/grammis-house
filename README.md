@@ -61,7 +61,8 @@ by itself. Open **Front page**, then the sign, to change it:
 - **The Christmas tree** (Front page → Add a section → Christmas tree): choose what hangs on each of
   twelve branches and what goes on top.
 - **Gifts under the tree** (Add a section → Gifts under the tree; put it right under the tree): the
-  wrapped boxes people have left you, and a form for leaving one. A gift is a note, or a card made right
+  wrapped boxes people have left you, piled on the floor where each giver set theirs down (boxes can
+  lean on each other, never cover one), and a form for leaving one. A gift is a note, or a card made right
   there (a design, a few words, up to eight stickers), with a choice of wrapping paper. A name shows on
   a box only when the giver ticks it and you allow it in **Gifts**; what a gift says is never on the
   site. Open them in **Gifts** from midnight on Christmas morning. The form asks for the family

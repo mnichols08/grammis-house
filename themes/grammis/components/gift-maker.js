@@ -22,16 +22,21 @@ const css = `@layer theme, base, components, utilities;
   .help { text-align: left; font-size: 0.95rem; color: var(--muted-foreground, #5a6170); }
   .said { font-weight: 600; }
   .problem { color: #a11224; font-weight: 600; }
-  .boxes { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 0.5rem; list-style: none; margin: 0.6rem 0; padding: 0; }
-  .box { display: grid; justify-items: center; gap: 0.15rem; font-size: 0.85rem; max-width: 6rem; text-align: center; overflow-wrap: anywhere; }
-  .box::before { content: ""; width: 2.6rem; height: 2.3rem; border-radius: 3px; box-shadow: 0 3px 4px -2px rgb(0 0 0 / 0.5);
+  .floor { position: relative; list-style: none; margin: 0.6rem 0 0.2rem; padding: 0; aspect-ratio: 2 / 1; overflow: hidden; border-radius: 10px;
+    background: radial-gradient(120% 70% at 50% 100%, color-mix(in srgb, var(--primary, #a11224) 16%, transparent), transparent 70%); }
+  .floor[data-placing="true"] { touch-action: none; cursor: crosshair; outline: 2px dashed var(--border, #8d897c); outline-offset: -2px; }
+  .box { position: absolute; left: var(--x); top: var(--y); width: var(--w); z-index: var(--z); aspect-ratio: 1 / 0.88; translate: -50% -100%; border-radius: 3px; box-shadow: 0 3px 4px -2px rgb(0 0 0 / 0.55); pointer-events: none;
     background: linear-gradient(90deg, transparent 42%, #f6e3a1 42% 58%, transparent 58%), linear-gradient(transparent 38%, #f6e3a1 38% 52%, transparent 52%), var(--paper, #c8243c); }
-  .box[data-wrap="red"]::before, .paper[data-wrap="red"] { --paper: #c8243c; }
-  .box[data-wrap="green"]::before, .paper[data-wrap="green"] { --paper: #2f6b3f; }
-  .box[data-wrap="gold"]::before, .paper[data-wrap="gold"] { --paper: #d9a62e; }
-  .box[data-wrap="blue"]::before, .paper[data-wrap="blue"] { --paper: #2f5fa8; }
-  .box[data-wrap="plaid"]::before, .paper[data-wrap="plaid"] { --paper: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.25) 0 4px, transparent 4px 10px), repeating-linear-gradient(90deg, #2f6b3f 0 6px, #a11224 6px 14px); }
-  .box[data-wrap="stripes"]::before, .paper[data-wrap="stripes"] { --paper: repeating-linear-gradient(-45deg, #c8243c 0 6px, #ffffff 6px 12px); }
+  .box[data-mine="true"] { outline: 3px dashed #1f2633; outline-offset: 2px; box-shadow: 0 0 0 5px #ffffff, 0 3px 4px -2px rgb(0 0 0 / 0.55); }
+  .box[data-wrap="red"], .paper[data-wrap="red"] { --paper: #c8243c; }
+  .box[data-wrap="green"], .paper[data-wrap="green"] { --paper: #2f6b3f; }
+  .box[data-wrap="gold"], .paper[data-wrap="gold"] { --paper: #d9a62e; }
+  .box[data-wrap="blue"], .paper[data-wrap="blue"] { --paper: #2f5fa8; }
+  .box[data-wrap="plaid"], .paper[data-wrap="plaid"] { --paper: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.25) 0 4px, transparent 4px 10px), repeating-linear-gradient(90deg, #2f6b3f 0 6px, #a11224 6px 14px); }
+  .box[data-wrap="stripes"], .paper[data-wrap="stripes"] { --paper: repeating-linear-gradient(-45deg, #c8243c 0 6px, #ffffff 6px 12px); }
+  .names { margin: 0.2rem 0; text-align: center; font-size: 0.95rem; overflow-wrap: anywhere; }
+  .nudges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .nudges button { min-height: 44px; padding: 0.4rem 0.7rem; font: inherit; border-radius: 8px; cursor: pointer; background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border: 2px solid var(--border, #b9b4a6); }
   .go, .send, .stickers button, .clear {
     min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
     border: 2px solid var(--primary, #a11224); background: var(--primary, #a11224); color: var(--primary-foreground, #ffffff); }
@@ -283,6 +288,54 @@ export class GiftMaker extends HTMLElement {
       return svg
     }
 
+    // The floor under the tree. A place is x (0 to 100, across) and y (0 at the back, 100 at the front).
+    // The floor is twice as wide as it is tall and boxes stand on its lower three fifths, so one step
+    // toward the front covers three tenths of the ground a step across does.
+    const DEPTH = 0.3
+    const clamp = (n, low, high) => Math.min(high, Math.max(low, n))
+    const hash = (words) => {
+      let h = 2166136261
+      for (const c of String(words)) h = Math.imul(h ^ c.charCodeAt(0), 16777619)
+      return h >>> 0
+    }
+    // Every box settled in turn: it starts where its giver put it and is pushed off any box already
+    // down until their middles are at least three fifths of a box apart. The more gifts, the smaller.
+    const settle = (list) => {
+      const n = list.length
+      const w = n > 60 ? 7 : n > 30 ? 9 : n > 12 ? 11 : 14
+      const apart = w * 0.6
+      const down = []
+      for (const gift of list) {
+        const h = hash(gift.id)
+        let x = gift.spot ? gift.spot.x : 6 + (h % 89)
+        let y = gift.spot ? gift.spot.y : (h >>> 8) % 101
+        for (let turn = 0; turn < 24; turn += 1) {
+          let moved = false
+          for (const other of down) {
+            const dx = x - other.x
+            const dy = (y - other.y) * DEPTH
+            const far = Math.hypot(dx, dy)
+            if (far < apart - 0.01) {
+              const way = far < 0.01 ? (h % 628) / 100 : Math.atan2(dy, dx)
+              x = other.x + Math.cos(way) * apart
+              y = other.y + (Math.sin(way) * apart) / DEPTH
+              moved = true
+            }
+          }
+          x = clamp(x, w / 2, 100 - w / 2)
+          y = clamp(y, 0, 100)
+          if (!moved) break
+        }
+        down.push({ id: gift.id, wrap: gift.wrap, mine: gift.mine === true, from: gift.from || '', x, y, w })
+      }
+      return down
+    }
+    // Where a settled box is drawn: its foot on the floor, smaller toward the back, nearer ones in front.
+    const left = (box) => `${box.x.toFixed(2)}%`
+    const foot = (box) => `${(40 + box.y * 0.6).toFixed(2)}%`
+    const wide = (box) => `${(box.w * (0.8 + box.y / 500)).toFixed(2)}%`
+    const near = (box) => String(Math.round(box.y) + 1)
+
     const base = computed(() => (String(element.service || '').trim().replace(/\/+$/, '')))
     const usable = computed(() => (/^https:\/\/[^\s"'<>]+$/.test(base.value) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(base.value)))
 
@@ -296,9 +349,30 @@ export class GiftMaker extends HTMLElement {
     const problem = state2('')
     const stuck = state2([])
     const token = state2('')
+    const spot = state2({ x: 50, y: 70 })
+    const paper = state2('red')
 
     const count = () => (gifts.value.length === 0 ? 'Nothing under the tree yet. Yours could be the first.' : gifts.value.length === 1 ? 'One gift is under the tree.' : `${gifts.value.length} gifts are under the tree.`)
-    const boxLabel = (gift) => (gift.from ? `A gift from ${gift.from}` : 'A gift')
+    const pile = () => settle(gifts.value)
+    const withMine = () => settle([...gifts.value, { id: 'yours', wrap: paper.value, mine: true, spot: spot.value }])
+    // Who the named ones are from, said once under the pile: boxes this small can't carry a name.
+    const fromWhom = () => {
+      const names = [...new Set(gifts.value.map((gift) => gift.from).filter(Boolean))]
+      if (!names.length) return ''
+      const shown = names.slice(0, 12)
+      const more = gifts.value.length - gifts.value.filter((gift) => shown.includes(gift.from)).length
+      const list = shown.length > 1 && !more ? `${shown.slice(0, -1).join(', ')} and ${shown.at(-1)}` : shown.join(', ')
+      return `From ${list}${more ? `, and ${more} more` : ''}.`
+    }
+
+    // Setting hers down: a tap or a drag on the floor in the form, or the four buttons.
+    const put = (x, y) => { spot.value = { x: Math.round(clamp(x, 0, 100)), y: Math.round(clamp(y, 0, 100)) } }
+    const point = (e) => {
+      if (e.type === 'pointermove' && !e.buttons) return
+      const box = e.currentTarget.getBoundingClientRect()
+      put(((e.clientX - box.left) / box.width) * 100, (((e.clientY - box.top) / box.height) * 100 - 40) / 0.6)
+    }
+    const nudge = (dx, dy) => put(spot.value.x + dx, spot.value.y + dy)
 
     const cardFrom = (form) => {
       const data = new FormData(form)
@@ -321,6 +395,7 @@ export class GiftMaker extends HTMLElement {
     }
     const choose = (e) => {
       if (e.target.name === 'kind') kind.value = e.target.value
+      if (e.target.name === 'wrap') paper.value = e.target.value
       if (problem.value) problem.value = ''
       redraw(e.currentTarget)
     }
@@ -363,7 +438,7 @@ export class GiftMaker extends HTMLElement {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             code: String(data.get('code') || ''), token: token.value, website: String(data.get('website') || ''), from,
-            showName: data.get('showName') === 'on', kind: kind.value, wrap: String(data.get('wrap') || 'red'),
+            showName: data.get('showName') === 'on', kind: kind.value, wrap: String(data.get('wrap') || 'red'), spot: spot.value,
             ...(kind.value === 'note' ? { note } : { card }),
           }),
         })
@@ -372,7 +447,9 @@ export class GiftMaker extends HTMLElement {
           problem.value = WHY[answer.error] || 'That didn’t go under the tree. Try again in a minute.'
           if (answer.error === 'token') { try { token.value = (await (await fetch(`${base.value}/token`)).json()).token || '' } catch (_) {} }
         } else {
-          if (answer.gift) gifts.value = [...gifts.value, answer.gift]
+          if (answer.gift) gifts.value = [...gifts.value, { ...answer.gift, spot: answer.gift.spot || spot.value }]
+          spot.value = { x: 50, y: 70 }
+          paper.value = 'red'
           said.value = 'Your gift is under the tree. Grammi opens it on Christmas morning.'
           open.value = false
           stuck.value = []
@@ -407,9 +484,10 @@ export class GiftMaker extends HTMLElement {
   <section class="under">
     <h2 class="heading"></h2>
     <p class="count"></p>
-    <ul class="boxes" aria-label="Gifts under the tree">
+    <div class="floor" role="img">
       <!--each--><!--/each-->
-    </ul>
+    </div>
+    <p class="names"></p>
     <p class="said" role="status"></p>
     <button class="go" type="button">Leave a gift</button>
     <form novalidate>
@@ -456,6 +534,19 @@ export class GiftMaker extends HTMLElement {
           <!--each--><!--/each-->
         </div>
       </fieldset>
+      <fieldset>
+        <legend>Where it goes under the tree</legend>
+        <p class="help">Yours is the box with the dotted edge. Tap or drag on the floor to set it down, or use the buttons. It can lean on another gift, but not cover it.</p>
+        <div class="floor" data-placing="true" role="img" aria-label="The gifts under the tree, with yours among them">
+          <!--each--><!--/each-->
+        </div>
+        <div class="nudges">
+          <button type="button">Left</button>
+          <button type="button">Right</button>
+          <button type="button">Toward the back</button>
+          <button type="button">Toward the front</button>
+        </div>
+      </fieldset>
       <div class="field">
         <label for="gift-code">The family password</label>
         <input id="gift-code" name="code" type="text" autocomplete="off">
@@ -470,13 +561,15 @@ export class GiftMaker extends HTMLElement {
     const under = content.children[0];
     const heading2 = under.children[0];
     const count2 = under.children[1];
-    const said2 = under.children[3];
-    const go = under.children[4];
+    const floor = under.children[2];
+    const names2 = under.children[3];
+    const said2 = under.children[4];
+    const go = under.children[5];
     go.addEventListener("click", (event) => {
       const handler = start;
       if (typeof handler === "function") handler.call(go, event);
     });
-    const form2 = under.children[5];
+    const form2 = under.children[6];
     form2.addEventListener("submit", (event) => {
       const handler = send;
       if (typeof handler === "function") handler.call(form2, event);
@@ -492,34 +585,56 @@ export class GiftMaker extends HTMLElement {
       const handler = unstick;
       if (typeof handler === "function") handler.call(clear, event);
     });
-    const field2 = form2.children[7];
-    const problem2 = form2.children[9];
-    const send2 = form2.children[10];
+    const floor2 = form2.children[7].children[2];
+    floor2.addEventListener("pointerdown", (event) => {
+      const handler = point;
+      if (typeof handler === "function") handler.call(floor2, event);
+    });
+    floor2.addEventListener("pointermove", (event) => {
+      const handler = point;
+      if (typeof handler === "function") handler.call(floor2, event);
+    });
+    const button2 = form2.children[7].children[3].children[0];
+    button2.addEventListener("click", () => nudge(-6, 0));
+    const button3 = form2.children[7].children[3].children[1];
+    button3.addEventListener("click", () => nudge(6, 0));
+    const button4 = form2.children[7].children[3].children[2];
+    button4.addEventListener("click", () => nudge(0, -15));
+    const button5 = form2.children[7].children[3].children[3];
+    button5.addEventListener("click", () => nudge(0, 15));
+    const field2 = form2.children[8];
+    const problem2 = form2.children[10];
+    const send2 = form2.children[11];
     this.#updates = [
       bind(() => state.value, (value) => attribute(under, "data-state", value)),
       bind(() => element.heading, (value) => attribute(under, "aria-label", value)),
       bind(() => element.heading ?? "", (value) => (heading2.textContent = value)),
       bind(() => (count()) ?? "", (value) => (count2.textContent = value)),
-      // <zb-each items={gifts} as="gift" key={gift.id}>
-      list(under.children[2].childNodes[1], under.children[2].childNodes[2], () => gifts.value, (gift, index2) => gift.id, (gift, index2) => {
+      bind(() => count(), (value) => attribute(floor, "aria-label", value)),
+      bind(() => open.value, (value) => floor.toggleAttribute("hidden", Boolean(value))),
+      // <zb-each items={pile()} as="b" key={b.id}>
+      $list(floor.childNodes[1], floor.childNodes[2], () => pile(), (b, index2) => b.id, (b, index2) => {
         const row = clone(`
-        <li class="box"><span></span></li>
+        <span class="box"></span>
       `);
-        const box = row.children[0];
-        const span2 = box.children[0];
+        const box2 = row.children[0];
         const updates = [
-          bind(() => gift.wrap, (value) => attribute(box, "data-wrap", value)),
-          bind(() => (boxLabel(gift)) ?? "", (value) => (span2.textContent = value)),
+          bind(() => b.wrap, (value) => attribute(box2, "data-wrap", value)),
+          bind(() => left(b), (value) => setStyle(box2, "--x", value)),
+          bind(() => foot(b), (value) => setStyle(box2, "--y", value)),
+          bind(() => wide(b), (value) => setStyle(box2, "--w", value)),
+          bind(() => near(b), (value) => setStyle(box2, "--z", value)),
         ];
-        return { nodes: row, update(next2, at) { gift = next2; index2 = at; for (const update of updates) update(); } };
+        return { nodes: row, update(next2, at) { b = next2; index2 = at; for (const update of updates) update(); } };
       }),
+      bind(() => (fromWhom()) ?? "", (value) => (names2.textContent = value)),
       bind(() => said.value ?? "", (value) => (said2.textContent = value)),
       bind(() => open.value, (value) => go.toggleAttribute("hidden", Boolean(value))),
       bind(() => !(open.value), (value) => form2.toggleAttribute("hidden", Boolean(value))),
       bind(() => kind.value !== "note", (value) => field.toggleAttribute("hidden", Boolean(value))),
       bind(() => kind.value !== "card", (value) => fieldset.toggleAttribute("hidden", Boolean(value))),
       // <zb-each items={DESIGN_NAMES} as="d" key={d[0]}>
-      list(fieldset.children[1].childNodes[1], fieldset.children[1].childNodes[2], () => DESIGN_NAMES, (d, index3) => d[0], (d, index3) => {
+      $list(fieldset.children[1].childNodes[1], fieldset.children[1].childNodes[2], () => DESIGN_NAMES, (d, index3) => d[0], (d, index3) => {
         const row2 = clone(`
             <label class="choice"><input type="radio" name="design"><!--text--></label>
           `);
@@ -534,7 +649,7 @@ export class GiftMaker extends HTMLElement {
         return { nodes: row2, update(next3, at2) { d = next3; index3 = at2; for (const update of updates2) update(); } };
       }),
       // <zb-each items={STICKER_NAMES} as="s" key={s[0]}>
-      list(fieldset.children[5].childNodes[1], fieldset.children[5].childNodes[2], () => STICKER_NAMES, (s, index4) => s[0], (s, index4) => {
+      $list(fieldset.children[5].childNodes[1], fieldset.children[5].childNodes[2], () => STICKER_NAMES, (s, index4) => s[0], (s, index4) => {
         const row3 = clone(`
             <button type="button"></button>
           `);
@@ -548,7 +663,7 @@ export class GiftMaker extends HTMLElement {
       }),
       bind(() => stuck.value.length === 0, (value) => clear.toggleAttribute("disabled", Boolean(value))),
       // <zb-each items={WRAPS} as="w" key={w[0]}>
-      list(form2.children[6].children[1].childNodes[1], form2.children[6].children[1].childNodes[2], () => WRAPS, (w, index5) => w[0], (w, index5) => {
+      $list(form2.children[6].children[1].childNodes[1], form2.children[6].children[1].childNodes[2], () => WRAPS, (w, index5) => w[0], (w, index5) => {
         const row4 = clone(`
             <label class="choice paper"><input type="radio" name="wrap"><!--text--></label>
           `);
@@ -563,6 +678,22 @@ export class GiftMaker extends HTMLElement {
           bind(() => ` ${(w[1]) ?? ""}`, (value) => (wText.data = value)),
         ];
         return { nodes: row4, update(next5, at4) { w = next5; index5 = at4; for (const update of updates4) update(); } };
+      }),
+      // <zb-each items={withMine()} as="b" key={b.id}>
+      $list(floor2.childNodes[1], floor2.childNodes[2], () => withMine(), (b, index6) => b.id, (b, index6) => {
+        const row5 = clone(`
+            <span class="box"></span>
+          `);
+        const box3 = row5.children[0];
+        const updates5 = [
+          bind(() => b.wrap, (value) => attribute(box3, "data-wrap", value)),
+          bind(() => b.mine ? "true" : "false", (value) => attribute(box3, "data-mine", value)),
+          bind(() => left(b), (value) => setStyle(box3, "--x", value)),
+          bind(() => foot(b), (value) => setStyle(box3, "--y", value)),
+          bind(() => wide(b), (value) => setStyle(box3, "--w", value)),
+          bind(() => near(b), (value) => setStyle(box3, "--z", value)),
+        ];
+        return { nodes: row5, update(next6, at5) { b = next6; index6 = at5; for (const update of updates5) update(); } };
       }),
       bind(() => !(asks.value), (value) => field2.toggleAttribute("hidden", Boolean(value))),
       bind(() => problem.value ?? "", (value) => (problem2.textContent = value)),
@@ -632,6 +763,12 @@ function setValue(node, value) {
   if (node.localName === "select" && node.value !== text) queueMicrotask(() => { if (node.value !== text) node.value = text; });
 }
 
+/** One CSS property from a value: null, false and "" remove it. */
+function setStyle(node, property, value) {
+  if (value == null || value === false || value === "") node.style.removeProperty(property);
+  else node.style.setProperty(property, String(value));
+}
+
 /** Puts a node in place (the platform's insertBefore, not one an element overrides for its slots). */
 function insert(parent, node, before) {
   return Node.prototype.insertBefore.call(parent, node, before);
@@ -653,7 +790,7 @@ function move(parent, node, before) {
  * makes a row: its nodes, and how to bring them up to date. With `animate`, `leave` and `glide`
  * come too: removed rows leave, and the rows that stay glide to their new places.
  */
-function list(start, end, read, key, create, leave, glide) {
+function $list(start, end, read, key, create, leave, glide) {
   let rows = new Map();
   const nodesOf = (row) => {
     const nodes = [];
