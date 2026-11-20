@@ -57,10 +57,10 @@
     {
       "id": "grammis-tree",
       "props": {
-        "hung": "red-ball@40,33;candy-cane@61,31;bell@28,50;heart@47,48;blue-ball@70,52;snowflake@18,72;gingerbread@37,69;red-ball@58,73;gold-ball@80,70;pinecone@34,81;bird@64,82",
+        "hung": "red-ball@46,24;candy-cane@63,38;bell@28,50;heart@46,54;blue-ball@70,52;snowflake@18,72;gingerbread@33,68;red-ball@58,73;gold-ball@80,70;pinecone@34,81;bird@64,82",
         "nolights": false,
         "shows": "season",
-        "topper": "snowflake"
+        "topper": "star"
       },
       "tag": "grammis-tree",
       "type": "component"
