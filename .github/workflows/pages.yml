@@ -29,9 +29,8 @@ permissions:
 # Point it at the next release when there is one.
 env:
   OPENBLOG_REV: 718c91393a72a2e282c2585a3ba7cfa763f7c410
-  # Notes on recipes (hosted comments) and greeting cards run on Netlify. They're off until scripts/setup-family-service.sh
-  # has been run: it sets the repository variable NETLIFY_SITE_ID and the secret NETLIFY_AUTH_TOKEN.
-  NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
+  # Notes on recipes, greeting cards and gifts run in the family service on Railway (Dockerfile.service,
+  # pinned to this same revision there), not here. scripts/setup-family-service.sh sets it up.
 
 concurrency:
   group: pages
@@ -63,18 +62,6 @@ jobs:
         run: npm install --global @zubra/compiler@5.8.0
       - name: Build the site
         run: openblog build
-      - name: Deploy the family notes service to Netlify
-        # Off until NETLIFY_SITE_ID is set. The function is open.blog's own (netlify/functions), at the
-        # same commit as the engine; Netlify also keeps a copy of the site, which nobody needs to visit.
-        if: env.NETLIFY_SITE_ID != ''
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        run: |
-          git clone -q https://github.com/journey-to-code-org/open.blog "$RUNNER_TEMP/openblog"
-          git -C "$RUNNER_TEMP/openblog" checkout -q "$OPENBLOG_REV"
-          cd "$RUNNER_TEMP/openblog"
-          npx -y netlify-cli@17 deploy --prod --no-build --dir "$GITHUB_WORKSPACE/dist" \
-            --functions netlify/functions --site "$NETLIFY_SITE_ID"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

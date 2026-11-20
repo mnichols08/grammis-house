@@ -68,8 +68,8 @@ by itself. Open **Front page**, then the sign, to change it:
   a box only when the giver ticks it and you allow it in **Gifts**; what a gift says is never on the
   site. Open them in **Gifts** from midnight on Christmas morning. The form asks for the family
   password unless you switch on **Let anyone leave you a gift**. Nothing shows, and nobody can leave a gift, until you turn on **My tree is ready for gifts** in
-  **Gifts**: decorate first, then open up. The section also stays hidden until Mikey
-  fills in **Where gifts go** (`https://<the Netlify site>/api/gifts`) and sets the service up:
+  **Gifts**: decorate first, then open up. The section also stays hidden until Mikey sets up the
+  family service (below) and fills in **Where gifts go** (`https://<the family service>/api/gifts`):
   [open.blog's gifts guide](https://github.com/journey-to-code-org/open.blog/blob/main/docs/gifts.md).
 - **Write to Grammi.** A postcard on the front page opens the family's email with a note to you
   already addressed. Fill in **Your email address** on it (Front page → Write to Grammi); it stays
@@ -85,10 +85,10 @@ by itself. Open **Front page**, then the sign, to change it:
   every year. **See the card** shows it as it will arrive; **Send me a test** sends it to you first.
   It goes out at the time you picked, even when your computer is off. The addresses are kept in the
   private database, never on the site.
-- **Notes on recipes** (comments) and greeting cards need three free accounts to hold what people
-  send and to send the cards (Supabase, Netlify, Brevo). Mikey runs
-  `bash scripts/setup-family-service.sh` once; after that every recipe has notes at the bottom, and new
-  ones wait for you in **Moderation inbox** until you approve them.
+- **Notes on recipes** (comments), greeting cards and gifts need somewhere to keep what people send:
+  the family service, on Railway next to the editor, and a free Brevo account to send the cards.
+  Mikey runs `bash scripts/setup-family-service.sh` once; after that every recipe has notes at the
+  bottom, and new ones wait for you in **Moderation inbox** until you approve them.
 
 **Changing a look's colors in your own words:** open **Look**, then **Describe a new look**, and
 describe it, like "Warm like my kitchen at Christmas, deep red and pine green, big easy-to-read
@@ -279,6 +279,14 @@ The editor Grammi uses runs on Railway (`Dockerfile.admin`). Its variables:
 | `ANTHROPIC_API_KEY` | Turns on the writing helper, so getting started never asks her for a key |
 | `OPENBLOG_STUDIO_ONBOARDING` | `rehearse` to try getting started as her without keeping anything, then `on` (or unset: `openblog.json` says `on`) |
 | `OPENBLOG_BEHIND_PROXY` | Secure sign-in cookies behind Railway's HTTPS; the entrypoint sets it to `1` unless you set it |
+| `OPENBLOG_GREETINGS_ENDPOINT`, `OPENBLOG_GREETINGS_ADMIN_KEY` | Greeting cards: the family service's `…/api/greetings` and its key |
+| `OPENBLOG_GIFTS_ENDPOINT`, `OPENBLOG_GIFTS_ADMIN_KEY` | Gifts: the family service's `…/api/gifts` and its key |
+
+The family service (notes, greeting cards and gifts) runs on Railway too (`Dockerfile.service`): it
+is open.blog's own service at the same revision, over a Railway Postgres in the same project, so
+there's no Netlify and no Supabase. Give it the watch path `/Dockerfile.service`, so the editor's
+saves don't rebuild it. `scripts/setup-family-service.sh` makes its keys and prints every variable
+it and the editor need. To check it, `https://<its domain>/health` answers `{"ok":true}`.
 
 The site deploys to GitHub Pages on every push to `main` (Settings → Pages → Source: **GitHub
 Actions**). The workflow pins the open.blog version (`OPENBLOG_REV`), so upgrades happen on purpose.
