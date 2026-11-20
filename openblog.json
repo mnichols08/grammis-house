@@ -34,7 +34,7 @@
     }
   ],
   "social": [],
-  "footer": "\u00a9 {year} {author}",
+  "footer": "© {year} {author}",
   "poweredBy": true,
   "home": {
     "heading": "From Grammi's kitchen",
@@ -58,10 +58,10 @@
     "bakeCounts": true
   },
   "engagement": {
-    "enabled": false,
+    "enabled": true,
     "comments": true,
     "analytics": true,
-    "endpoint": "",
+    "endpoint": "https://grammis-house.up.railway.app/api",
     "feedback": false,
     "feedbackContact": ""
   },
