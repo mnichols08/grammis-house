@@ -12,7 +12,7 @@
   "contributors": {},
   "logo": "",
   "favicon": "/favicon.svg",
-  "ogImage": "",
+  "ogImage": "/images/grammis-house-social.png",
   "theme": "grammis",
   "colorSchemeToggle": null,
   "postPath": "/posts/{slug}/",

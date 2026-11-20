@@ -247,6 +247,12 @@ component dropped in here follows the current season, in light and dark.
 Studio sends out only `content`, `static`, `openblog.json`, `themes` and
 `.github`, so commit changes to `components/` and `scripts/` with git.
 
+## Sharing links
+
+Pages use `static/images/grammis-house-social.png` as their default Open Graph and Twitter
+preview image. A post's cover, or its first image when no cover is set, takes its place.
+Post covers are hidden on the post itself; images in the post and listing thumbnails remain.
+
 ## The writing helper (for Describe a new look)
 
 `openblog.json` already sets the provider (`knowledgeChecks`: Anthropic, `claude-sonnet-5-5`). The
