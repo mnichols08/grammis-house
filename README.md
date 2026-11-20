@@ -263,7 +263,7 @@ turned on, and everything else works as before.
 ## Running it
 
 ```sh
-cargo install --git https://github.com/journey-to-code-org/open.blog --rev 79ae78c33198e56b63adaaeba17e5dd4a24e8b62 openblog-cli
+cargo install --git https://github.com/journey-to-code-org/open.blog --rev 718c91393a72a2e282c2585a3ba7cfa763f7c410 openblog-cli
 openblog serve --drafts           # http://localhost:8080/grammis-house/ (drafts included)
 openblog user add grammi          # once, to create a login
 openblog serve --admin            # editor at http://localhost:8080/admin

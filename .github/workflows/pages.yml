@@ -28,7 +28,7 @@ permissions:
 # 16 November, and a component's choices read from a file, which the Parlor's list of games needs).
 # Point it at the next release when there is one.
 env:
-  OPENBLOG_REV: 79ae78c33198e56b63adaaeba17e5dd4a24e8b62
+  OPENBLOG_REV: 718c91393a72a2e282c2585a3ba7cfa763f7c410
   # Notes on recipes (hosted comments) and greeting cards run on Netlify. They're off until scripts/setup-family-service.sh
   # has been run: it sets the repository variable NETLIFY_SITE_ID and the secret NETLIFY_AUTH_TOKEN.
   NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
