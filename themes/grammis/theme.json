@@ -111,6 +111,7 @@
     "components/family-birthday.css",
     "components/advent-calendar.css",
     "components/grammis-tree.css",
+    "components/gift-maker.css",
     "components/family-mailbox.css",
     "components/card-room.css"
   ],
@@ -1037,6 +1038,45 @@
             {
               "value": "bird",
               "label": "Little red bird"
+            }
+          ]
+        }
+      ]
+    },
+    "gift-maker": {
+      "label": "Gifts under the tree",
+      "description": "The wrapped boxes people have left you, and a little form for leaving one: a note, or a card they make. You open them on Christmas morning.",
+      "script": "components/gift-maker.js",
+      "source": "components/gift-maker.zb",
+      "fallback": "Gifts for Grammi go under the tree here in December.",
+      "props": [
+        {
+          "name": "service",
+          "type": "text",
+          "label": "Where gifts go",
+          "maxLength": 200,
+          "help": "The address Mikey gives you. Nothing shows until this is filled in."
+        },
+        {
+          "name": "heading",
+          "type": "text",
+          "label": "The heading",
+          "default": "Under the tree",
+          "maxLength": 60
+        },
+        {
+          "name": "shows",
+          "type": "choice",
+          "label": "When it's on the page",
+          "default": "season",
+          "choices": [
+            {
+              "value": "season",
+              "label": "From November 20 to January 6"
+            },
+            {
+              "value": "always",
+              "label": "All year"
             }
           ]
         }
