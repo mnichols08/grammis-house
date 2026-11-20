@@ -30,7 +30,8 @@ permissions:
 env:
   OPENBLOG_REV: 718c91393a72a2e282c2585a3ba7cfa763f7c410
   # Notes on recipes, greeting cards and gifts run in the family service on Railway (Dockerfile, family/),
-  # which serves the site there too; this copy on GitHub Pages shows the pages without them. When this
+  # which serves the site there, at the root of its address; this copy on GitHub Pages shows the pages
+  # without them. When this
   # changes, change Dockerfile and Dockerfile.admin to match and run family/scripts/vendor-openblog.sh.
 
 concurrency:
@@ -62,7 +63,16 @@ jobs:
         # there before its script runs and in Admin's preview (open.blog ADR 0409).
         run: npm install --global @zubra/compiler@5.8.0
       - name: Build the site
-        run: openblog build
+        # Her site lives at the root of its Railway address (openblog.json's url). This copy on GitHub
+        # Pages is a project site, under /grammis-house/, so it's built with that address instead.
+        run: |
+          node -e '
+            const fs = require("fs");
+            const site = JSON.parse(fs.readFileSync("openblog.json", "utf8"));
+            site.url = "https://mnichols08.github.io/grammis-house";
+            fs.writeFileSync("openblog.json", JSON.stringify(site, null, 2) + "\n");
+          '
+          openblog build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

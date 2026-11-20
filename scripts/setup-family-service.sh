@@ -17,7 +17,6 @@
 # (the site's public address for notes, which isn't secret).
 set -euo pipefail
 
-BASE_PATH="/grammis-house/"
 EDITOR="https://grammis-house-admin.up.railway.app/admin/"
 
 say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
@@ -71,7 +70,6 @@ cat <<EOF
 DATABASE_URL=\${{Postgres.DATABASE_URL}}
 OPENBLOG_SITE_ID=grammis-house
 OPENBLOG_SITE_ORIGIN=$SITE
-OPENBLOG_SITE_BASE_PATH=$BASE_PATH
 OPENBLOG_SITE_NAME="Grammi's House"
 OPENBLOG_ADMIN_URL=$EDITOR
 OPENBLOG_ADMIN_API_KEY=$ADMIN_KEY
@@ -113,5 +111,5 @@ cat <<EOF
   New notes wait in the Moderation inbox until Grammi approves them. Greeting cards shows under
   Family: try "Send me a test" first, it goes to $SENDER_EMAIL, not to anyone in the address book.
   Gifts stay hidden until she turns on "My tree is ready for gifts" in Gifts. All of it works at
-  $SITE$BASE_PATH (the GitHub Pages copy shows the pages without them).
+  $SITE (the GitHub Pages copy shows the pages without them).
 EOF

@@ -1,4 +1,4 @@
-// Grammi's built site, served under its base path (/grammis-house/, as openblog.json's url says), so
+// Grammi's built site, served under its base path (the root, as openblog.json's url says), so
 // every page and the family service share one address and the gift form's server functions are on
 // the same origin as the page. It does what a static host does:
 //

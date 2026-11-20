@@ -7,7 +7,7 @@
 //   /api/greetings/...   Studio's side of greeting cards  (family/cards.js)
 //   /api/...             notes, views and moderation      (family/notes.js)
 //   /health              which parts are on
-//   everything else      the built site (FAMILY_SITE_DIR), under /grammis-house/
+//   everything else      the built site (FAMILY_SITE_DIR), at the root
 //
 // The database is set up at start (family/lib/migrate.js); due cards go out every hour.
 //
@@ -52,14 +52,21 @@ export function repeat(job, { every = HOUR, first = 15000, log = () => {}, label
 }
 
 /**
- * The whole service, given its settings and database. `actions` is @zubra/actions over the theme's
- * components; `site`, when there is one, serves the built pages.
+ * The whole service. `actions` is @zubra/actions over the theme's components; `site`, when there is
+ * one, serves the built pages. The pages are served from the start; notes, cards and gifts come on
+ * once there is a database (`db` here, or `attach(db)` later), so a database that is missing or
+ * slow never takes her site down.
  */
-export function createFamily({ settings, db, actions, site = null, now = () => Date.now(), transport = null, log = () => {} }) {
-  const gifts = settings.gifts.enabled ? createGifts({ db, settings, now }) : null;
-  const cards = settings.cards.enabled ? createCards({ db, settings, now, transport }) : null;
-  const notes = settings.notes.enabled ? createNotes({ db, settings, now: () => new Date(now()) }) : null;
-  connect({ gifts, trustRealIp: settings.trustRealIp });
+export function createFamily({ settings, db = null, actions, site = null, now = () => Date.now(), transport = null, log = () => {} }) {
+  const family = { gifts: null, cards: null, notes: null };
+  connect({ gifts: null, trustRealIp: settings.trustRealIp });
+  family.attach = (database) => {
+    family.gifts = settings.gifts.enabled ? createGifts({ db: database, settings, now }) : null;
+    family.cards = settings.cards.enabled ? createCards({ db: database, settings, now, transport }) : null;
+    family.notes = settings.notes.enabled ? createNotes({ db: database, settings, now: () => new Date(now()) }) : null;
+    connect({ gifts: family.gifts, trustRealIp: settings.trustRealIp });
+  };
+  if (db) family.attach(db);
 
   const server = createServer(async (req, res) => {
     let url;
@@ -70,13 +77,14 @@ export function createFamily({ settings, db, actions, site = null, now = () => D
     }
     let path = url.pathname;
     // open.blog's build writes a page's own addresses under the site's base path, so a form's
-    // action reads /grammis-house/_zb/action/…: the same server functions as /_zb/action/….
+    // action reads e.g. /grammis-house/_zb/action/…: the same server functions as /_zb/action/….
     const base = settings.site.basePath || "/";
     if (base !== "/" && path.startsWith(`${base}_zb/`)) {
       path = path.slice(base.length - 1);
       req.url = `${path}${url.search}`;
     }
     try {
+      const { gifts, cards, notes } = family;
       if (path === "/health") return send(res, reply(200, { ok: true, notes: Boolean(notes), cards: Boolean(cards), gifts: Boolean(gifts) }));
 
       // A component's server function. Only pages from this same address may post to one (Zubra
@@ -115,28 +123,16 @@ export function createFamily({ settings, db, actions, site = null, now = () => D
     }
   });
 
-  return { server, gifts, cards, notes };
+  family.server = server;
+  return family;
 }
 
 async function main() {
   const log = (line) => console.log(`[family] ${line}`);
   const settings = readSettings(process.env);
-  if (!settings.databaseUrl) throw new Error("Set DATABASE_URL to the Postgres connection string");
   for (const part of ["notes", "cards", "gifts"]) {
     if (settings[part].problems.length) log(`${part} are off: check ${settings[part].problems.join(", ")}`);
   }
-  const db = createDatabase(settings.databaseUrl);
-  // Railway's Postgres can take a moment after a deploy: try for a minute.
-  for (let tries = 1; ; tries += 1) {
-    try {
-      await db.value("select 1 as value");
-      break;
-    } catch (error) {
-      if (tries >= 30) throw new Error(`the database didn't answer: ${error.message}`);
-      await new Promise((done) => setTimeout(done, 2000));
-    }
-  }
-  await migrate(db, { log });
   const actions = await createActions({
     components: COMPONENTS,
     secure: settings.production ? true : undefined,
@@ -144,11 +140,30 @@ async function main() {
     onError: (error) => log(`a server function failed: ${error?.message || error}`),
   });
   const site = settings.siteDir ? await createSite({ root: settings.siteDir, basePath: settings.site.basePath || "/", adminUrl: settings.adminUrl }) : null;
-  const family = createFamily({ settings, db, actions, site, log });
-  family.server.listen(settings.port, "0.0.0.0", () => {
-    const on = ["notes", "cards", "gifts"].filter((part) => family[part]);
-    log(`listening on ${settings.port}: ${on.length ? on.join(", ") : "nothing switched on"}${site ? ", and the site" : ""}`);
-  });
+  const family = createFamily({ settings, actions, site, log });
+  family.server.listen(settings.port, "0.0.0.0", () => log(`listening on ${settings.port}${site ? ", serving the site" : ""}`));
+
+  // Her pages are up; now the database. Without one, notes, cards and gifts stay off (their
+  // sections stay hidden) and the log says what to set. A database that doesn't answer yet is tried
+  // again every 15 seconds, so the parts come on by themselves once it does.
+  if (!settings.databaseUrl) {
+    log("no DATABASE_URL: notes, cards and gifts are off. Add the Postgres reference to this service's variables.");
+    return;
+  }
+  const db = createDatabase(settings.databaseUrl);
+  for (let tries = 1; ; tries += 1) {
+    try {
+      await db.value("select 1 as value");
+      await migrate(db, { log });
+      break;
+    } catch (error) {
+      if (tries === 1 || tries % 20 === 0) log(`waiting for the database (${error.message}); trying every 15 seconds`);
+      await new Promise((done) => setTimeout(done, 15000));
+    }
+  }
+  family.attach(db);
+  const on = ["notes", "cards", "gifts"].filter((part) => family[part]);
+  log(`database ready: ${on.length ? on.join(", ") : "nothing switched on"}`);
   if (family.cards) repeat(family.cards.sendCards, { log, label: "sending cards" });
 }
 
