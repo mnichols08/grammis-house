@@ -2,3 +2,4 @@
 /.openblog
 /.openblog/private/
 scripts/__pycache__/
+family/node_modules/

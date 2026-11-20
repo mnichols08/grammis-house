@@ -1,0 +1,18 @@
+{
+  "name": "grammis-family-service",
+  "private": true,
+  "type": "module",
+  "description": "Grammi's family service: notes on recipes, greeting cards and gifts under the tree, on Zubra.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@zubra/actions": "5.23.0",
+    "@zubra/compiler": "5.23.0",
+    "pg": "8.16.3"
+  }
+}
