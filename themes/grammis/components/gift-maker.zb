@@ -298,14 +298,37 @@
   // pulled up over the gap so the boxes sit around the trunk. Measured again when the page resizes.
   const tuck = () => {
     const root = document.querySelector('gift-maker')
-    const tree = document.querySelector('grammis-tree .tree')
-    if (!root || !tree) return
+    const tree = document.querySelector('grammis-tree:not([data-gift-preview]) .tree')
+    if (!root || !tree) { tucked = false; return }
     const above = tree.getBoundingClientRect()
     const here = root.getBoundingClientRect()
     const gap = here.top - above.bottom
     if (!above.height || gap < -4 || gap > 160) { tucked = false; return }
+    const under = root.querySelector('.under')
+    const style = getComputedStyle(under)
+    const floorWidth = under.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+    if (!floorWidth) { tucked = false; return }
     root.style.setProperty('--tuck', `${Math.round(gap)}px`)
+    root.style.setProperty('--preview-tree-width', `${(above.width / floorWidth) * 100}%`)
+    root.style.setProperty('--preview-overlap', `${(Math.min(innerWidth * 0.34, 11.5 * parseFloat(getComputedStyle(document.documentElement).fontSize)) / floorWidth) * 100}%`)
     tucked = true
+    const preview = root.querySelector('.placement-tree')
+    if (preview && !preview.firstElementChild) {
+      const original = tree.closest('grammis-tree')
+      const copy = document.createElement('grammis-tree')
+      for (const name of ['topper', 'nolights', 'hung', 'zb-props']) {
+        if (original.hasAttribute(name)) copy.setAttribute(name, original.getAttribute(name))
+      }
+      copy.setAttribute('data-gift-preview', '')
+      copy.setAttribute('aria-hidden', 'true')
+      copy.setAttribute('shows', 'always')
+      if ('topper' in original) {
+        copy.topper = original.topper
+        copy.nolights = original.nolights
+        copy.hung = original.hung
+      }
+      preview.append(copy)
+    }
   }
 
   onMount(async () => {
@@ -338,6 +361,9 @@
   .floor { position: relative; list-style: none; margin: 0.6rem 0 0.2rem; padding: 0; aspect-ratio: 2 / 1; overflow: hidden; border-radius: 10px;
     background: radial-gradient(120% 70% at 50% 100%, color-mix(in srgb, var(--primary, #a11224) 16%, transparent), transparent 70%); }
   .floor[data-placing="true"] { touch-action: none; cursor: crosshair; outline: 2px dashed var(--border, #8d897c); outline-offset: -2px; }
+  .placement-tree { pointer-events: none; }
+  .placement-tree grammis-tree .stand { width: var(--preview-tree-width); max-width: none; margin: 0 auto; }
+  .placement-tree:not([hidden]) + .floor { z-index: 2; margin-top: calc(-1 * var(--preview-overlap) - 0.5rem); }
   .box { position: absolute; left: var(--x); top: var(--y); width: var(--w); z-index: var(--z); aspect-ratio: 1 / 0.88; translate: -50% -100%; border-radius: 3px; box-shadow: 0 3px 4px -2px rgb(0 0 0 / 0.55); pointer-events: none;
     background: linear-gradient(90deg, transparent 42%, var(--bow, #f2c14e) 42% 58%, transparent 58%), linear-gradient(transparent 38%, var(--bow, #f2c14e) 38% 52%, transparent 52%), var(--paper, #c8243c); }
   /* The bow: two loops and a knot on the lid, in the ribbon's colour. "No bow" is a box left plain. */
@@ -462,6 +488,8 @@
       <fieldset>
         <legend>Where it goes under the tree</legend>
         <p class="help">Yours is the box with the dotted edge. Tap or drag on the floor to set it down, or use the buttons. It can lean on another gift, but not cover it.</p>
+        <p class="help" hidden={tucked}>The gift pile is shown separately from the tree on this page.</p>
+        <div class="placement-tree" hidden={!tucked}></div>
         <div class="floor" data-placing="true" role="img" aria-label="The gifts under the tree, with yours among them" onpointerdown={point} onpointermove={point}>
           <zb-each items={withMine()} as="b" key={b.id}>
             <span class="box" data-wrap={b.wrap} data-bow={b.bow} data-mine={b.mine ? 'true' : 'false'} style:--x={left(b)} style:--y={foot(b)} style:--w={wide(b)} style:--z={near(b)}></span>

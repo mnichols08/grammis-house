@@ -292,7 +292,8 @@ project: no Netlify, no Supabase. `Dockerfile` builds the site with open.blog an
 - **Gifts under the tree.** The gift form (`themes/grammis/components/gift-maker.zb`) has two
   `'use server'` functions, `look` and `leave`. `@zubra/actions` compiles them from the component when
   the server starts and serves them at `/_zb/action/gift-maker/…`; they call `family/gifts.js`. Studio's
-  side is `/api/gifts/admin/…` (list, open, hide, settings).
+  side is `/api/gifts/admin/…` (list, open, hide, settings). When the pile is tucked under the tree,
+  the placement form previews that same decorated tree and the gifts together.
 - **Greeting cards**, Studio's side at `/api/greetings/…` (`family/cards.js`); the cards that are due
   go out every hour through Brevo.
 - **Notes on recipes**, page views and the moderation inbox at `/api/…` (`family/notes.js`), the

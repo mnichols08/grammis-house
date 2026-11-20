@@ -13,6 +13,9 @@
   .floor { position: relative; list-style: none; margin: 0.6rem 0 0.2rem; padding: 0; aspect-ratio: 2 / 1; overflow: hidden; border-radius: 10px;
     background: radial-gradient(120% 70% at 50% 100%, color-mix(in srgb, var(--primary, #a11224) 16%, transparent), transparent 70%); }
   .floor[data-placing="true"] { touch-action: none; cursor: crosshair; outline: 2px dashed var(--border, #8d897c); outline-offset: -2px; }
+  .placement-tree { pointer-events: none; }
+  .placement-tree grammis-tree .stand { width: var(--preview-tree-width); max-width: none; margin: 0 auto; }
+  .placement-tree:not([hidden]) + .floor { z-index: 2; margin-top: calc(-1 * var(--preview-overlap) - 0.5rem); }
   .box { position: absolute; left: var(--x); top: var(--y); width: var(--w); z-index: var(--z); aspect-ratio: 1 / 0.88; translate: -50% -100%; border-radius: 3px; box-shadow: 0 3px 4px -2px rgb(0 0 0 / 0.55); pointer-events: none;
     background: linear-gradient(90deg, transparent 42%, var(--bow, #f2c14e) 42% 58%, transparent 58%), linear-gradient(transparent 38%, var(--bow, #f2c14e) 38% 52%, transparent 52%), var(--paper, #c8243c); }
   /* The bow: two loops and a knot on the lid, in the ribbon's colour. "No bow" is a box left plain. */

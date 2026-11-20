@@ -25,6 +25,9 @@ const css = `@layer theme, base, components, utilities;
   .floor { position: relative; list-style: none; margin: 0.6rem 0 0.2rem; padding: 0; aspect-ratio: 2 / 1; overflow: hidden; border-radius: 10px;
     background: radial-gradient(120% 70% at 50% 100%, color-mix(in srgb, var(--primary, #a11224) 16%, transparent), transparent 70%); }
   .floor[data-placing="true"] { touch-action: none; cursor: crosshair; outline: 2px dashed var(--border, #8d897c); outline-offset: -2px; }
+  .placement-tree { pointer-events: none; }
+  .placement-tree grammis-tree .stand { width: var(--preview-tree-width); max-width: none; margin: 0 auto; }
+  .placement-tree:not([hidden]) + .floor { z-index: 2; margin-top: calc(-1 * var(--preview-overlap) - 0.5rem); }
   .box { position: absolute; left: var(--x); top: var(--y); width: var(--w); z-index: var(--z); aspect-ratio: 1 / 0.88; translate: -50% -100%; border-radius: 3px; box-shadow: 0 3px 4px -2px rgb(0 0 0 / 0.55); pointer-events: none;
     background: linear-gradient(90deg, transparent 42%, var(--bow, #f2c14e) 42% 58%, transparent 58%), linear-gradient(transparent 38%, var(--bow, #f2c14e) 38% 52%, transparent 52%), var(--paper, #c8243c); }
   /* The bow: two loops and a knot on the lid, in the ribbon's colour. "No bow" is a box left plain. */
@@ -101,6 +104,8 @@ export class GiftMaker extends HTMLElement {
   // The props, each starting at its default; #given has the ones set from outside.
   #props = { heading: "Under the tree", shows: "season" };
   #given = new Set();
+  // Attributes whose replay at upgrade a property set before then outranks (see the constructor).
+  #early = null;
   // What brings the DOM up to date: one function for each spot that changes.
   #updates = [];
   #pending = null;
@@ -111,12 +116,15 @@ export class GiftMaker extends HTMLElement {
   constructor() {
     super();
     // A property set before this class was defined sits on the element itself, hiding the
-    // accessor below: take it over.
-    for (const prop of ["heading", "shows"]) {
+    // accessor below: take it over. The upgrade then replays the attributes already on the
+    // element, which a server writes for a prop that isn't its default: that replay is older
+    // than the property, so it's skipped (once). A later setAttribute still applies.
+    for (const [prop, attribute] of [["heading", "heading"], ["shows", "shows"]]) {
       if (Object.hasOwn(this, prop)) {
         const value = this[prop];
         delete this[prop];
         this[prop] = value;
+        if (this.hasAttribute(attribute)) (this.#early ??= new Set()).add(attribute);
       }
     }
   }
@@ -144,6 +152,7 @@ export class GiftMaker extends HTMLElement {
   }
 
   attributeChangedCallback(name, previous, raw) {
+    if (this.#early?.delete(name)) return; // the upgrade's replay of an attribute a property outranks
     // raw is the attribute's text, or null once it's removed.
     switch (name) {
       case "heading":
@@ -481,14 +490,37 @@ export class GiftMaker extends HTMLElement {
     // pulled up over the gap so the boxes sit around the trunk. Measured again when the page resizes.
     const tuck = () => {
       const root = document.querySelector('gift-maker')
-      const tree = document.querySelector('grammis-tree .tree')
-      if (!root || !tree) return
+      const tree = document.querySelector('grammis-tree:not([data-gift-preview]) .tree')
+      if (!root || !tree) { tucked.value = false; return }
       const above = tree.getBoundingClientRect()
       const here = root.getBoundingClientRect()
       const gap = here.top - above.bottom
       if (!above.height || gap < -4 || gap > 160) { tucked.value = false; return }
+      const under = root.querySelector('.under')
+      const style = getComputedStyle(under)
+      const floorWidth = under.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+      if (!floorWidth) { tucked.value = false; return }
       root.style.setProperty('--tuck', `${Math.round(gap)}px`)
+      root.style.setProperty('--preview-tree-width', `${(above.width / floorWidth) * 100}%`)
+      root.style.setProperty('--preview-overlap', `${(Math.min(innerWidth * 0.34, 11.5 * parseFloat(getComputedStyle(document.documentElement).fontSize)) / floorWidth) * 100}%`)
       tucked.value = true
+      const preview = root.querySelector('.placement-tree')
+      if (preview && !preview.firstElementChild) {
+        const original = tree.closest('grammis-tree')
+        const copy = document.createElement('grammis-tree')
+        for (const name of ['topper', 'nolights', 'hung', 'zb-props']) {
+          if (original.hasAttribute(name)) copy.setAttribute(name, original.getAttribute(name))
+        }
+        copy.setAttribute('data-gift-preview', '')
+        copy.setAttribute('aria-hidden', 'true')
+        copy.setAttribute('shows', 'always')
+        if ('topper' in original) {
+          copy.topper = original.topper
+          copy.nolights = original.nolights
+          copy.hung = original.hung
+        }
+        preview.append(copy)
+      }
     }
 
     onMount(async () => {
@@ -573,6 +605,8 @@ export class GiftMaker extends HTMLElement {
       <fieldset>
         <legend>Where it goes under the tree</legend>
         <p class="help">Yours is the box with the dotted edge. Tap or drag on the floor to set it down, or use the buttons. It can lean on another gift, but not cover it.</p>
+        <p class="help">The gift pile is shown separately from the tree on this page.</p>
+        <div class="placement-tree"></div>
         <div class="floor" data-placing="true" role="img" aria-label="The gifts under the tree, with yours among them">
           <!--each--><!--/each-->
         </div>
@@ -594,18 +628,18 @@ export class GiftMaker extends HTMLElement {
     </form>
   </section>
 `);
-    const under = content.children[0];
-    const heading2 = under.children[0];
-    const count2 = under.children[1];
-    const floor = under.children[2];
-    const names2 = under.children[3];
-    const said2 = under.children[4];
-    const go = under.children[5];
+    const under2 = content.children[0];
+    const heading2 = under2.children[0];
+    const count2 = under2.children[1];
+    const floor = under2.children[2];
+    const names2 = under2.children[3];
+    const said2 = under2.children[4];
+    const go = under2.children[5];
     go.addEventListener("click", (event) => {
       const handler = start;
       if (typeof handler === "function") handler.call(go, event);
     });
-    const form2 = under.children[6];
+    const form2 = under2.children[6];
     form2.addEventListener("submit", (event) => {
       const handler = send;
       if (typeof handler === "function") handler.call(form2, event);
@@ -621,7 +655,9 @@ export class GiftMaker extends HTMLElement {
       const handler = unstick;
       if (typeof handler === "function") handler.call(clear, event);
     });
-    const floor2 = form2.children[8].children[2];
+    const help = form2.children[8].children[2];
+    const placementTree = form2.children[8].children[3];
+    const floor2 = form2.children[8].children[4];
     floor2.addEventListener("pointerdown", (event) => {
       const handler = point;
       if (typeof handler === "function") handler.call(floor2, event);
@@ -630,21 +666,21 @@ export class GiftMaker extends HTMLElement {
       const handler = point;
       if (typeof handler === "function") handler.call(floor2, event);
     });
-    const button2 = form2.children[8].children[3].children[0];
+    const button2 = form2.children[8].children[5].children[0];
     button2.addEventListener("click", () => nudge(-6, 0));
-    const button3 = form2.children[8].children[3].children[1];
+    const button3 = form2.children[8].children[5].children[1];
     button3.addEventListener("click", () => nudge(6, 0));
-    const button4 = form2.children[8].children[3].children[2];
+    const button4 = form2.children[8].children[5].children[2];
     button4.addEventListener("click", () => nudge(0, -15));
-    const button5 = form2.children[8].children[3].children[3];
+    const button5 = form2.children[8].children[5].children[3];
     button5.addEventListener("click", () => nudge(0, 15));
     const field2 = form2.children[9];
     const problem2 = form2.children[11];
     const send2 = form2.children[12];
     this.#updates = [
-      bind(() => state.value, (value) => attribute(under, "data-state", value)),
-      bind(() => tucked.value ? "true" : "false", (value) => attribute(under, "data-tucked", value)),
-      bind(() => element.heading, (value) => attribute(under, "aria-label", value)),
+      bind(() => state.value, (value) => attribute(under2, "data-state", value)),
+      bind(() => tucked.value ? "true" : "false", (value) => attribute(under2, "data-tucked", value)),
+      bind(() => element.heading, (value) => attribute(under2, "aria-label", value)),
       bind(() => element.heading ?? "", (value) => (heading2.textContent = value)),
       bind(() => (count()) ?? "", (value) => (count2.textContent = value)),
       bind(() => count(), (value) => attribute(floor, "aria-label", value)),
@@ -734,6 +770,8 @@ export class GiftMaker extends HTMLElement {
         ];
         return { nodes: row5, update(next6, at5) { w = next6; index6 = at5; for (const update of updates5) update(); } };
       }),
+      bind(() => tucked.value, (value) => help.toggleAttribute("hidden", Boolean(value))),
+      bind(() => !(tucked.value), (value) => placementTree.toggleAttribute("hidden", Boolean(value))),
       // <zb-each items={withMine()} as="b" key={b.id}>
       $list(floor2.childNodes[1], floor2.childNodes[2], () => withMine(), (b, index7) => b.id, (b, index7) => {
         const row6 = clone(`
@@ -833,7 +871,8 @@ function insert(parent, node, before) {
 /** Moves a node already on the page, keeping its focus and state where the browser can (moveBefore). */
 function move(parent, node, before) {
   try {
-    if (Element.prototype.moveBefore && node.isConnected && parent.isConnected) return parent.moveBefore(node, before);
+    // The platform's own, as with insert: a parent that is another element's host has one that routes.
+    if (Element.prototype.moveBefore && node.isConnected && parent.isConnected) return Element.prototype.moveBefore.call(parent, node, before);
   } catch {
     // not movable in one step: insert it
   }
@@ -856,11 +895,26 @@ function $list(start, end, read, key, create, leave, glide) {
     }
     return nodes;
   };
-  // The node after `node`, passing rows on their way out.
-  const after = (node) => {
-    let next = node.nextSibling;
-    while (next?.nodeType === 1 && next.hasAttribute("data-leaving")) next = next.nextSibling;
-    return next;
+  // The indexes of a longest increasing run of `sequence` (negative entries never count): the rows
+  // already in order, which needn't move.
+  const inOrder = (sequence) => {
+    const tails = [];
+    const previous = [];
+    sequence.forEach((value, index) => {
+      if (value < 0) return;
+      let low = 0;
+      let high = tails.length;
+      while (low < high) {
+        const middle = (low + high) >> 1;
+        if (sequence[tails[middle]] < value) low = middle + 1;
+        else high = middle;
+      }
+      previous[index] = low > 0 ? tails[low - 1] : -1;
+      tails[low] = index;
+    });
+    const kept = new Set();
+    for (let index = tails.length ? tails[tails.length - 1] : -1; index >= 0; index = previous[index]) kept.add(index);
+    return kept;
   };
   const update = () => {
     const parent = start.parentNode;
@@ -879,26 +933,35 @@ function $list(start, end, read, key, create, leave, glide) {
       if (leave) leave(nodesOf(row), true);
       else for (const node of nodesOf(row)) node.remove();
     }
+    const was = new Map([...rows.values()].map((row, index) => [row, index]));
     const next = new Map();
-    let last = start;
-    items.forEach((item, index) => {
+    const order = items.map((item, index) => {
       const id = ids[index];
       let row = rows.get(id);
       if (!row) {
         const { nodes, update } = create(item, index);
         // A row is everything from its first node to its last, with what a list inside it adds later.
-        row = { first: nodes.firstChild, last: nodes.lastChild, update };
+        row = { first: nodes.firstChild, last: nodes.lastChild, update, nodes };
         update(item, index); // filled in before it's on the page
-        insert(parent, nodes, after(last));
       }
       next.set(id, row);
       row.update(item, index);
-      if (row.first !== after(last)) {
-        const before = after(last);
+      return row;
+    });
+    // The longest run of rows still in their old order stays put; every other row goes before the
+    // row after it, from the end. A swap moves two rows, not the rows between them.
+    const stay = inOrder(order.map((row) => was.get(row) ?? -1));
+    let before = end;
+    for (let index = order.length - 1; index >= 0; index--) {
+      const row = order[index];
+      if (row.nodes) {
+        insert(parent, row.nodes, before); // a new row, from its fragment
+        delete row.nodes;
+      } else if (!stay.has(index)) {
         for (const node of nodesOf(row)) move(parent, node, before);
       }
-      last = row.last;
-    });
+      before = row.first;
+    }
     rows = next;
   };
   if (!glide) return update;
