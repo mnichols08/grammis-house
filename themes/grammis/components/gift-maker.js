@@ -81,12 +81,11 @@ const css = `@layer theme, base, components, utilities;
 
 export class GiftMaker extends HTMLElement {
   /** The attributes this element watches: attributeChangedCallback runs when one changes. */
-  static observedAttributes = ["service", "heading", "shows"];
+  static observedAttributes = ["heading", "shows"];
   /** What framework adapters (@zubra/runtime/react, /vue) read to wrap this element. */
   static zubra = {
     tag,
     props: {
-      service: { attribute: "service", default: "", required: false },
       heading: { attribute: "heading", default: "Under the tree", required: false },
       shows: { attribute: "shows", default: "season", required: false },
     },
@@ -100,7 +99,7 @@ export class GiftMaker extends HTMLElement {
   // ElementInternals: the element's form value and validity, and :state() for CSS.
   #internals = this.attachInternals();
   // The props, each starting at its default; #given has the ones set from outside.
-  #props = { service: "", heading: "Under the tree", shows: "season" };
+  #props = { heading: "Under the tree", shows: "season" };
   #given = new Set();
   // What brings the DOM up to date: one function for each spot that changes.
   #updates = [];
@@ -113,7 +112,7 @@ export class GiftMaker extends HTMLElement {
     super();
     // A property set before this class was defined sits on the element itself, hiding the
     // accessor below: take it over.
-    for (const prop of ["service", "heading", "shows"]) {
+    for (const prop of ["heading", "shows"]) {
       if (Object.hasOwn(this, prop)) {
         const value = this[prop];
         delete this[prop];
@@ -124,19 +123,7 @@ export class GiftMaker extends HTMLElement {
 
   // ---- props: properties, and attributes that set them
 
-  get service() {
-    reads?.push(() => this.#props.service); // what reads it (a computed, an effect) depends on it
-    return this.#props.service;
-  }
-  set service(value) {
-    this.#given.add("service");
-    if (Object.is(value, this.#props.service)) return;
-    this.#props.service = value;
-    this.#requestUpdate();
-  }
-
   get heading() {
-    reads?.push(() => this.#props.heading); // what reads it (a computed, an effect) depends on it
     return this.#props.heading;
   }
   set heading(value) {
@@ -147,7 +134,6 @@ export class GiftMaker extends HTMLElement {
   }
 
   get shows() {
-    reads?.push(() => this.#props.shows); // what reads it (a computed, an effect) depends on it
     return this.#props.shows;
   }
   set shows(value) {
@@ -160,9 +146,6 @@ export class GiftMaker extends HTMLElement {
   attributeChangedCallback(name, previous, raw) {
     // raw is the attribute's text, or null once it's removed.
     switch (name) {
-      case "service":
-        this.service = raw ?? "";
-        break;
       case "heading":
         this.heading = raw ?? "Under the tree";
         break;
@@ -226,9 +209,14 @@ export class GiftMaker extends HTMLElement {
       this.#mounted.push(run);
     };
     const state2 = (initial) => createState(initial, () => this.#requestUpdate());
-    const computed = createComputed;
 
     // ---- <script>
+    // The family service's side (family/gifts.js). These two run on the server; the page only ever has
+    // their addresses. `look` is the boxes and a form token; `leave` is one gift, from the form's fields.
+    const look = "/_zb/action/gift-maker/look";                              
+
+    const leave = "/_zb/action/gift-maker/leave";                                                    
+
     const WRAPS = [['red', 'Red'], ['green', 'Green'], ['gold', 'Gold'], ['blue', 'Blue'], ['plaid', 'Plaid'], ['stripes', 'Stripes']]
     const BOWS = [['gold', 'Gold'], ['red', 'Red'], ['green', 'Green'], ['white', 'White'], ['blue', 'Blue'], ['none', 'No bow']]
     const STICKER_NAMES = [['star', 'Star'], ['heart', 'Heart'], ['snowflake', 'Snowflake'], ['candy-cane', 'Candy cane'], ['bell', 'Bell'], ['mitten', 'Mitten'], ['cookie', 'Cookie'], ['ornament', 'Ornament'], ['holly', 'Holly'], ['gift', 'Gift']]
@@ -355,8 +343,13 @@ export class GiftMaker extends HTMLElement {
     const wide = (box) => `${(box.w * (0.8 + box.y / 500)).toFixed(2)}%`
     const near = (box) => String(Math.round(box.y) + 1)
 
-    const base = computed(() => (String(element.service || '').trim().replace(/\/+$/, '')))
-    const usable = computed(() => (/^https:\/\/[^\s"'<>]+$/.test(base.value) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(base.value)))
+    // A server function is called the way Zubra's own form script calls one: a post of the form's fields,
+    // asking for JSON. What it returns comes back as it is.
+    const call = async (fn, data = new FormData()) => {
+      const reply = await fetch(fn, { method: 'POST', headers: { accept: 'application/json' }, body: data })
+      if (!reply.ok) throw new Error(String(reply.status))
+      return reply.json()
+    }
 
     const state = state2('hidden')
     const gifts = state2([])
@@ -410,7 +403,7 @@ export class GiftMaker extends HTMLElement {
       problem.value = ''
       const root = e.currentTarget.closest('gift-maker')
       // The form has to have been open a few seconds before a gift is taken: it keeps robots out.
-      try { token.value = (await (await fetch(`${base.value}/token`)).json()).token || '' } catch (_) { token.value = '' }
+      try { token.value = (await call(look)).token || '' } catch (_) { token.value = '' }
       const form = root && root.querySelector('form')
       if (form) { redraw(form); const first = form.querySelector('input[name="from"]'); if (first) first.focus() }
     }
@@ -456,19 +449,17 @@ export class GiftMaker extends HTMLElement {
       if (problem.value) return
       busy.value = true
       try {
-        const reply = await fetch(`${base.value}/submit`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            code: String(data.get('code') || ''), token: token.value, website: String(data.get('website') || ''), from,
-            showName: data.get('showName') === 'on', kind: kind.value, wrap: String(data.get('wrap') || 'red'), bow: String(data.get('bow') || 'gold'), spot: spot.value,
-            ...(kind.value === 'note' ? { note } : { card }),
-          }),
-        })
-        const answer = await reply.json().catch(() => ({}))
-        if (!reply.ok) {
+        // The form's own fields, and what it holds outside them: the token, where the box was set down,
+        // and the card's stickers.
+        data.set('kind', kind.value)
+        data.set('token', token.value)
+        data.set('spotX', String(spot.value.x))
+        data.set('spotY', String(spot.value.y))
+        data.set('stickers', JSON.stringify(card.stickers))
+        const answer = await call(leave, data)
+        if (answer.error) {
           problem.value = WHY[answer.error] || 'That didn’t go under the tree. Try again in a minute.'
-          if (answer.error === 'token') { try { token.value = (await (await fetch(`${base.value}/token`)).json()).token || '' } catch (_) {} }
+          if (answer.error === 'token') { try { token.value = (await call(look)).token || '' } catch (_) {} }
         } else {
           if (answer.gift) gifts.value = [...gifts.value, { ...answer.gift, bow: answer.gift.bow || ribbon.value, spot: answer.gift.spot || spot.value }]
           spot.value = { x: 50, y: 70 }
@@ -501,16 +492,13 @@ export class GiftMaker extends HTMLElement {
     }
 
     onMount(async () => {
-      if (!usable.value) return
       const now = new Date()
       const month = now.getMonth()
       const date = now.getDate()
       const inSeason = (month === 10 && date >= 20) || month === 11 || (month === 0 && date <= 6)
       if (element.shows !== 'always' && !inSeason) return
       try {
-        const reply = await fetch(`${base.value}/tree`)
-        if (!reply.ok) return
-        const tree = await reply.json()
+        const tree = await call(look)
         // Grammi says when her tree is ready for gifts; until then this stays off the page.
         if (tree.ready === false) return
         gifts.value = Array.isArray(tree.gifts) ? tree.gifts.slice(0, 200) : []
@@ -532,7 +520,7 @@ export class GiftMaker extends HTMLElement {
     <p class="names"></p>
     <p class="said" role="status"></p>
     <button class="go" type="button">Leave a gift</button>
-    <form novalidate>
+    <form action="/_zb/action/gift-maker/leave" method="post" novalidate>
       <p class="help">It stays wrapped until Christmas morning. Only Grammi reads what you write.</p>
       <div class="field">
         <label for="gift-from">Your name</label>
@@ -985,31 +973,6 @@ function createState(initial, changed) {
     },
     set(next) {
       this.value = next;
-    },
-  };
-}
-
-/** A value derived from props and state, cached until something it read changes. */
-function createComputed(compute) {
-  let seen = null; // [read again, the value it gave]
-  let value;
-  return {
-    get value() {
-      if (!seen || !seen.every(([read, last]) => Object.is(read(), last))) {
-        const outer = reads;
-        const collected = (reads = []);
-        try {
-          value = compute();
-        } finally {
-          reads = outer;
-          seen = collected.map((read) => [read, read()]);
-        }
-      }
-      if (reads) for (const [read] of seen) reads.push(read); // what reads this depends on what it read
-      return value;
-    },
-    get() {
-      return this.value;
     },
   };
 }

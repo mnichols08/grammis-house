@@ -6,19 +6,19 @@
 #   birthdays every year. The family's addresses stay in the private database, never in this repo.
 #   Gifts: anyone can leave Grammi a wrapped note or card under her tree, opened on Christmas morning.
 #
-# The site itself can't store anything a reader sends, so these live in a small service on Railway,
-# next to her editor, with Railway's own Postgres (Dockerfile.service: open.blog's service at the same
-# version as the rest of the site). This walks you through the clicks only you can do in Railway and
-# Brevo, makes every key, and prints exactly what to paste where. Run it from the repository folder:
+# They live in the family service (family/, on Zubra), which the site's own Railway service runs next
+# to her pages (Dockerfile), with Railway's Postgres. This walks you through the clicks only you can
+# do in Railway and Brevo, makes every key, and prints exactly what to paste where. Run it from the
+# repository folder:
 #
 #     bash scripts/setup-family-service.sh
 #
 # It needs: openssl and node. Nothing it makes is written anywhere but your screen and openblog.json
-# (the service's public address, which isn't secret).
+# (the site's public address for notes, which isn't secret).
 set -euo pipefail
 
-SITE_ORIGIN="https://mnichols08.github.io"
 BASE_PATH="/grammis-house/"
+EDITOR="https://grammis-house-admin.up.railway.app/admin/"
 
 say()  { printf '\n\033[1m%s\033[0m\n' "$*"; }
 step() { printf '\n\033[1;34m== %s ==\033[0m\n' "$*"; }
@@ -29,7 +29,7 @@ wait_enter() { read -r -p "Press Enter when that's done. "; }
 for tool in openssl node; do
   command -v "$tool" >/dev/null || { echo "Please install $tool first."; exit 1; }
 done
-[ -f openblog.json ] && [ -f Dockerfile.service ] || { echo "Run this from the grammis-house folder."; exit 1; }
+[ -f openblog.json ] && [ -f family/server.js ] || { echo "Run this from the grammis-house folder."; exit 1; }
 
 step "1 of 4: the email service for greeting cards (Brevo, free)"
 cat <<EOF
@@ -45,32 +45,37 @@ SENDER_NAME=$(ask "The name cards come from [Grammi]")
 SENDER_NAME=${SENDER_NAME:-Grammi}
 
 key() { openssl rand -hex 32; }
-JWT_SECRET=$(key)
 ADMIN_KEY=$(key)
 GREETINGS_KEY=$(key)
 GIFTS_KEY=$(key)
 SALT=$(key)
 
-step "2 of 4: the database and the service (Railway, in the project with her editor)"
+step "2 of 4: the database (Railway, in the project with her site and editor)"
 cat <<EOF
   1. In the Railway project, click Create > Database > PostgreSQL. Leave its name as Postgres.
-  2. Click Create > GitHub Repo > mnichols08/grammis-house. Rename the new service family-service.
-  3. In family-service > Settings:
-       - Build > Dockerfile path: Dockerfile.service   (or add the variable RAILWAY_DOCKERFILE_PATH below)
-       - Build > Watch paths: /Dockerfile.service
-       - Networking > Generate domain (port 8080)
-  4. In family-service > Variables > Raw editor, paste ALL of this and click Update variables:
+  2. Open the service that runs her site (the one that builds Dockerfile). In Settings > Networking,
+     copy its public domain (Generate domain if it has none; port 8080).
+EOF
+wait_enter
+DOMAIN=$(ask "The site service's domain (like grammis-house-production.up.railway.app)")
+DOMAIN=${DOMAIN#https://}
+DOMAIN=${DOMAIN%%/*}
+SITE="https://$DOMAIN"
 
-RAILWAY_DOCKERFILE_PATH=Dockerfile.service
+step "3 of 4: switch the family service on"
+cat <<EOF
+  In the site service > Variables > Raw editor, paste ALL of this and click Update variables. It
+  rebuilds and starts; the first start sets up the database. $SITE/health then answers
+  {"ok":true,"notes":true,"cards":true,"gifts":true}.
+
 DATABASE_URL=\${{Postgres.DATABASE_URL}}
-PGRST_JWT_SECRET=$JWT_SECRET
 OPENBLOG_SITE_ID=grammis-house
-OPENBLOG_SITE_ORIGIN=$SITE_ORIGIN
+OPENBLOG_SITE_ORIGIN=$SITE
 OPENBLOG_SITE_BASE_PATH=$BASE_PATH
 OPENBLOG_SITE_NAME="Grammi's House"
+OPENBLOG_ADMIN_URL=$EDITOR
 OPENBLOG_ADMIN_API_KEY=$ADMIN_KEY
 OPENBLOG_ANALYTICS_SALT=$SALT
-OPENBLOG_MODERATION_ENABLED=true
 OPENBLOG_GREETINGS_ENABLED=true
 OPENBLOG_GREETINGS_ADMIN_KEY=$GREETINGS_KEY
 OPENBLOG_GREETINGS_FROM="$SENDER_NAME <$SENDER_EMAIL>"
@@ -79,23 +84,11 @@ BREVO_API_KEY=$BREVO_API_KEY
 OPENBLOG_GIFTS_ENABLED=true
 OPENBLOG_GIFTS_ADMIN_KEY=$GIFTS_KEY
 
-  It builds and starts by itself. Its log ends with "listening on 8080" when it's ready, and
-  https://<its domain>/health answers {"ok":true}. The first start sets up the database.
-EOF
-wait_enter
-DOMAIN=$(ask "The service's domain (like family-service-production.up.railway.app)")
-DOMAIN=${DOMAIN#https://}
-DOMAIN=${DOMAIN%%/*}
-SERVICE="https://$DOMAIN"
+  Then, in her editor's service > Variables > Raw editor, add these and click Update variables:
 
-step "3 of 4: tell her editor where the service is"
-cat <<EOF
-  In the editor's Railway service > Variables > Raw editor, add these and click Update variables
-  (the editor restarts):
-
-OPENBLOG_GREETINGS_ENDPOINT=$SERVICE/api/greetings
+OPENBLOG_GREETINGS_ENDPOINT=$SITE/api/greetings
 OPENBLOG_GREETINGS_ADMIN_KEY=$GREETINGS_KEY
-OPENBLOG_GIFTS_ENDPOINT=$SERVICE/api/gifts
+OPENBLOG_GIFTS_ENDPOINT=$SITE/api/gifts
 OPENBLOG_GIFTS_ADMIN_KEY=$GIFTS_KEY
 EOF
 wait_enter
@@ -106,21 +99,19 @@ node -e '
   const site = JSON.parse(fs.readFileSync("openblog.json", "utf8"));
   site.engagement = { ...site.engagement, enabled: true, endpoint: process.argv[1] };
   fs.writeFileSync("openblog.json", JSON.stringify(site, null, 2) + "\n");
-' "$SERVICE/api"
-say "openblog.json now sends notes to $SERVICE/api."
+' "$SITE/api"
+say "openblog.json now sends notes to $SITE/api."
 cat <<EOF
-  1. Commit and push openblog.json:
+  1. Commit and push openblog.json (the site rebuilds with notes at the bottom of each recipe):
        git commit -am "Notes on recipes go to the family service" && git push
   2. Sign in to her editor, open Analytics, and paste this into the write-only moderation token
      box, then Save:
        $ADMIN_KEY
      (Keep a copy in your password manager. It's the key to approving notes.)
-  3. In Front page, add Christmas tree, then Gifts under the tree right after it, and put this in
-     Where gifts go:
-       $SERVICE/api/gifts
+  3. In Front page, add Christmas tree, then Gifts under the tree right after it.
 
-  From then on every recipe has a place for notes at the bottom; new notes wait in the Moderation
-  inbox until Grammi approves them. Greeting cards shows under Family: try "Send me a test" first,
-  it goes to $SENDER_EMAIL, not to anyone in the address book. Gifts stay hidden until she turns on
-  "My tree is ready for gifts" in Gifts.
+  New notes wait in the Moderation inbox until Grammi approves them. Greeting cards shows under
+  Family: try "Send me a test" first, it goes to $SENDER_EMAIL, not to anyone in the address book.
+  Gifts stay hidden until she turns on "My tree is ready for gifts" in Gifts. All of it works at
+  $SITE$BASE_PATH (the GitHub Pages copy shows the pages without them).
 EOF

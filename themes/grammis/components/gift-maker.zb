@@ -4,9 +4,11 @@
   until Christmas morning, when Grammi opens it in her own pages; nothing anyone writes is ever
   shown on the site.
 
-  service  where gifts go: the address of the family service, ending in /api/gifts. Hidden until set.
   heading  the heading (default "Under the tree")
   shows    when it's on the page: "season" (from November 20 to January 6, the default) or "always"
+
+  It talks to the family service that serves the page (family/ in this repository) through its own
+  server functions, `look` and `leave`; on a copy of the site anywhere else it stays hidden.
 
   The boxes sit in a pile on the floor under the tree, each where its giver set it down. A place
   is only a wish: boxes are settled one after another in the order they came, and each is nudged
@@ -19,6 +21,18 @@
 -->
 <script>
   import { onMount } from '@zubra/runtime'
+  import { lookAtTree, leaveGift } from '../../../family/actions.js'
+
+  // The family service's side (family/gifts.js). These two run on the server; the page only ever has
+  // their addresses. `look` is the boxes and a form token; `leave` is one gift, from the form's fields.
+  export async function look() {
+    'use server'
+    return lookAtTree()
+  }
+  export async function leave(formData, { request }) {
+    'use server'
+    return leaveGift(formData, request)
+  }
 
   const WRAPS = [['red', 'Red'], ['green', 'Green'], ['gold', 'Gold'], ['blue', 'Blue'], ['plaid', 'Plaid'], ['stripes', 'Stripes']]
   const BOWS = [['gold', 'Gold'], ['red', 'Red'], ['green', 'Green'], ['white', 'White'], ['blue', 'Blue'], ['none', 'No bow']]
@@ -146,8 +160,13 @@
   const wide = (box) => `${(box.w * (0.8 + box.y / 500)).toFixed(2)}%`
   const near = (box) => String(Math.round(box.y) + 1)
 
-  const base = String(service || '').trim().replace(/\/+$/, '')
-  const usable = /^https:\/\/[^\s"'<>]+$/.test(base) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(base)
+  // A server function is called the way Zubra's own form script calls one: a post of the form's fields,
+  // asking for JSON. What it returns comes back as it is.
+  const call = async (fn, data = new FormData()) => {
+    const reply = await fetch(fn, { method: 'POST', headers: { accept: 'application/json' }, body: data })
+    if (!reply.ok) throw new Error(String(reply.status))
+    return reply.json()
+  }
 
   let state = 'hidden'
   let gifts = []
@@ -201,7 +220,7 @@
     problem = ''
     const root = e.currentTarget.closest('gift-maker')
     // The form has to have been open a few seconds before a gift is taken: it keeps robots out.
-    try { token = (await (await fetch(`${base}/token`)).json()).token || '' } catch (_) { token = '' }
+    try { token = (await call(look)).token || '' } catch (_) { token = '' }
     const form = root && root.querySelector('form')
     if (form) { redraw(form); const first = form.querySelector('input[name="from"]'); if (first) first.focus() }
   }
@@ -247,19 +266,17 @@
     if (problem) return
     busy = true
     try {
-      const reply = await fetch(`${base}/submit`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          code: String(data.get('code') || ''), token, website: String(data.get('website') || ''), from,
-          showName: data.get('showName') === 'on', kind, wrap: String(data.get('wrap') || 'red'), bow: String(data.get('bow') || 'gold'), spot,
-          ...(kind === 'note' ? { note } : { card }),
-        }),
-      })
-      const answer = await reply.json().catch(() => ({}))
-      if (!reply.ok) {
+      // The form's own fields, and what it holds outside them: the token, where the box was set down,
+      // and the card's stickers.
+      data.set('kind', kind)
+      data.set('token', token)
+      data.set('spotX', String(spot.x))
+      data.set('spotY', String(spot.y))
+      data.set('stickers', JSON.stringify(card.stickers))
+      const answer = await call(leave, data)
+      if (answer.error) {
         problem = WHY[answer.error] || 'That didn’t go under the tree. Try again in a minute.'
-        if (answer.error === 'token') { try { token = (await (await fetch(`${base}/token`)).json()).token || '' } catch (_) {} }
+        if (answer.error === 'token') { try { token = (await call(look)).token || '' } catch (_) {} }
       } else {
         if (answer.gift) gifts = [...gifts, { ...answer.gift, bow: answer.gift.bow || ribbon, spot: answer.gift.spot || spot }]
         spot = { x: 50, y: 70 }
@@ -292,16 +309,13 @@
   }
 
   onMount(async () => {
-    if (!usable) return
     const now = new Date()
     const month = now.getMonth()
     const date = now.getDate()
     const inSeason = (month === 10 && date >= 20) || month === 11 || (month === 0 && date <= 6)
     if (shows !== 'always' && !inSeason) return
     try {
-      const reply = await fetch(`${base}/tree`)
-      if (!reply.ok) return
-      const tree = await reply.json()
+      const tree = await call(look)
       // Grammi says when her tree is ready for gifts; until then this stays off the page.
       if (tree.ready === false) return
       gifts = Array.isArray(tree.gifts) ? tree.gifts.slice(0, 200) : []
@@ -375,7 +389,7 @@
   .preview svg { display: block; width: 100%; height: auto; border-radius: 10px; }
   .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
 </style>
-<gift-maker service="" heading="Under the tree" shows="season">
+<gift-maker heading="Under the tree" shows="season">
   <section class="under" data-state={state} data-tucked={tucked ? 'true' : 'false'} aria-label={heading}>
     <h2 class="heading">{heading}</h2>
     <p class="count">{count()}</p>
@@ -387,7 +401,7 @@
     <p class="names">{fromWhom()}</p>
     <p class="said" role="status">{said}</p>
     <button class="go" type="button" hidden={open} onclick={start}>Leave a gift</button>
-    <form hidden={!open} onsubmit={send} oninput={choose} novalidate>
+    <form hidden={!open} action={leave} method="post" onsubmit={send} oninput={choose} novalidate>
       <p class="help">It stays wrapped until Christmas morning. Only Grammi reads what you write.</p>
       <div class="field">
         <label for="gift-from">Your name</label>

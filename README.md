@@ -68,9 +68,8 @@ by itself. Open **Front page**, then the sign, to change it:
   a box only when the giver ticks it and you allow it in **Gifts**; what a gift says is never on the
   site. Open them in **Gifts** from midnight on Christmas morning. The form asks for the family
   password unless you switch on **Let anyone leave you a gift**. Nothing shows, and nobody can leave a gift, until you turn on **My tree is ready for gifts** in
-  **Gifts**: decorate first, then open up. The section also stays hidden until Mikey sets up the
-  family service (below) and fills in **Where gifts go** (`https://<the family service>/api/gifts`):
-  [open.blog's gifts guide](https://github.com/journey-to-code-org/open.blog/blob/main/docs/gifts.md).
+  **Gifts**: decorate first, then open up. Gifts work on the site's Railway address, where the family
+  service (below) serves the pages; on any other copy of the site the section stays hidden.
 - **Write to Grammi.** A postcard on the front page opens the family's email with a note to you
   already addressed. Fill in **Your email address** on it (Front page → Write to Grammi); it stays
   hidden until you do. Put your favorite notes on **The Family Wall** page, the fridge: each note
@@ -86,7 +85,7 @@ by itself. Open **Front page**, then the sign, to change it:
   It goes out at the time you picked, even when your computer is off. The addresses are kept in the
   private database, never on the site.
 - **Notes on recipes** (comments), greeting cards and gifts need somewhere to keep what people send:
-  the family service, on Railway next to the editor, and a free Brevo account to send the cards.
+  the family service, on Railway with her pages, and a free Brevo account to send the cards.
   Mikey runs `bash scripts/setup-family-service.sh` once; after that every recipe has notes at the
   bottom, and new ones wait for you in **Moderation inbox** until you approve them.
 
@@ -282,11 +281,33 @@ The editor Grammi uses runs on Railway (`Dockerfile.admin`). Its variables:
 | `OPENBLOG_GREETINGS_ENDPOINT`, `OPENBLOG_GREETINGS_ADMIN_KEY` | Greeting cards: the family service's `…/api/greetings` and its key |
 | `OPENBLOG_GIFTS_ENDPOINT`, `OPENBLOG_GIFTS_ADMIN_KEY` | Gifts: the family service's `…/api/gifts` and its key |
 
-The family service (notes, greeting cards and gifts) runs on Railway too (`Dockerfile.service`): it
-is open.blog's own service at the same revision, over a Railway Postgres in the same project, so
-there's no Netlify and no Supabase. Give it the watch path `/Dockerfile.service`, so the editor's
-saves don't rebuild it. `scripts/setup-family-service.sh` makes its keys and prints every variable
-it and the editor need. To check it, `https://<its domain>/health` answers `{"ok":true}`.
+### The site and the family service (`Dockerfile`, `family/`)
+
+Her pages and the family service run as one Railway service, with a Railway Postgres in the same
+project: no Netlify, no Supabase. `Dockerfile` builds the site with open.blog and starts
+`family/server.js`, a Node server on Zubra:
+
+- **Her pages**, under `/grammis-house/`; `/` goes to the front page and `/admin` to her editor
+  (`OPENBLOG_ADMIN_URL`).
+- **Gifts under the tree.** The gift form (`themes/grammis/components/gift-maker.zb`) has two
+  `'use server'` functions, `look` and `leave`. `@zubra/actions` compiles them from the component when
+  the server starts and serves them at `/_zb/action/gift-maker/…`; they call `family/gifts.js`. Studio's
+  side is `/api/gifts/admin/…` (list, open, hide, settings).
+- **Greeting cards**, Studio's side at `/api/greetings/…` (`family/cards.js`); the cards that are due
+  go out every hour through Brevo.
+- **Notes on recipes**, page views and the moderation inbox at `/api/…` (`family/notes.js`), the
+  addresses open.blog's pages and Studio already use.
+- **The database** is set up when the server starts (`family/lib/migrate.js`).
+
+The rules (what a gift or card may hold, when it opens or goes out, how the inbox decides) and the
+database's SQL are open.blog's own, copied at the pinned revision into `family/vendor/openblog/`, so
+the data stays the shape open.blog's tools read. After bumping `OPENBLOG_REV`, run
+`sh family/scripts/vendor-openblog.sh` to copy them again. Never edit the copies.
+
+`scripts/setup-family-service.sh` makes every key and prints the variables for this service and for
+the editor. `https://<its domain>/health` answers which parts are on. Tests: `npm test` in `family/`
+(set `FAMILY_TEST_DATABASE_URL` to a Postgres it may make a throwaway database on, for the end-to-end
+run).
 
 The site deploys to GitHub Pages on every push to `main` (Settings → Pages → Source: **GitHub
 Actions**). The workflow pins the open.blog version (`OPENBLOG_REV`), so upgrades happen on purpose.

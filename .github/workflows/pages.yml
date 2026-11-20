@@ -29,8 +29,9 @@ permissions:
 # Point it at the next release when there is one.
 env:
   OPENBLOG_REV: 718c91393a72a2e282c2585a3ba7cfa763f7c410
-  # Notes on recipes, greeting cards and gifts run in the family service on Railway (Dockerfile.service,
-  # pinned to this same revision there), not here. scripts/setup-family-service.sh sets it up.
+  # Notes on recipes, greeting cards and gifts run in the family service on Railway (Dockerfile, family/),
+  # which serves the site there too; this copy on GitHub Pages shows the pages without them. When this
+  # changes, change Dockerfile and Dockerfile.admin to match and run family/scripts/vendor-openblog.sh.
 
 concurrency:
   group: pages

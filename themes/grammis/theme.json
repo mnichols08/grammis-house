@@ -488,13 +488,6 @@
       "fallback": "Gifts for Grammi go under the tree here in December.",
       "props": [
         {
-          "name": "service",
-          "type": "text",
-          "label": "Where gifts go",
-          "maxLength": 200,
-          "help": "The address Mikey gives you. Nothing shows until this is filled in."
-        },
-        {
           "name": "heading",
           "type": "text",
           "label": "The heading",
