@@ -12,7 +12,7 @@ cook: 20 min
 tags: [thanksgiving]
 description: "Grammi's baked mac n cheese: medium shells in a sauce made with two pounds of sharp and extra sharp cheddar."
 cover: ""
-coverAlt: "The handwritten recipe card for the mac n cheese"
+coverAlt: ""
 ---
 
 

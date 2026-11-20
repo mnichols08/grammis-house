@@ -12,7 +12,7 @@ cook: overnight
 tags: [thanksgiving]
 description: "Grammi's mashed potatoes, cooked overnight in the slow cooker in chicken broth and mashed with butter and cream cheese."
 cover: ""
-coverAlt: "The handwritten recipe card for the mashed potatoes"
+coverAlt: ""
 ---
 
 

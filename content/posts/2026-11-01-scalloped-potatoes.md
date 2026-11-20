@@ -11,8 +11,6 @@ prep: 15 min
 cook: 1 to 1 1/2 hours
 tags: [thanksgiving]
 description: "Grammi's scalloped potatoes: sliced russets and onion rings baked in a cheddar sauce until tender."
-cover: ""
-coverAlt: "The handwritten recipe card for the scalloped potatoes"
 ---
 
 
