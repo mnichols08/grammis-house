@@ -2,8 +2,13 @@
 # Pins the same open.blog revision as the other workflows. Set this service's Dockerfile path to Dockerfile.admin.
 
 FROM rust:1-bookworm AS build
-RUN cargo install --git https://github.com/journey-to-code-org/open.blog \
-    --rev 718c91393a72a2e282c2585a3ba7cfa763f7c410 openblog-cli
+COPY docker/openblog-password-setup.patch /tmp/openblog-password-setup.patch
+RUN git init /tmp/openblog \
+    && cd /tmp/openblog \
+    && git fetch --depth 1 https://github.com/journey-to-code-org/open.blog 718c91393a72a2e282c2585a3ba7cfa763f7c410 \
+    && git checkout --detach FETCH_HEAD \
+    && git apply /tmp/openblog-password-setup.patch \
+    && cargo install --path crates/openblog-cli
 
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates nodejs npm \

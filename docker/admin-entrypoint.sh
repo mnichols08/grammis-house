@@ -21,17 +21,28 @@ git pull --ff-only --quiet origin main || echo "warning: could not pull the late
 # Railway serves this over HTTPS from a proxy, so sign-in cookies are marked secure.
 export OPENBLOG_BEHIND_PROXY="${OPENBLOG_BEHIND_PROXY:-1}"
 
-# Make the login (or reset its password) from the service variables, so nobody needs a shell on the volume.
+# Provision the temporary login once. The password she chooses in Studio must survive restarts.
 if [ -n "${OPENBLOG_ADMIN_USER:-}" ] || [ -n "${OPENBLOG_ADMIN_PASSWORD:-}" ]; then
     if [ -z "${OPENBLOG_ADMIN_USER:-}" ] || [ -z "${OPENBLOG_ADMIN_PASSWORD:-}" ]; then
         echo "Set both OPENBLOG_ADMIN_USER and OPENBLOG_ADMIN_PASSWORD." >&2
         exit 1
     fi
-    if openblog user list | grep -Fqx -- "$OPENBLOG_ADMIN_USER"; then
-        OPENBLOG_PASSWORD="$OPENBLOG_ADMIN_PASSWORD" openblog user passwd "$OPENBLOG_ADMIN_USER"
+    marker=/data/.grammis-admin-bootstrap
+    if [ -f "$marker" ]; then
+        if [ "$(cat "$marker")" != "$OPENBLOG_ADMIN_USER" ] || ! openblog user list | grep -Fqx -- "$OPENBLOG_ADMIN_USER"; then
+            echo "The bootstrapped admin account does not match the saved account." >&2
+            exit 1
+        fi
     else
-        OPENBLOG_PASSWORD="$OPENBLOG_ADMIN_PASSWORD" openblog user add "$OPENBLOG_ADMIN_USER"
+        if openblog user list | grep -Fqx -- "$OPENBLOG_ADMIN_USER"; then
+            OPENBLOG_PASSWORD="$OPENBLOG_ADMIN_PASSWORD" openblog user passwd "$OPENBLOG_ADMIN_USER" --temporary-password
+        else
+            OPENBLOG_PASSWORD="$OPENBLOG_ADMIN_PASSWORD" openblog user add "$OPENBLOG_ADMIN_USER" --temporary-password
+        fi
+        printf '%s\n' "$OPENBLOG_ADMIN_USER" > "$marker.tmp"
+        mv "$marker.tmp" "$marker"
     fi
 fi
+unset OPENBLOG_ADMIN_PASSWORD
 
 exec openblog serve --admin --host 0.0.0.0 --port "${PORT:-8080}"

@@ -11,7 +11,8 @@ every month of the year, with Thanksgiving and Christmas the biggest of all.
 
 Everything is done in the editor in your web browser. You never have to touch a file.
 
-1. Open the editor (`/admin`) and sign in. The first time, it walks you through getting started;
+1. Open the editor (`/admin`) and sign in with the temporary password. Choose your own password
+   when asked; use it for future sign-ins. The first time, it walks you through getting started;
    you can skip any part and come back to it from the menu under your name.
 2. **Posts** lists every recipe. Tap one to open it:
    - Under **Ingredients**, start each line with the amount (`2 cups flour`). That lets
@@ -274,12 +275,20 @@ The editor Grammi uses runs on Railway (`Dockerfile.admin`). Its variables:
 | Variable | What it does |
 | --- | --- |
 | `GITHUB_TOKEN` | Lets the editor send her changes to this repository (required) |
-| `OPENBLOG_ADMIN_USER`, `OPENBLOG_ADMIN_PASSWORD` | Makes her login, or resets its password, each time the service starts |
+| `OPENBLOG_ADMIN_USER`, `OPENBLOG_ADMIN_PASSWORD` | Creates or migrates her login once with a temporary password; she chooses her own after signing in. The saved password survives service restarts |
 | `ANTHROPIC_API_KEY` | Turns on the writing helper, so getting started never asks her for a key |
 | `OPENBLOG_STUDIO_ONBOARDING` | `rehearse` to try getting started as her without keeping anything, then `on` (or unset: `openblog.json` says `on`) |
 | `OPENBLOG_BEHIND_PROXY` | Secure sign-in cookies behind Railway's HTTPS; the entrypoint sets it to `1` unless you set it |
 | `OPENBLOG_GREETINGS_ENDPOINT`, `OPENBLOG_GREETINGS_ADMIN_KEY` | Greeting cards: the family service's `…/api/greetings` and its key |
 | `OPENBLOG_GIFTS_ENDPOINT`, `OPENBLOG_GIFTS_ADMIN_KEY` | Gifts: the family service's `…/api/gifts` and its key |
+
+On the first start after this change, an existing configured login is reset once to
+`OPENBLOG_ADMIN_PASSWORD` and asked to choose a new password. Later starts do not reset it.
+If she forgets it, run `openblog user passwd grammi --temporary-password` from a shell in the
+editor's site checkout; the prompt shows what you type, so use a private terminal. Give her
+that temporary password so she can choose another.
+The admin image applies `docker/openblog-password-setup.patch` to its pinned open.blog revision;
+recheck the patch and password-setup tests when updating that revision.
 
 ### The site and the family service (`Dockerfile`, `family/`)
 
