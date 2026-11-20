@@ -12,6 +12,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends git ca-certific
 COPY --from=build /usr/local/cargo/bin/openblog /usr/local/bin/openblog
 COPY docker/admin-entrypoint.sh /usr/local/bin/admin-entrypoint.sh
 RUN chmod +x /usr/local/bin/admin-entrypoint.sh
-# Railway mounts a volume here; the site checkout and Admin's private files (logins, drafts) live on it.
-VOLUME /data
+# The site checkout and Studio's private files (logins, drafts) live in /data. On Railway, attach a
+# volume there (the service's Settings > Volumes, mount path /data); a Dockerfile can't declare one.
 ENTRYPOINT ["/usr/local/bin/admin-entrypoint.sh"]
