@@ -58,9 +58,9 @@
     "bakeCounts": true
   },
   "engagement": {
-    "enabled": true,
-    "comments": true,
     "analytics": true,
+    "comments": true,
+    "enabled": true,
     "endpoint": "https://grammis-house.up.railway.app/api",
     "feedback": false,
     "feedbackContact": ""
