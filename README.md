@@ -264,7 +264,7 @@ turned on, and everything else works as before.
 
 ```sh
 cargo install --git https://github.com/journey-to-code-org/open.blog --rev 718c91393a72a2e282c2585a3ba7cfa763f7c410 openblog-cli
-openblog serve --drafts           # http://localhost:8080/grammis-house/ (drafts included)
+openblog serve --drafts           # http://localhost:8080/ (drafts included)
 openblog user add grammi          # once, to create a login
 openblog serve --admin            # editor at http://localhost:8080/admin
 ```
@@ -287,7 +287,7 @@ Her pages and the family service run as one Railway service, with a Railway Post
 project: no Netlify, no Supabase. `Dockerfile` builds the site with open.blog and starts
 `family/server.js`, a Node server on Zubra:
 
-- **Her pages**, under `/grammis-house/`; `/` goes to the front page and `/admin` to her editor
+- **Her pages**, at the root of the service's address (openblog.json's `url`); `/admin` goes to her editor
   (`OPENBLOG_ADMIN_URL`).
 - **Gifts under the tree.** The gift form (`themes/grammis/components/gift-maker.zb`) has two
   `'use server'` functions, `look` and `leave`. `@zubra/actions` compiles them from the component when
