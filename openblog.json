@@ -59,7 +59,7 @@
   },
   "engagement": {
     "analytics": true,
-    "comments": false,
+    "comments": true,
     "enabled": true,
     "endpoint": "https://grammis-house.up.railway.app/api",
     "feedback": false,
