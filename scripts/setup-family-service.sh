@@ -102,10 +102,12 @@ say "openblog.json now sends notes to $SITE/api."
 cat <<EOF
   1. Commit and push openblog.json (the site rebuilds with notes at the bottom of each recipe):
        git commit -am "Notes on recipes go to the family service" && git push
-  2. Sign in to her editor, open Analytics, and paste this into the write-only moderation token
-     box, then Save:
+  2. In her editor, open Readers > How readers reach you, then For Mikey at the bottom. Under
+     Connection: switch on Use the comments service, set Service address to $SITE/api, paste this
+     into Replace the key, and click Save connection:
        $ADMIN_KEY
-     (Keep a copy in your password manager. It's the key to approving notes.)
+     (Keep a copy in your password manager. It's the key to approving notes.) Then switch on
+     Let readers leave comments at the top of that page.
   3. In Front page, add Christmas tree, then Gifts under the tree right after it.
 
   New notes wait in the Moderation inbox until Grammi approves them. Greeting cards shows under
