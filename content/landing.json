@@ -1,59 +1,70 @@
 {
   "format": "openblog-landing",
-  "version": 4,
   "sections": [
     {
-      "id": "welcome",
-      "type": "welcome",
-      "heading": "Welcome to Grammi's House",
-      "subheading": "Come on in. The kitchen's warm and the recipes are on the counter.",
       "button": {
-        "label": "Thanksgiving recipes",
         "href": "/series/thanksgiving/",
+        "label": "Thanksgiving recipes",
         "style": "primary"
-      }
+      },
+      "heading": "Welcome to Grammi's House",
+      "id": "welcome",
+      "subheading": "Come on in. The kitchen's warm and the recipes are on the counter.",
+      "type": "welcome"
     },
     {
       "id": "countdown",
-      "type": "component",
-      "tag": "holiday-countdown",
       "props": {
         "holiday": "next"
-      }
+      },
+      "tag": "holiday-countdown",
+      "type": "component"
     },
     {
       "id": "advent",
-      "type": "component",
-      "tag": "advent-calendar",
       "props": {
-        "tag": "advent",
-        "shows": "season"
-      }
+        "shows": "season",
+        "tag": "advent"
+      },
+      "tag": "advent-calendar",
+      "type": "component"
     },
     {
       "id": "this-season",
-      "type": "rich-text",
-      "markdown": "## This season: Thanksgiving\n\nEverybody's spread out now, so Grammi wrote it all down. Find the turkey, the sides, and the pie, and cook them wherever you are this year. Then send her a picture."
+      "markdown": "## This season: Thanksgiving\n\nEverybody's spread out now, so Grammi wrote it all down. Find the turkey, the sides, and the pie, and cook them wherever you are this year. Then send her a picture.",
+      "type": "rich-text"
     },
     {
-      "id": "recipes",
-      "type": "latest-posts",
+      "count": 8,
       "heading": "Grammi's recipes",
+      "id": "recipes",
       "show": "recipes",
-      "count": 8
+      "type": "latest-posts"
     },
     {
+      "heading": "Holiday collections",
       "id": "collections",
-      "type": "series",
-      "heading": "Holiday collections"
+      "type": "series"
     },
     {
       "id": "write-to-grammi",
-      "type": "component",
-      "tag": "family-mailbox",
       "props": {
         "email": ""
-      }
+      },
+      "tag": "family-mailbox",
+      "type": "component"
+    },
+    {
+      "id": "grammis-tree",
+      "props": {
+        "hung": "red-ball@40,33;candy-cane@61,31;bell@28,50;heart@47,48;blue-ball@70,52;snowflake@18,72;gingerbread@37,69;red-ball@58,73;gold-ball@80,70;pinecone@34,81;bird@64,82",
+        "nolights": false,
+        "shows": "season",
+        "topper": "snowflake"
+      },
+      "tag": "grammis-tree",
+      "type": "component"
     }
-  ]
+  ],
+  "version": 4
 }
