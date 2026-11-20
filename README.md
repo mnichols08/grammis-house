@@ -203,7 +203,7 @@ corner piece: those only go on the home page's welcome card):
 
 ## Components (Zubra)
 
-`components/` holds web components written in [Zubra](https://github.com/journey-to-code-org/zubra).
+`components/` holds web components written in [Zubra](https://github.com/zubra-js/zubra).
 They are compiled to plain custom elements (no runtime, nothing to install) into the `grammis`
 theme, which declares each one under `components` in its `theme.json`
 ([open.blog#651](https://github.com/journey-to-code-org/open.blog/pull/651)). Every season extends
@@ -240,7 +240,7 @@ Anything only the browser knows (like today's date) is left for the script. That
 "Counting down to Christmas" first and then fills in the number of days.
 
 `themes/grammis/zubra-bridge.css` maps open.blog's `--ob-*` tokens to the shadcn/ui variables
-that [Zubra UI](https://github.com/journey-to-code-org/zubra-ui) components read. That means any Zubra UI
+that [Zubra UI](https://github.com/zubra-js/zubra-ui) components read. That means any Zubra UI
 component dropped in here follows the current season, in light and dark.
 
 Studio sends out only `content`, `static`, `openblog.json`, `themes` and

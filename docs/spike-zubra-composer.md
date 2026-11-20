@@ -1,7 +1,7 @@
 # Spike: Zubra, a component composer, and describing a theme in words
 
-**Question.** Should open.blog bring in [Zubra](https://github.com/journey-to-code-org/zubra) and
-[Zubra UI](https://github.com/journey-to-code-org/zubra-ui) so that an author with no coding skills can
+**Question.** Should open.blog bring in [Zubra](https://github.com/zubra-js/zubra) and
+[Zubra UI](https://github.com/zubra-js/zubra-ui) so that an author with no coding skills can
 add components to their site, and describe a theme in plain words?
 
 **Short answer.** Yes, in three steps. The first step works today and is already in this repo.
