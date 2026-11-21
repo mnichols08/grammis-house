@@ -16,8 +16,9 @@
   (an older one) gets one worked out from its id, the same on every visit.
 
   The page shows only the boxes, and a name only when the giver chose that and Grammi allows it. The service decides whether the family password is asked for; this form asks unless
-  the service says anyone may leave a gift. A card is data from fixed lists (a design, stickers on
-  a grid), drawn here the same way her pages draw it, with text nodes only.
+  the service says anyone may leave a gift. A card is still a design, words and stickers from
+  fixed lists, drawn here the same way her pages draw it, with text nodes only. On top of that a
+  guest can color the paper, draw, place words, drag stickers, and add a small photo.
 -->
 <script>
   import { onMount } from '@zubra/runtime'
@@ -37,6 +38,10 @@
   const WRAPS = [['red', 'Red'], ['green', 'Green'], ['gold', 'Gold'], ['blue', 'Blue'], ['plaid', 'Plaid'], ['stripes', 'Stripes']]
   const BOWS = [['gold', 'Gold'], ['red', 'Red'], ['green', 'Green'], ['white', 'White'], ['blue', 'Blue'], ['none', 'No bow']]
   const STICKER_NAMES = [['star', 'Star'], ['heart', 'Heart'], ['snowflake', 'Snowflake'], ['candy-cane', 'Candy cane'], ['bell', 'Bell'], ['mitten', 'Mitten'], ['cookie', 'Cookie'], ['ornament', 'Ornament'], ['holly', 'Holly'], ['gift', 'Gift']]
+  const INKS = [['#1f2633', 'Ink'], ['#a11224', 'Red'], ['#1f4d2c', 'Pine'], ['#1f4f9a', 'Blue'], ['#f2c14e', 'Gold'], ['#ffffff', 'White'], ['#7a1020', 'Wine'], ['#5a3518', 'Brown']]
+  const PAPERS = [['', 'The design'], ['#fffdf8', 'Cream'], ['#f7f3e8', 'Ivory'], ['#fff6f2', 'Blush'], ['#1f3a5f', 'Night'], ['#2f6b3f', 'Pine'], ['#a4643a', 'Ginger'], ['#2b2140', 'Plum']]
+  const TEXT_SIZES = [18, 24, 32, 44]
+  const PEN_SIZES = [[3, 'Thin'], [6, 'Medium'], [12, 'Thick']]
   // Where each sticker lands, in the order they're added: the corners first, then the edges.
   const SPOTS = [[6, 8], [94, 8], [6, 92], [94, 92], [50, 4], [50, 96], [4, 50], [96, 50]]
 
@@ -45,11 +50,11 @@
   const W = 600
   const H = 400
   const DESIGNS = {
-    'snowy-night': { label: 'Snowy night', bg: '#1f3a5f', ink: '#ffffff', edge: '#9cc3e6', shapes: [['circle', { cx: 80, cy: 70, r: 4, fill: '#fff' }], ['circle', { cx: 520, cy: 60, r: 3, fill: '#fff' }], ['circle', { cx: 460, cy: 340, r: 5, fill: '#fff' }], ['circle', { cx: 120, cy: 330, r: 3, fill: '#fff' }]] },
+    'snowy-night': { label: 'Snowy night', bg: '#1f3a5f', ink: '#ffffff', edge: '#9cc3e6', shapes: [['circle', { cx: 80, cy: 70, r: 4, fill: '#fff' }], ['circle', { cx: 520, cy: 60, r: 3, fill: '#fff' }], ['circle', { cx: 460, cy: 340, r: 5, fill: '#fff' }], ['circle', { cx: 120, cy: 330, r: 3, fill: '#fff' }], ['path', { d: 'M0 360 Q150 330 300 360 T600 350 V400 H0Z', fill: '#e8f1fa' }]] },
     'candy-stripe': { label: 'Candy stripe', bg: '#fff6f2', ink: '#7a1020', edge: '#c8243c', shapes: [['path', { d: 'M0 0H600V24H0ZM0 376H600V400H0Z', fill: '#c8243c' }], ['path', { d: 'M0 24H600V32H0ZM0 368H600V376H0Z', fill: '#fff' }]] },
-    holly: { label: 'Holly', bg: '#f7f3e8', ink: '#1f4d2c', edge: '#2f6b3f', shapes: [['path', { d: 'M30 40c20-10 40 0 50 20-20 0-40 10-50-20ZM80 30c10 20 0 40-20 50 0-20-10-40 20-50Z', fill: '#2f6b3f' }], ['circle', { cx: 70, cy: 60, r: 7, fill: '#c8243c' }]] },
+    holly: { label: 'Holly', bg: '#f7f3e8', ink: '#1f4d2c', edge: '#2f6b3f', shapes: [['path', { d: 'M30 40c20-10 40 0 50 20-20 0-40 10-50-20ZM80 30c10 20 0 40-20 50 0-20-10-40 20-50Z', fill: '#2f6b3f' }], ['circle', { cx: 70, cy: 60, r: 7, fill: '#c8243c' }], ['path', { d: 'M570 360c-20 10-40 0-50-20 20 0 40-10 50 20ZM520 370c-10-20 0-40 20-50 0 20 10 40-20 50Z', fill: '#2f6b3f' }], ['circle', { cx: 530, cy: 340, r: 7, fill: '#c8243c' }]] },
     gingerbread: { label: 'Gingerbread', bg: '#a4643a', ink: '#fff8ee', edge: '#fff8ee', shapes: [['path', { d: 'M20 20H580V380H20Z', fill: 'none', stroke: '#fff8ee', 'stroke-width': 6, 'stroke-dasharray': '2 14', 'stroke-linecap': 'round' }]] },
-    starry: { label: 'Starry', bg: '#2b2140', ink: '#ffe9a8', edge: '#f2c14e', shapes: [['path', { d: 'M90 60l6 14 15 1-12 9 4 15-13-8-13 8 4-15-12-9 15-1Z', fill: '#f2c14e' }], ['path', { d: 'M510 300l5 11 12 1-9 7 3 12-11-6-10 6 3-12-9-7 12-1Z', fill: '#f2c14e' }], ['circle', { cx: 480, cy: 70, r: 3, fill: '#ffe9a8' }]] },
+    starry: { label: 'Starry', bg: '#2b2140', ink: '#ffe9a8', edge: '#f2c14e', shapes: [['path', { d: 'M90 60l6 14 15 1-12 9 4 15-13-8-13 8 4-15-12-9 15-1Z', fill: '#f2c14e' }], ['path', { d: 'M510 300l5 11 12 1-9 7 3 12-11-6-10 6 3-12-9-7 12-1Z', fill: '#f2c14e' }], ['circle', { cx: 480, cy: 70, r: 3, fill: '#ffe9a8' }], ['circle', { cx: 140, cy: 320, r: 3, fill: '#ffe9a8' }]] },
   }
   const DESIGN_NAMES = Object.entries(DESIGNS).map(([value, design]) => [value, design.label])
   const STICKERS = {
@@ -81,18 +86,57 @@
     }
     return lines.length > max ? [...lines.slice(0, max - 1), `${lines[max - 1]}…`] : lines
   }
-  const drawCard = (card) => {
+  const safePhoto = (src) => /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(src || '')
+  const lum = (hex) => {
+    const part = (i) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255
+    const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+    const [r, g, b] = [0, 1, 2].map((i) => lin(part(i)))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  }
+  const readable = (hex) => (lum(hex) > 0.4 ? '#1f2633' : '#fffdf8')
+  const contrast = (a, b) => {
+    const [hi, lo] = lum(a) > lum(b) ? [lum(a), lum(b)] : [lum(b), lum(a)]
+    return (hi + 0.05) / (lo + 0.05)
+  }
+  const inkOn = (ground, color) => (contrast(color, ground) < 3 ? readable(ground) : color)
+  const drawStroke = (svg, stroke) => {
+    const points = stroke.points || []
+    if (!points.length) return
+    if (points.length < 2) {
+      const [x, y] = points[0]
+      svg.append(el('circle', { cx: x, cy: y, r: Math.max(1, stroke.size / 2), fill: stroke.color }))
+      return
+    }
+    svg.append(el('polyline', {
+      points: points.map((point) => point.join(',')).join(' '),
+      fill: 'none', stroke: stroke.color, 'stroke-width': stroke.size, 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+    }))
+  }
+  // A card an older gift already has (no paper color, no drawing, no placed words) is drawn the
+  // same way as before: the design, the centered words, the sign-off, and stickers at scale 1.8.
+  const drawCard = (card, extra = {}) => {
     const design = DESIGNS[card.design] || DESIGNS.holly
+    const ink = card.bg ? readable(card.bg) : design.ink
     const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' })
     const title = el('title')
     title.textContent = 'How your card looks'
-    svg.append(title, el('rect', { width: W, height: H, rx: 18, fill: design.bg, stroke: design.edge, 'stroke-width': 6 }))
-    for (const [name, attributes] of design.shapes) svg.append(el(name, attributes))
+    svg.append(title, el('rect', { width: W, height: H, rx: 18, fill: card.bg || design.bg, stroke: design.edge, 'stroke-width': 6 }))
+    if (!card.plain) for (const [name, attributes] of design.shapes) svg.append(el(name, attributes))
+    for (const picture of card.pictures || []) {
+      if (!safePhoto(picture.src)) continue
+      const cx = (picture.x / 100) * W
+      const cy = (picture.y / 100) * H
+      const image = el('image', { href: picture.src, x: cx - picture.w / 2, y: cy - picture.h / 2, width: picture.w, height: picture.h })
+      if (picture.turn) image.setAttribute('transform', `rotate(${picture.turn} ${cx} ${cy})`)
+      svg.append(image)
+    }
+    for (const stroke of card.marks || []) drawStroke(svg, stroke)
+    if (extra.draft?.kind === 'draw') drawStroke(svg, { color: pen, size: penSize, points: extra.draft.points })
     let lines = wrapLines(card.message)
     const small = lines.length > 6 || lines.some((line) => line.endsWith('…'))
     if (small) lines = wrapLines(card.message, 50, 12)
     const step = small ? 23 : 32
-    const text = el('text', { x: W / 2, y: H / 2 - ((lines.length - 1) * step) / 2, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: design.ink, 'font-size': small ? 19 : 26, 'font-family': 'Georgia, serif' })
+    const text = el('text', { x: W / 2, y: H / 2 - ((lines.length - 1) * step) / 2, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: ink, 'font-size': small ? 19 : 26, 'font-family': 'Georgia, serif' })
     lines.forEach((line, index) => {
       const span = el('tspan', { x: W / 2, dy: index === 0 ? 0 : step })
       span.textContent = line
@@ -100,16 +144,113 @@
     })
     svg.append(text)
     if (card.signOff) {
-      const sign = el('text', { x: W - 60, y: H - 50, 'text-anchor': 'end', fill: design.ink, 'font-size': 24, 'font-style': 'italic', 'font-family': 'Georgia, serif' })
+      const sign = el('text', { x: W - 60, y: H - 50, 'text-anchor': 'end', fill: ink, 'font-size': 24, 'font-style': 'italic', 'font-family': 'Georgia, serif' })
       sign.textContent = `— ${card.signOff}`
       svg.append(sign)
     }
-    for (const sticker of card.stickers) {
-      const group = el('g', { transform: `translate(${30 + (sticker.x / 100) * (W - 60)} ${30 + (sticker.y / 100) * (H - 60)}) scale(1.8)` })
+    for (const item of card.texts || []) {
+      const x = (item.x / 100) * W
+      const y = (item.y / 100) * H
+      const node = el('text', { x, y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: item.color, 'font-size': item.size, 'font-family': 'Georgia, serif' })
+      if (item.turn) node.setAttribute('transform', `rotate(${item.turn} ${x} ${y})`)
+      node.textContent = item.text
+      svg.append(node)
+    }
+    for (const sticker of card.stickers || []) {
+      const tx = 30 + (sticker.x / 100) * (W - 60)
+      const ty = 30 + (sticker.y / 100) * (H - 60)
+      const scale = sticker.size && sticker.size !== 100 ? 1.8 * sticker.size / 100 : 1.8
+      const transform = sticker.turn ? `translate(${tx} ${ty}) rotate(${sticker.turn}) scale(${scale})` : `translate(${tx} ${ty}) scale(${scale})`
+      const group = el('g', { transform })
       for (const [name, attributes] of STICKERS[sticker.kind] || []) group.append(el(name, attributes))
       svg.append(group)
     }
+    const which = extra.picked
+    if (which?.kind === 'sticker' && card.stickers?.[which.index]) {
+      const sticker = card.stickers[which.index]
+      const x = 30 + (sticker.x / 100) * (W - 60)
+      const y = 30 + (sticker.y / 100) * (H - 60)
+      const reach = 56 * ((sticker.size || 100) / 100)
+      svg.append(el('rect', { x: x - reach / 2, y: y - reach / 2, width: reach, height: reach, rx: 6, fill: 'none', stroke: '#1f2633', 'stroke-width': 2, 'stroke-dasharray': '5 4' }))
+    } else if (which?.kind === 'text' && card.texts?.[which.index]) {
+      const item = card.texts[which.index]
+      const x = (item.x / 100) * W
+      const y = (item.y / 100) * H
+      const rw = Math.max(48, String(item.text).length * item.size * 0.56)
+      const rh = item.size + 16
+      svg.append(el('rect', { x: x - rw / 2, y: y - rh / 2, width: rw, height: rh, rx: 6, fill: 'none', stroke: '#1f2633', 'stroke-width': 2, 'stroke-dasharray': '5 4' }))
+    } else if (which?.kind === 'picture' && card.pictures?.[which.index]) {
+      const item = card.pictures[which.index]
+      const x = (item.x / 100) * W
+      const y = (item.y / 100) * H
+      svg.append(el('rect', { x: x - item.w / 2 - 4, y: y - item.h / 2 - 4, width: item.w + 8, height: item.h + 8, rx: 6, fill: 'none', stroke: '#1f2633', 'stroke-width': 2, 'stroke-dasharray': '5 4' }))
+    }
     return svg
+  }
+  // The pointer work on the card. Kept off the template's state until a gesture finishes, so a
+  // line being drawn doesn't rebuild the form on every move.
+  const gesture = { current: null }
+  const remember = () => {
+    past = [...past.slice(-29), {
+      stuck: stuck.map((item) => ({ ...item })),
+      marks: marks.map((stroke) => ({ ...stroke, points: stroke.points.map((point) => [...point]) })),
+      texts: texts.map((item) => ({ ...item })),
+      pictures: pictures.map((item) => ({ ...item })),
+      paperColor,
+      plain,
+    }]
+  }
+  const cardPoint = (e) => {
+    const svg = e.currentTarget.querySelector('svg')
+    if (!svg) return null
+    const box = svg.getBoundingClientRect()
+    if (!box.width || !box.height) return null
+    return {
+      x: clamp(((e.clientX - box.left) / box.width) * W, 0, W),
+      y: clamp(((e.clientY - box.top) / box.height) * H, 0, H),
+    }
+  }
+  const hit = (p) => {
+    for (let i = stuck.length - 1; i >= 0; i -= 1) {
+      const sticker = stuck[i]
+      const x = 30 + (sticker.x / 100) * (W - 60)
+      const y = 30 + (sticker.y / 100) * (H - 60)
+      if (Math.hypot(p.x - x, p.y - y) <= 26 * ((sticker.size || 100) / 100)) return { kind: 'sticker', index: i }
+    }
+    for (let i = texts.length - 1; i >= 0; i -= 1) {
+      const item = texts[i]
+      const x = (item.x / 100) * W
+      const y = (item.y / 100) * H
+      const half = Math.max(22, String(item.text).length * item.size * 0.28)
+      if (Math.abs(p.x - x) <= half && Math.abs(p.y - y) <= item.size * 0.7) return { kind: 'text', index: i }
+    }
+    for (let i = pictures.length - 1; i >= 0; i -= 1) {
+      const item = pictures[i]
+      const x = (item.x / 100) * W
+      const y = (item.y / 100) * H
+      if (Math.abs(p.x - x) <= item.w / 2 && Math.abs(p.y - y) <= item.h / 2) return { kind: 'picture', index: i }
+    }
+    return null
+  }
+  const listOf = (kind) => (kind === 'sticker' ? stuck : kind === 'text' ? texts : pictures)
+  const setList = (kind, list) => {
+    if (kind === 'sticker') stuck = list
+    else if (kind === 'text') texts = list
+    else pictures = list
+  }
+  const eraseAt = (p) => {
+    const left = marks.filter((stroke) => !stroke.points.some(([x, y]) => Math.hypot(p.x - x, p.y - y) <= stroke.size + 10))
+    if (left.length !== marks.length) marks = left
+  }
+  const shift = (kind, index, dx, dy) => {
+    const list = listOf(kind).slice()
+    const item = { ...list[index] }
+    const across = kind === 'sticker' ? W - 60 : W
+    const down = kind === 'sticker' ? H - 60 : H
+    item.x = clamp(item.x + (dx / across) * 100, 0, 100)
+    item.y = clamp(item.y + (dy / down) * 100, 0, 100)
+    list[index] = item
+    setList(kind, list)
   }
 
   // The floor under the tree. A place is x (0 to 100, across) and y (0 at the back, 100 at the front).
@@ -182,6 +323,16 @@
   let paper = 'red'
   let ribbon = 'gold'
   let tucked = false
+  let tool = 'move'
+  let pen = '#1f2633'
+  let penSize = 6
+  let paperColor = ''
+  let plain = false
+  let marks = []
+  let texts = []
+  let pictures = []
+  let picked = null
+  let past = []
 
   const count = () => (gifts.length === 0 ? 'Nothing under the tree yet. Yours could be the first.' : gifts.length === 1 ? 'One gift is under the tree.' : `${gifts.length} gifts are under the tree.`)
   const pile = () => settle(gifts)
@@ -207,11 +358,59 @@
 
   const cardFrom = (form) => {
     const data = new FormData(form)
-    return { design: String(data.get('design') || 'holly'), message: String(data.get('message') || '').trim(), signOff: String(data.get('signOff') || '').trim(), stickers: stuck }
+    return {
+      design: String(data.get('design') || 'holly'),
+      message: String(data.get('message') || '').trim(),
+      signOff: String(data.get('signOff') || '').trim(),
+      stickers: stuck,
+      bg: paperColor,
+      plain,
+      marks,
+      texts,
+      pictures,
+    }
   }
-  const redraw = (form) => {
-    const preview = form.querySelector('.preview')
-    if (preview) preview.replaceChildren(drawCard(cardFrom(form)))
+  const redraw = (form, draft) => {
+    const preview = form && form.querySelector('.preview')
+    if (preview) preview.replaceChildren(drawCard(cardFrom(form), { draft, picked }))
+  }
+  const pickedHelp = () => (picked ? 'Selected. Drag it on the card, or use the buttons under it.' : 'Select something on the card, or add a sticker, words or a photo.')
+  const stickerPayload = () => stuck.map((sticker) => {
+    const out = { kind: sticker.kind, x: Math.round(clamp(sticker.x, 0, 100)), y: Math.round(clamp(sticker.y, 0, 100)) }
+    if (sticker.turn) out.turn = Math.round(sticker.turn)
+    if (sticker.size && sticker.size !== 100) out.size = Math.round(sticker.size)
+    return out
+  })
+  const scenePayload = () => {
+    const scene = {}
+    if (paperColor) scene.bg = paperColor
+    if (plain) scene.plain = true
+    if (marks.length) scene.marks = marks.map((stroke) => ({ color: stroke.color, size: stroke.size, points: stroke.points.map((point) => [Math.round(point[0]), Math.round(point[1])]) }))
+    if (texts.length) scene.texts = texts.map((item) => {
+      const out = { text: item.text, x: Math.round(item.x), y: Math.round(item.y), size: item.size, color: item.color }
+      if (item.turn) out.turn = Math.round(item.turn)
+      return out
+    })
+    if (pictures.length) scene.pictures = pictures.map((item) => {
+      const out = { src: item.src, x: Math.round(item.x), y: Math.round(item.y), w: Math.round(item.w), h: Math.round(item.h) }
+      if (item.turn) out.turn = Math.round(item.turn)
+      return out
+    })
+    return scene
+  }
+  const resetCard = () => {
+    stuck = []
+    marks = []
+    texts = []
+    pictures = []
+    paperColor = ''
+    plain = false
+    picked = null
+    past = []
+    tool = 'move'
+    pen = '#1f2633'
+    penSize = 6
+    gesture.current = null
   }
 
   const start = async (e) => {
@@ -222,7 +421,7 @@
     // The form has to have been open a few seconds before a gift is taken: it keeps robots out.
     try { token = (await call(look)).token || '' } catch (_) { token = '' }
     const form = root && root.querySelector('form')
-    if (form) { redraw(form); const first = form.querySelector('input[name="from"]'); if (first) first.focus() }
+    if (form) { redraw(form); const first = form.querySelector('input[name="from"]'); if (first) first.focus(); requestAnimationFrame(tuck) }
   }
   const choose = (e) => {
     if (e.target.name === 'kind') kind = e.target.value
@@ -233,13 +432,251 @@
   }
   const stick = (e, name) => {
     if (stuck.length >= SPOTS.length) return
+    remember()
     const [x, y] = SPOTS[stuck.length]
     stuck = [...stuck, { kind: name, x, y }]
+    picked = { kind: 'sticker', index: stuck.length - 1 }
+    tool = 'move'
     redraw(e.currentTarget.form)
   }
   const unstick = (e) => {
+    if (!stuck.length) return
+    remember()
     stuck = []
+    if (picked && picked.kind === 'sticker') picked = null
     redraw(e.currentTarget.form)
+  }
+  const useTool = (e, name) => {
+    tool = name
+    if (name !== 'move') picked = null
+    redraw(e.currentTarget.form)
+  }
+  const choosePen = (e, color) => { pen = color; tool = 'draw'; redraw(e.currentTarget.form) }
+  const customPen = (e) => { pen = String(e.target.value || '').toLowerCase(); tool = 'draw'; redraw(e.target.form) }
+  const groundOf = (form) => {
+    const name = String(new FormData(form).get('design') || 'holly')
+    return paperColor || (DESIGNS[name] || DESIGNS.holly).bg
+  }
+  const setPaper = (form, color) => {
+    paperColor = color
+    const ground = groundOf(form)
+    pen = inkOn(ground, pen)
+    texts = texts.map((item) => ({ ...item, color: inkOn(ground, item.color) }))
+    redraw(form)
+  }
+  const choosePaper = (e, color) => setPaper(e.currentTarget.form, color)
+  const customPaper = (e) => setPaper(e.target.form, String(e.target.value || '').toLowerCase())
+  const chooseSize = (size) => { penSize = size; tool = 'draw' }
+  const togglePlain = (e) => { plain = e.target.checked; redraw(e.target.form) }
+  const undo = (e) => {
+    const prev = past.at(-1)
+    if (!prev) return
+    past = past.slice(0, -1)
+    stuck = prev.stuck
+    marks = prev.marks
+    texts = prev.texts
+    pictures = prev.pictures
+    paperColor = prev.paperColor
+    plain = prev.plain
+    picked = null
+    gesture.current = null
+    redraw(e.currentTarget.form)
+  }
+  const clearArt = (e) => {
+    remember()
+    stuck = []
+    marks = []
+    texts = []
+    pictures = []
+    plain = false
+    paperColor = ''
+    picked = null
+    gesture.current = null
+    redraw(e.currentTarget.form)
+  }
+  const placeText = (form, x, y) => {
+    const input = form.querySelector('#gift-place')
+    const words = String(input ? input.value : '').replace(/\s+/g, ' ').trim()
+    if (!words) { problem = 'Write the words in the box, then tap the card where they should go.'; return }
+    if (words.length > 80 || texts.length >= 12) { problem = WHY['bad-text']; return }
+    remember()
+    texts = [...texts, { text: words, x: Math.round(clamp(x, 0, 100)), y: Math.round(clamp(y, 0, 100)), size: 32, color: inkOn(groundOf(form), pen) }]
+    picked = { kind: 'text', index: texts.length - 1 }
+    tool = 'move'
+    if (input) input.value = ''
+    problem = ''
+    redraw(form)
+  }
+  const changePicked = (e, change) => {
+    if (!picked) return
+    const list = listOf(picked.kind)
+    const current = list[picked.index]
+    if (!current) return
+    remember()
+    const next = list.slice()
+    next[picked.index] = change({ ...current })
+    setList(picked.kind, next)
+    redraw(e.currentTarget.form)
+  }
+  const turnPicked = (e, by) => changePicked(e, (item) => {
+    const turn = Math.max(-180, Math.min(180, (item.turn || 0) + by))
+    if (turn) item.turn = turn
+    else delete item.turn
+    return item
+  })
+  const sizePicked = (e, by) => changePicked(e, (item) => {
+    if (picked.kind === 'text') {
+      const at = Math.max(0, TEXT_SIZES.indexOf(item.size))
+      item.size = TEXT_SIZES[Math.max(0, Math.min(TEXT_SIZES.length - 1, at + by))]
+      return item
+    }
+    if (picked.kind === 'picture') {
+      const factor = by > 0 ? 1.15 : 0.87
+      item.w = Math.max(8, Math.min(520, Math.round(item.w * factor)))
+      item.h = Math.max(8, Math.min(360, Math.round(item.h * factor)))
+      return item
+    }
+    const sizes = [40, 70, 100, 140, 180, 220]
+    const at = sizes.reduce((best, size, index) => (Math.abs(size - (item.size || 100)) < Math.abs(sizes[best] - (item.size || 100)) ? index : best), 0)
+    const next = sizes[Math.max(0, Math.min(sizes.length - 1, at + by))]
+    if (next === 100) delete item.size
+    else item.size = next
+    return item
+  })
+  const nudgePicked = (e, dx, dy) => changePicked(e, (item) => {
+    item.x = clamp(item.x + dx, 0, 100)
+    item.y = clamp(item.y + dy, 0, 100)
+    return item
+  })
+  const frontPicked = (e) => {
+    if (!picked) return
+    const list = listOf(picked.kind)
+    if (picked.index >= list.length - 1) return
+    remember()
+    const next = list.slice()
+    const [item] = next.splice(picked.index, 1)
+    next.push(item)
+    setList(picked.kind, next)
+    picked = { kind: picked.kind, index: next.length - 1 }
+    redraw(e.currentTarget.form)
+  }
+  const removePicked = (e) => {
+    if (!picked) return
+    remember()
+    const next = listOf(picked.kind).slice()
+    next.splice(picked.index, 1)
+    setList(picked.kind, next)
+    picked = null
+    redraw(e.currentTarget.form)
+  }
+  const onCardPointer = (e) => {
+    const form = e.currentTarget.closest('form')
+    const p = cardPoint(e)
+    if (!p || !form) return
+    if (e.type === 'pointerdown') {
+      if (e.cancelable) e.preventDefault()
+      try { e.currentTarget.setPointerCapture(e.pointerId) } catch (_) {}
+      if (tool === 'draw') {
+        if (marks.length >= 40) { problem = WHY['bad-drawing']; return }
+        remember()
+        gesture.current = { kind: 'draw', points: [[Math.round(p.x), Math.round(p.y)]] }
+        return
+      }
+      if (tool === 'erase') {
+        remember()
+        gesture.current = { kind: 'erase' }
+        eraseAt(p)
+        redraw(form)
+        return
+      }
+      if (tool === 'text') { placeText(form, (p.x / W) * 100, (p.y / H) * 100); return }
+      const found = hit(p)
+      picked = found
+      if (found) {
+        remember()
+        gesture.current = { kind: 'drag', itemKind: found.kind, index: found.index, x: p.x, y: p.y }
+      } else gesture.current = null
+      redraw(form)
+      return
+    }
+    const current = gesture.current
+    if (!current) return
+    if (e.type === 'pointermove') {
+      if (current.kind === 'draw') {
+        const last = current.points.at(-1)
+        if (Math.hypot(p.x - last[0], p.y - last[1]) < 4 || current.points.length >= 80) return
+        current.points.push([Math.round(p.x), Math.round(p.y)])
+        redraw(form, current)
+        return
+      }
+      if (current.kind === 'erase') { eraseAt(p); redraw(form); return }
+      if (current.kind === 'drag') {
+        shift(current.itemKind, current.index, p.x - current.x, p.y - current.y)
+        current.x = p.x
+        current.y = p.y
+        redraw(form)
+      }
+      return
+    }
+    if (e.type === 'pointerup' || e.type === 'pointercancel') {
+      if (current.kind === 'draw' && current.points.length) marks = [...marks, { color: pen, size: penSize, points: current.points }]
+      gesture.current = null
+      redraw(form)
+    }
+  }
+  const loadImage = (url) => new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('image'))
+    img.src = url
+  })
+  const shrinkPhoto = (img) => {
+    let w = img.naturalWidth
+    let h = img.naturalHeight
+    if (!w || !h) return null
+    const scale = Math.min(1, 280 / Math.max(w, h))
+    w = Math.max(8, Math.round(w * scale))
+    h = Math.max(8, Math.round(h * scale))
+    const canvas = document.createElement('canvas')
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, w, h)
+    ctx.drawImage(img, 0, 0, w, h)
+    let quality = 0.72
+    let src = canvas.toDataURL('image/jpeg', quality)
+    while (src.length > 70000 && quality > 0.4) {
+      quality = Math.round((quality - 0.1) * 10) / 10
+      src = canvas.toDataURL('image/jpeg', quality)
+    }
+    if (!safePhoto(src) || src.length > 70000) return null
+    return { src, w: Math.min(520, w), h: Math.min(360, h) }
+  }
+  const addPhoto = async (e) => {
+    const input = e.currentTarget
+    const file = input.files && input.files[0]
+    input.value = ''
+    const form = input.form
+    if (!file) return
+    if (pictures.length >= 2) { problem = WHY['too-many-pictures']; return }
+    if (!/^image\/(png|jpeg)$/.test(file.type)) { problem = WHY['bad-picture']; return }
+    const url = URL.createObjectURL(file)
+    try {
+      const made = shrinkPhoto(await loadImage(url))
+      if (!made || pictures.length >= 2) { problem = pictures.length >= 2 ? WHY['too-many-pictures'] : WHY['bad-picture']; return }
+      remember()
+      pictures = [...pictures, { ...made, x: 50, y: 46 }]
+      picked = { kind: 'picture', index: pictures.length - 1 }
+      tool = 'move'
+      problem = ''
+      redraw(form)
+    } catch (_) {
+      problem = WHY['bad-picture']
+    } finally {
+      URL.revokeObjectURL(url)
+    }
   }
 
   const WHY = {
@@ -250,8 +687,16 @@
     token: 'That took a while. Press the button once more.',
     'from-length': 'Add your name, 40 letters at most.',
     'note-length': 'Write your note, 1,000 letters at most.',
-    'message-length': 'Write a few words for the card, 300 letters at most.',
+    'message-length': 'Write a few words for the card, or draw, place words, or add a sticker.',
     'sign-off-length': 'The sign-off can be 40 letters at most.',
+    'bad-sticker': 'That sticker didn’t stick. Take it off and try again.',
+    'too-many-stickers': 'Eight stickers is the most.',
+    'bad-drawing': 'The card is full of drawing. Erase a line to add more.',
+    'bad-text': 'Keep each bit of writing short, and on the card.',
+    'bad-picture': 'Use a photo that’s a JPG or PNG, and not too big.',
+    'too-many-pictures': 'Two photos is the most a card can hold.',
+    'bad-color': 'Pick a color for the card.',
+    'card-too-big': 'That card is too full. Take a photo or a drawing off.',
   }
 
   const send = async (e) => {
@@ -262,17 +707,19 @@
     const from = String(data.get('from') || '').trim()
     const note = String(data.get('note') || '').trim()
     const card = cardFrom(form)
-    problem = !from ? WHY['from-length'] : kind === 'note' && !note ? WHY['note-length'] : kind === 'card' && !card.message ? WHY['message-length'] : ''
+    const made = card.message || card.signOff || card.stickers.length || card.marks.length || card.texts.length || card.pictures.length
+    problem = !from ? WHY['from-length'] : kind === 'note' && !note ? WHY['note-length'] : kind === 'card' && !made ? WHY['message-length'] : ''
     if (problem) return
     busy = true
     try {
       // The form's own fields, and what it holds outside them: the token, where the box was set down,
-      // and the card's stickers.
+      // the stickers, and anything drawn or placed on the card.
       data.set('kind', kind)
       data.set('token', token)
       data.set('spotX', String(spot.x))
       data.set('spotY', String(spot.y))
-      data.set('stickers', JSON.stringify(card.stickers))
+      data.set('stickers', JSON.stringify(stickerPayload()))
+      data.set('scene', JSON.stringify(scenePayload()))
       const answer = await call(leave, data)
       if (answer.error) {
         problem = WHY[answer.error] || 'That didn’t go under the tree. Try again in a minute.'
@@ -284,9 +731,10 @@
         ribbon = 'gold'
         said = 'Your gift is under the tree. Grammi opens it on Christmas morning.'
         open = false
-        stuck = []
+        resetCard()
         form.reset()
         kind = 'note'
+        requestAnimationFrame(tuck)
       }
     } catch (_) {
       problem = 'That didn’t go under the tree. Check your connection and try again.'
@@ -352,6 +800,7 @@
 <style>
   :host { display: block; }
   .under { display: none; max-width: 34rem; margin: 1.5rem auto; padding: 0 0.5rem; color: var(--foreground, #1f2633); }
+  .under:has(form:not([hidden])) { max-width: 42rem; }
   .under[data-state="shown"] { display: block; }
   .heading { margin: 0 0 0.3rem; text-align: center; font-family: var(--ob-font-heading, Georgia, serif); font-size: 1.5rem; }
   .count, .said, .problem, .help { margin: 0.3rem 0; text-align: center; }
@@ -394,11 +843,12 @@
   .names { margin: 0.2rem 0; text-align: center; font-size: 0.95rem; overflow-wrap: anywhere; }
   .nudges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .nudges button { min-height: 44px; padding: 0.4rem 0.7rem; font: inherit; border-radius: 8px; cursor: pointer; background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border: 2px solid var(--border, #b9b4a6); }
-  .go, .send, .stickers button, .clear {
+  .go, .send, .stickers button, .tools button, .clear {
     min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
     border: 2px solid var(--primary, #a11224); background: var(--primary, #a11224); color: var(--primary-foreground, #ffffff); }
   .go { display: block; margin: 0.6rem auto; }
-  .stickers button, .clear { background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); padding: 0.4rem 0.7rem; }
+  .stickers button, .tools button, .clear { background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); padding: 0.4rem 0.7rem; }
+  .tools button[aria-pressed="true"] { background: var(--primary, #a11224); color: var(--primary-foreground, #ffffff); border-color: var(--primary, #a11224); }
   button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
   button:disabled { opacity: 0.6; cursor: default; }
   form { display: grid; gap: 0.9rem; margin-top: 0.8rem; padding: 1rem; border: 1px solid var(--border, #b9b4a6); border-radius: 10px; background: var(--card, #fffdf8); }
@@ -411,7 +861,16 @@
   .choices { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; }
   .choice { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; font-weight: 400; }
   .paper::before { content: ""; width: 1.4rem; height: 1.4rem; border-radius: 3px; background: var(--paper); border: 1px solid rgb(0 0 0 / 0.3); }
-  .stickers { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .stickers, .swatches, .tools { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .swatch { width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 8px; border: 2px solid var(--border, #b9b4a6); background: var(--ink, #fffdf8); cursor: pointer; }
+  .swatch[aria-pressed="true"] { outline: 3px solid var(--foreground, #1f2633); outline-offset: 2px; }
+  .swatch[data-paper="design"] { background: linear-gradient(135deg, #1f3a5f 50%, #f7f3e8 50%); }
+  input[type="color"] { width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+  .file { font-weight: 600; }
+  .preview { touch-action: none; user-select: none; }
+  .preview[data-tool="draw"], .preview[data-tool="text"] { cursor: crosshair; }
+  .preview[data-tool="move"] { cursor: grab; }
+  .preview[data-tool="erase"] { cursor: cell; }
   .preview svg { display: block; width: 100%; height: auto; border-radius: 10px; }
   .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
 </style>
@@ -452,22 +911,69 @@
             <label class="choice"><input type="radio" name="design" value={d[0]} checked={d[0] === 'holly'} /> {d[1]}</label>
           </zb-each>
         </div>
-        <div class="field">
-          <label for="gift-message">What the card says</label>
-          <textarea id="gift-message" name="message" maxlength="300"></textarea>
+        <p class="help">Pick a design, or a paper color of your own. Plain paper leaves the design’s drawings off. Then draw, write, and drag things where you want them.</p>
+        <div class="swatches" role="group" aria-label="Card color">
+          <zb-each items={PAPERS} as="c" key={c[1]}>
+            <button type="button" class="swatch" data-paper={c[0] || 'design'} style:--ink={c[0] || '#f7f3e8'} aria-pressed={paperColor === c[0] ? 'true' : 'false'} aria-label={c[1]} onclick={(e) => choosePaper(e, c[0])}></button>
+          </zb-each>
+          <label class="choice">Other <input type="color" value={paperColor || '#fffdf8'} oninput={customPaper} aria-label="Another card color" /></label>
         </div>
-        <div class="field">
-          <label for="gift-sign">How you sign it</label>
-          <input id="gift-sign" name="signOff" type="text" maxlength="40" />
+        <label class="choice"><input type="checkbox" checked={plain} oninput={togglePlain} /> Plain paper</label>
+        <div class="tools" role="group" aria-label="Card tools">
+          <button type="button" aria-pressed={tool === 'move' ? 'true' : 'false'} onclick={(e) => useTool(e, 'move')}>Move</button>
+          <button type="button" aria-pressed={tool === 'draw' ? 'true' : 'false'} onclick={(e) => useTool(e, 'draw')}>Draw</button>
+          <button type="button" aria-pressed={tool === 'erase' ? 'true' : 'false'} onclick={(e) => useTool(e, 'erase')}>Erase</button>
+          <button type="button" aria-pressed={tool === 'text' ? 'true' : 'false'} onclick={(e) => useTool(e, 'text')}>Words</button>
         </div>
-        <p class="help">Add up to eight stickers. Each one goes to the next open spot around the edge.</p>
+        <div class="tools" hidden={tool !== 'draw'}>
+          <zb-each items={INKS} as="c" key={c[0]}>
+            <button type="button" class="swatch" style:--ink={c[0]} aria-pressed={pen === c[0] ? 'true' : 'false'} aria-label={c[1]} onclick={(e) => choosePen(e, c[0])}></button>
+          </zb-each>
+          <label class="choice">Other <input type="color" value={pen} oninput={customPen} aria-label="Another pen color" /></label>
+          <zb-each items={PEN_SIZES} as="s" key={s[0]}>
+            <button type="button" aria-pressed={penSize === s[0] ? 'true' : 'false'} onclick={() => chooseSize(s[0])}>{s[1]}</button>
+          </zb-each>
+        </div>
+        <div class="field" hidden={tool !== 'text'}>
+          <label for="gift-place">Words to put on the card</label>
+          <input id="gift-place" type="text" maxlength="80" autocomplete="off" />
+          <button type="button" onclick={(e) => placeText(e.currentTarget.form, 50, 42)}>Put them in the middle</button>
+        </div>
         <div class="stickers">
           <zb-each items={STICKER_NAMES} as="s" key={s[0]}>
             <button type="button" disabled={stuck.length >= 8} onclick={(e) => stick(e, s[0])}>{s[1]}</button>
           </zb-each>
           <button class="clear" type="button" disabled={stuck.length === 0} onclick={unstick}>Take the stickers off</button>
         </div>
-        <div class="preview"></div>
+        <label class="file">Add a photo
+          <input type="file" accept="image/jpeg,image/png" disabled={pictures.length >= 2} onchange={addPhoto} />
+        </label>
+        <p class="help">{pickedHelp()}</p>
+        <div class="nudges">
+          <button type="button" disabled={picked == null} onclick={(e) => nudgePicked(e, -4, 0)}>Left</button>
+          <button type="button" disabled={picked == null} onclick={(e) => nudgePicked(e, 4, 0)}>Right</button>
+          <button type="button" disabled={picked == null} onclick={(e) => nudgePicked(e, 0, -4)}>Up</button>
+          <button type="button" disabled={picked == null} onclick={(e) => nudgePicked(e, 0, 4)}>Down</button>
+          <button type="button" disabled={picked == null} onclick={(e) => turnPicked(e, -15)}>Turn left</button>
+          <button type="button" disabled={picked == null} onclick={(e) => turnPicked(e, 15)}>Turn right</button>
+          <button type="button" disabled={picked == null} onclick={(e) => sizePicked(e, -1)}>Smaller</button>
+          <button type="button" disabled={picked == null} onclick={(e) => sizePicked(e, 1)}>Bigger</button>
+          <button type="button" disabled={picked == null} onclick={frontPicked}>In front</button>
+          <button type="button" disabled={picked == null} onclick={removePicked}>Remove</button>
+        </div>
+        <div class="nudges">
+          <button class="clear" type="button" disabled={past.length === 0} onclick={undo}>Undo</button>
+          <button class="clear" type="button" onclick={clearArt}>Start this card over</button>
+        </div>
+        <div class="preview" data-tool={tool} aria-label="Your card. Draw on it, or drag what you added." onpointerdown={onCardPointer} onpointermove={onCardPointer} onpointerup={onCardPointer} onpointercancel={onCardPointer}></div>
+        <div class="field">
+          <label for="gift-message">Words in the middle</label>
+          <textarea id="gift-message" name="message" maxlength="300"></textarea>
+        </div>
+        <div class="field">
+          <label for="gift-sign">How you sign it</label>
+          <input id="gift-sign" name="signOff" type="text" maxlength="40" />
+        </div>
       </fieldset>
       <fieldset>
         <legend>Wrapping paper</legend>

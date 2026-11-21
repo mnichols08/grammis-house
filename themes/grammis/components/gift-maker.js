@@ -16,6 +16,7 @@ const css = `@layer theme, base, components, utilities;
 @scope (gift-maker) to ([data-zb-slotted="gift-maker"]) {
   :scope { display: block; }
   .under { display: none; max-width: 34rem; margin: 1.5rem auto; padding: 0 0.5rem; color: var(--foreground, #1f2633); }
+  .under:has(form:not([hidden])) { max-width: 42rem; }
   .under[data-state="shown"] { display: block; }
   .heading { margin: 0 0 0.3rem; text-align: center; font-family: var(--ob-font-heading, Georgia, serif); font-size: 1.5rem; }
   .count, .said, .problem, .help { margin: 0.3rem 0; text-align: center; }
@@ -58,11 +59,12 @@ const css = `@layer theme, base, components, utilities;
   .names { margin: 0.2rem 0; text-align: center; font-size: 0.95rem; overflow-wrap: anywhere; }
   .nudges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .nudges button { min-height: 44px; padding: 0.4rem 0.7rem; font: inherit; border-radius: 8px; cursor: pointer; background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border: 2px solid var(--border, #b9b4a6); }
-  .go, .send, .stickers button, .clear {
+  .go, .send, .stickers button, .tools button, .clear {
     min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
     border: 2px solid var(--primary, #a11224); background: var(--primary, #a11224); color: var(--primary-foreground, #ffffff); }
   .go { display: block; margin: 0.6rem auto; }
-  .stickers button, .clear { background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); padding: 0.4rem 0.7rem; }
+  .stickers button, .tools button, .clear { background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); padding: 0.4rem 0.7rem; }
+  .tools button[aria-pressed="true"] { background: var(--primary, #a11224); color: var(--primary-foreground, #ffffff); border-color: var(--primary, #a11224); }
   button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
   button:disabled { opacity: 0.6; cursor: default; }
   form { display: grid; gap: 0.9rem; margin-top: 0.8rem; padding: 1rem; border: 1px solid var(--border, #b9b4a6); border-radius: 10px; background: var(--card, #fffdf8); }
@@ -75,7 +77,16 @@ const css = `@layer theme, base, components, utilities;
   .choices { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; }
   .choice { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; font-weight: 400; }
   .paper::before { content: ""; width: 1.4rem; height: 1.4rem; border-radius: 3px; background: var(--paper); border: 1px solid rgb(0 0 0 / 0.3); }
-  .stickers { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .stickers, .swatches, .tools { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .swatch { width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 8px; border: 2px solid var(--border, #b9b4a6); background: var(--ink, #fffdf8); cursor: pointer; }
+  .swatch[aria-pressed="true"] { outline: 3px solid var(--foreground, #1f2633); outline-offset: 2px; }
+  .swatch[data-paper="design"] { background: linear-gradient(135deg, #1f3a5f 50%, #f7f3e8 50%); }
+  input[type="color"] { width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+  .file { font-weight: 600; }
+  .preview { touch-action: none; user-select: none; }
+  .preview[data-tool="draw"], .preview[data-tool="text"] { cursor: crosshair; }
+  .preview[data-tool="move"] { cursor: grab; }
+  .preview[data-tool="erase"] { cursor: cell; }
   .preview svg { display: block; width: 100%; height: auto; border-radius: 10px; }
   .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
 }
@@ -229,6 +240,10 @@ export class GiftMaker extends HTMLElement {
     const WRAPS = [['red', 'Red'], ['green', 'Green'], ['gold', 'Gold'], ['blue', 'Blue'], ['plaid', 'Plaid'], ['stripes', 'Stripes']]
     const BOWS = [['gold', 'Gold'], ['red', 'Red'], ['green', 'Green'], ['white', 'White'], ['blue', 'Blue'], ['none', 'No bow']]
     const STICKER_NAMES = [['star', 'Star'], ['heart', 'Heart'], ['snowflake', 'Snowflake'], ['candy-cane', 'Candy cane'], ['bell', 'Bell'], ['mitten', 'Mitten'], ['cookie', 'Cookie'], ['ornament', 'Ornament'], ['holly', 'Holly'], ['gift', 'Gift']]
+    const INKS = [['#1f2633', 'Ink'], ['#a11224', 'Red'], ['#1f4d2c', 'Pine'], ['#1f4f9a', 'Blue'], ['#f2c14e', 'Gold'], ['#ffffff', 'White'], ['#7a1020', 'Wine'], ['#5a3518', 'Brown']]
+    const PAPERS = [['', 'The design'], ['#fffdf8', 'Cream'], ['#f7f3e8', 'Ivory'], ['#fff6f2', 'Blush'], ['#1f3a5f', 'Night'], ['#2f6b3f', 'Pine'], ['#a4643a', 'Ginger'], ['#2b2140', 'Plum']]
+    const TEXT_SIZES = [18, 24, 32, 44]
+    const PEN_SIZES = [[3, 'Thin'], [6, 'Medium'], [12, 'Thick']]
     // Where each sticker lands, in the order they're added: the corners first, then the edges.
     const SPOTS = [[6, 8], [94, 8], [6, 92], [94, 92], [50, 4], [50, 96], [4, 50], [96, 50]]
 
@@ -237,11 +252,11 @@ export class GiftMaker extends HTMLElement {
     const W = 600
     const H = 400
     const DESIGNS = {
-      'snowy-night': { label: 'Snowy night', bg: '#1f3a5f', ink: '#ffffff', edge: '#9cc3e6', shapes: [['circle', { cx: 80, cy: 70, r: 4, fill: '#fff' }], ['circle', { cx: 520, cy: 60, r: 3, fill: '#fff' }], ['circle', { cx: 460, cy: 340, r: 5, fill: '#fff' }], ['circle', { cx: 120, cy: 330, r: 3, fill: '#fff' }]] },
+      'snowy-night': { label: 'Snowy night', bg: '#1f3a5f', ink: '#ffffff', edge: '#9cc3e6', shapes: [['circle', { cx: 80, cy: 70, r: 4, fill: '#fff' }], ['circle', { cx: 520, cy: 60, r: 3, fill: '#fff' }], ['circle', { cx: 460, cy: 340, r: 5, fill: '#fff' }], ['circle', { cx: 120, cy: 330, r: 3, fill: '#fff' }], ['path', { d: 'M0 360 Q150 330 300 360 T600 350 V400 H0Z', fill: '#e8f1fa' }]] },
       'candy-stripe': { label: 'Candy stripe', bg: '#fff6f2', ink: '#7a1020', edge: '#c8243c', shapes: [['path', { d: 'M0 0H600V24H0ZM0 376H600V400H0Z', fill: '#c8243c' }], ['path', { d: 'M0 24H600V32H0ZM0 368H600V376H0Z', fill: '#fff' }]] },
-      holly: { label: 'Holly', bg: '#f7f3e8', ink: '#1f4d2c', edge: '#2f6b3f', shapes: [['path', { d: 'M30 40c20-10 40 0 50 20-20 0-40 10-50-20ZM80 30c10 20 0 40-20 50 0-20-10-40 20-50Z', fill: '#2f6b3f' }], ['circle', { cx: 70, cy: 60, r: 7, fill: '#c8243c' }]] },
+      holly: { label: 'Holly', bg: '#f7f3e8', ink: '#1f4d2c', edge: '#2f6b3f', shapes: [['path', { d: 'M30 40c20-10 40 0 50 20-20 0-40 10-50-20ZM80 30c10 20 0 40-20 50 0-20-10-40 20-50Z', fill: '#2f6b3f' }], ['circle', { cx: 70, cy: 60, r: 7, fill: '#c8243c' }], ['path', { d: 'M570 360c-20 10-40 0-50-20 20 0 40-10 50 20ZM520 370c-10-20 0-40 20-50 0 20 10 40-20 50Z', fill: '#2f6b3f' }], ['circle', { cx: 530, cy: 340, r: 7, fill: '#c8243c' }]] },
       gingerbread: { label: 'Gingerbread', bg: '#a4643a', ink: '#fff8ee', edge: '#fff8ee', shapes: [['path', { d: 'M20 20H580V380H20Z', fill: 'none', stroke: '#fff8ee', 'stroke-width': 6, 'stroke-dasharray': '2 14', 'stroke-linecap': 'round' }]] },
-      starry: { label: 'Starry', bg: '#2b2140', ink: '#ffe9a8', edge: '#f2c14e', shapes: [['path', { d: 'M90 60l6 14 15 1-12 9 4 15-13-8-13 8 4-15-12-9 15-1Z', fill: '#f2c14e' }], ['path', { d: 'M510 300l5 11 12 1-9 7 3 12-11-6-10 6 3-12-9-7 12-1Z', fill: '#f2c14e' }], ['circle', { cx: 480, cy: 70, r: 3, fill: '#ffe9a8' }]] },
+      starry: { label: 'Starry', bg: '#2b2140', ink: '#ffe9a8', edge: '#f2c14e', shapes: [['path', { d: 'M90 60l6 14 15 1-12 9 4 15-13-8-13 8 4-15-12-9 15-1Z', fill: '#f2c14e' }], ['path', { d: 'M510 300l5 11 12 1-9 7 3 12-11-6-10 6 3-12-9-7 12-1Z', fill: '#f2c14e' }], ['circle', { cx: 480, cy: 70, r: 3, fill: '#ffe9a8' }], ['circle', { cx: 140, cy: 320, r: 3, fill: '#ffe9a8' }]] },
     }
     const DESIGN_NAMES = Object.entries(DESIGNS).map(([value, design]) => [value, design.label])
     const STICKERS = {
@@ -273,18 +288,57 @@ export class GiftMaker extends HTMLElement {
       }
       return lines.length > max ? [...lines.slice(0, max - 1), `${lines[max - 1]}…`] : lines
     }
-    const drawCard = (card) => {
+    const safePhoto = (src) => /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(src || '')
+    const lum = (hex) => {
+      const part = (i) => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16) / 255
+      const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+      const [r, g, b] = [0, 1, 2].map((i) => lin(part(i)))
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+    const readable = (hex) => (lum(hex) > 0.4 ? '#1f2633' : '#fffdf8')
+    const contrast = (a, b) => {
+      const [hi, lo] = lum(a) > lum(b) ? [lum(a), lum(b)] : [lum(b), lum(a)]
+      return (hi + 0.05) / (lo + 0.05)
+    }
+    const inkOn = (ground, color) => (contrast(color, ground) < 3 ? readable(ground) : color)
+    const drawStroke = (svg, stroke) => {
+      const points = stroke.points || []
+      if (!points.length) return
+      if (points.length < 2) {
+        const [x, y] = points[0]
+        svg.append(el('circle', { cx: x, cy: y, r: Math.max(1, stroke.size / 2), fill: stroke.color }))
+        return
+      }
+      svg.append(el('polyline', {
+        points: points.map((point) => point.join(',')).join(' '),
+        fill: 'none', stroke: stroke.color, 'stroke-width': stroke.size, 'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+      }))
+    }
+    // A card an older gift already has (no paper color, no drawing, no placed words) is drawn the
+    // same way as before: the design, the centered words, the sign-off, and stickers at scale 1.8.
+    const drawCard = (card, extra = {}) => {
       const design = DESIGNS[card.design] || DESIGNS.holly
+      const ink = card.bg ? readable(card.bg) : design.ink
       const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' })
       const title = el('title')
       title.textContent = 'How your card looks'
-      svg.append(title, el('rect', { width: W, height: H, rx: 18, fill: design.bg, stroke: design.edge, 'stroke-width': 6 }))
-      for (const [name, attributes] of design.shapes) svg.append(el(name, attributes))
+      svg.append(title, el('rect', { width: W, height: H, rx: 18, fill: card.bg || design.bg, stroke: design.edge, 'stroke-width': 6 }))
+      if (!card.plain) for (const [name, attributes] of design.shapes) svg.append(el(name, attributes))
+      for (const picture of card.pictures || []) {
+        if (!safePhoto(picture.src)) continue
+        const cx = (picture.x / 100) * W
+        const cy = (picture.y / 100) * H
+        const image = el('image', { href: picture.src, x: cx - picture.w / 2, y: cy - picture.h / 2, width: picture.w, height: picture.h })
+        if (picture.turn) image.setAttribute('transform', `rotate(${picture.turn} ${cx} ${cy})`)
+        svg.append(image)
+      }
+      for (const stroke of card.marks || []) drawStroke(svg, stroke)
+      if (extra.draft?.kind === 'draw') drawStroke(svg, { color: pen.value, size: penSize.value, points: extra.draft.points })
       let lines = wrapLines(card.message)
       const small = lines.length > 6 || lines.some((line) => line.endsWith('…'))
       if (small) lines = wrapLines(card.message, 50, 12)
       const step = small ? 23 : 32
-      const text = el('text', { x: W / 2, y: H / 2 - ((lines.length - 1) * step) / 2, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: design.ink, 'font-size': small ? 19 : 26, 'font-family': 'Georgia, serif' })
+      const text = el('text', { x: W / 2, y: H / 2 - ((lines.length - 1) * step) / 2, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: ink, 'font-size': small ? 19 : 26, 'font-family': 'Georgia, serif' })
       lines.forEach((line, index) => {
         const span = el('tspan', { x: W / 2, dy: index === 0 ? 0 : step })
         span.textContent = line
@@ -292,16 +346,113 @@ export class GiftMaker extends HTMLElement {
       })
       svg.append(text)
       if (card.signOff) {
-        const sign = el('text', { x: W - 60, y: H - 50, 'text-anchor': 'end', fill: design.ink, 'font-size': 24, 'font-style': 'italic', 'font-family': 'Georgia, serif' })
+        const sign = el('text', { x: W - 60, y: H - 50, 'text-anchor': 'end', fill: ink, 'font-size': 24, 'font-style': 'italic', 'font-family': 'Georgia, serif' })
         sign.textContent = `— ${card.signOff}`
         svg.append(sign)
       }
-      for (const sticker of card.stickers) {
-        const group = el('g', { transform: `translate(${30 + (sticker.x / 100) * (W - 60)} ${30 + (sticker.y / 100) * (H - 60)}) scale(1.8)` })
+      for (const item of card.texts || []) {
+        const x = (item.x / 100) * W
+        const y = (item.y / 100) * H
+        const node = el('text', { x, y, 'text-anchor': 'middle', 'dominant-baseline': 'middle', fill: item.color, 'font-size': item.size, 'font-family': 'Georgia, serif' })
+        if (item.turn) node.setAttribute('transform', `rotate(${item.turn} ${x} ${y})`)
+        node.textContent = item.text
+        svg.append(node)
+      }
+      for (const sticker of card.stickers || []) {
+        const tx = 30 + (sticker.x / 100) * (W - 60)
+        const ty = 30 + (sticker.y / 100) * (H - 60)
+        const scale = sticker.size && sticker.size !== 100 ? 1.8 * sticker.size / 100 : 1.8
+        const transform = sticker.turn ? `translate(${tx} ${ty}) rotate(${sticker.turn}) scale(${scale})` : `translate(${tx} ${ty}) scale(${scale})`
+        const group = el('g', { transform })
         for (const [name, attributes] of STICKERS[sticker.kind] || []) group.append(el(name, attributes))
         svg.append(group)
       }
+      const which = extra.picked
+      if (which?.kind === 'sticker' && card.stickers?.[which.index]) {
+        const sticker = card.stickers[which.index]
+        const x = 30 + (sticker.x / 100) * (W - 60)
+        const y = 30 + (sticker.y / 100) * (H - 60)
+        const reach = 56 * ((sticker.size || 100) / 100)
+        svg.append(el('rect', { x: x - reach / 2, y: y - reach / 2, width: reach, height: reach, rx: 6, fill: 'none', stroke: '#1f2633', 'stroke-width': 2, 'stroke-dasharray': '5 4' }))
+      } else if (which?.kind === 'text' && card.texts?.[which.index]) {
+        const item = card.texts[which.index]
+        const x = (item.x / 100) * W
+        const y = (item.y / 100) * H
+        const rw = Math.max(48, String(item.text).length * item.size * 0.56)
+        const rh = item.size + 16
+        svg.append(el('rect', { x: x - rw / 2, y: y - rh / 2, width: rw, height: rh, rx: 6, fill: 'none', stroke: '#1f2633', 'stroke-width': 2, 'stroke-dasharray': '5 4' }))
+      } else if (which?.kind === 'picture' && card.pictures?.[which.index]) {
+        const item = card.pictures[which.index]
+        const x = (item.x / 100) * W
+        const y = (item.y / 100) * H
+        svg.append(el('rect', { x: x - item.w / 2 - 4, y: y - item.h / 2 - 4, width: item.w + 8, height: item.h + 8, rx: 6, fill: 'none', stroke: '#1f2633', 'stroke-width': 2, 'stroke-dasharray': '5 4' }))
+      }
       return svg
+    }
+    // The pointer work on the card. Kept off the template's state until a gesture finishes, so a
+    // line being drawn doesn't rebuild the form on every move.
+    const gesture = { current: null }
+    const remember = () => {
+      past.value = [...past.value.slice(-29), {
+        stuck: stuck.value.map((item) => ({ ...item })),
+        marks: marks.value.map((stroke) => ({ ...stroke, points: stroke.points.map((point) => [...point]) })),
+        texts: texts.value.map((item) => ({ ...item })),
+        pictures: pictures.value.map((item) => ({ ...item })),
+        paperColor: paperColor.value,
+        plain: plain.value,
+      }]
+    }
+    const cardPoint = (e) => {
+      const svg = e.currentTarget.querySelector('svg')
+      if (!svg) return null
+      const box = svg.getBoundingClientRect()
+      if (!box.width || !box.height) return null
+      return {
+        x: clamp(((e.clientX - box.left) / box.width) * W, 0, W),
+        y: clamp(((e.clientY - box.top) / box.height) * H, 0, H),
+      }
+    }
+    const hit = (p) => {
+      for (let i = stuck.value.length - 1; i >= 0; i -= 1) {
+        const sticker = stuck.value[i]
+        const x = 30 + (sticker.x / 100) * (W - 60)
+        const y = 30 + (sticker.y / 100) * (H - 60)
+        if (Math.hypot(p.x - x, p.y - y) <= 26 * ((sticker.size || 100) / 100)) return { kind: 'sticker', index: i }
+      }
+      for (let i = texts.value.length - 1; i >= 0; i -= 1) {
+        const item = texts.value[i]
+        const x = (item.x / 100) * W
+        const y = (item.y / 100) * H
+        const half = Math.max(22, String(item.text).length * item.size * 0.28)
+        if (Math.abs(p.x - x) <= half && Math.abs(p.y - y) <= item.size * 0.7) return { kind: 'text', index: i }
+      }
+      for (let i = pictures.value.length - 1; i >= 0; i -= 1) {
+        const item = pictures.value[i]
+        const x = (item.x / 100) * W
+        const y = (item.y / 100) * H
+        if (Math.abs(p.x - x) <= item.w / 2 && Math.abs(p.y - y) <= item.h / 2) return { kind: 'picture', index: i }
+      }
+      return null
+    }
+    const listOf = (kind) => (kind === 'sticker' ? stuck.value : kind === 'text' ? texts.value : pictures.value)
+    const setList = (kind, list) => {
+      if (kind === 'sticker') stuck.value = list
+      else if (kind === 'text') texts.value = list
+      else pictures.value = list
+    }
+    const eraseAt = (p) => {
+      const left = marks.value.filter((stroke) => !stroke.points.some(([x, y]) => Math.hypot(p.x - x, p.y - y) <= stroke.size + 10))
+      if (left.length !== marks.value.length) marks.value = left
+    }
+    const shift = (kind, index, dx, dy) => {
+      const list = listOf(kind).slice()
+      const item = { ...list[index] }
+      const across = kind === 'sticker' ? W - 60 : W
+      const down = kind === 'sticker' ? H - 60 : H
+      item.x = clamp(item.x + (dx / across) * 100, 0, 100)
+      item.y = clamp(item.y + (dy / down) * 100, 0, 100)
+      list[index] = item
+      setList(kind, list)
     }
 
     // The floor under the tree. A place is x (0 to 100, across) and y (0 at the back, 100 at the front).
@@ -374,6 +525,16 @@ export class GiftMaker extends HTMLElement {
     const paper = state2('red')
     const ribbon = state2('gold')
     const tucked = state2(false)
+    const tool = state2('move')
+    const pen = state2('#1f2633')
+    const penSize = state2(6)
+    const paperColor = state2('')
+    const plain = state2(false)
+    const marks = state2([])
+    const texts = state2([])
+    const pictures = state2([])
+    const picked = state2(null)
+    const past = state2([])
 
     const count = () => (gifts.value.length === 0 ? 'Nothing under the tree yet. Yours could be the first.' : gifts.value.length === 1 ? 'One gift is under the tree.' : `${gifts.value.length} gifts are under the tree.`)
     const pile = () => settle(gifts.value)
@@ -399,11 +560,59 @@ export class GiftMaker extends HTMLElement {
 
     const cardFrom = (form) => {
       const data = new FormData(form)
-      return { design: String(data.get('design') || 'holly'), message: String(data.get('message') || '').trim(), signOff: String(data.get('signOff') || '').trim(), stickers: stuck.value }
+      return {
+        design: String(data.get('design') || 'holly'),
+        message: String(data.get('message') || '').trim(),
+        signOff: String(data.get('signOff') || '').trim(),
+        stickers: stuck.value,
+        bg: paperColor.value,
+        plain: plain.value,
+        marks: marks.value,
+        texts: texts.value,
+        pictures: pictures.value,
+      }
     }
-    const redraw = (form) => {
-      const preview = form.querySelector('.preview')
-      if (preview) preview.replaceChildren(drawCard(cardFrom(form)))
+    const redraw = (form, draft) => {
+      const preview = form && form.querySelector('.preview')
+      if (preview) preview.replaceChildren(drawCard(cardFrom(form), { draft, picked: picked.value }))
+    }
+    const pickedHelp = () => (picked.value ? 'Selected. Drag it on the card, or use the buttons under it.' : 'Select something on the card, or add a sticker, words or a photo.')
+    const stickerPayload = () => stuck.value.map((sticker) => {
+      const out = { kind: sticker.kind, x: Math.round(clamp(sticker.x, 0, 100)), y: Math.round(clamp(sticker.y, 0, 100)) }
+      if (sticker.turn) out.turn = Math.round(sticker.turn)
+      if (sticker.size && sticker.size !== 100) out.size = Math.round(sticker.size)
+      return out
+    })
+    const scenePayload = () => {
+      const scene = {}
+      if (paperColor.value) scene.bg = paperColor.value
+      if (plain.value) scene.plain = true
+      if (marks.value.length) scene.marks = marks.value.map((stroke) => ({ color: stroke.color, size: stroke.size, points: stroke.points.map((point) => [Math.round(point[0]), Math.round(point[1])]) }))
+      if (texts.value.length) scene.texts = texts.value.map((item) => {
+        const out = { text: item.text, x: Math.round(item.x), y: Math.round(item.y), size: item.size, color: item.color }
+        if (item.turn) out.turn = Math.round(item.turn)
+        return out
+      })
+      if (pictures.value.length) scene.pictures = pictures.value.map((item) => {
+        const out = { src: item.src, x: Math.round(item.x), y: Math.round(item.y), w: Math.round(item.w), h: Math.round(item.h) }
+        if (item.turn) out.turn = Math.round(item.turn)
+        return out
+      })
+      return scene
+    }
+    const resetCard = () => {
+      stuck.value = []
+      marks.value = []
+      texts.value = []
+      pictures.value = []
+      paperColor.value = ''
+      plain.value = false
+      picked.value = null
+      past.value = []
+      tool.value = 'move'
+      pen.value = '#1f2633'
+      penSize.value = 6
+      gesture.current = null
     }
 
     const start = async (e) => {
@@ -414,7 +623,7 @@ export class GiftMaker extends HTMLElement {
       // The form has to have been open a few seconds before a gift is taken: it keeps robots out.
       try { token.value = (await call(look)).token || '' } catch (_) { token.value = '' }
       const form = root && root.querySelector('form')
-      if (form) { redraw(form); const first = form.querySelector('input[name="from"]'); if (first) first.focus() }
+      if (form) { redraw(form); const first = form.querySelector('input[name="from"]'); if (first) first.focus(); requestAnimationFrame(tuck) }
     }
     const choose = (e) => {
       if (e.target.name === 'kind') kind.value = e.target.value
@@ -425,13 +634,251 @@ export class GiftMaker extends HTMLElement {
     }
     const stick = (e, name) => {
       if (stuck.value.length >= SPOTS.length) return
+      remember()
       const [x, y] = SPOTS[stuck.value.length]
       stuck.value = [...stuck.value, { kind: name, x, y }]
+      picked.value = { kind: 'sticker', index: stuck.value.length - 1 }
+      tool.value = 'move'
       redraw(e.currentTarget.form)
     }
     const unstick = (e) => {
+      if (!stuck.value.length) return
+      remember()
       stuck.value = []
+      if (picked.value && picked.value.kind === 'sticker') picked.value = null
       redraw(e.currentTarget.form)
+    }
+    const useTool = (e, name) => {
+      tool.value = name
+      if (name !== 'move') picked.value = null
+      redraw(e.currentTarget.form)
+    }
+    const choosePen = (e, color) => { pen.value = color; tool.value = 'draw'; redraw(e.currentTarget.form) }
+    const customPen = (e) => { pen.value = String(e.target.value || '').toLowerCase(); tool.value = 'draw'; redraw(e.target.form) }
+    const groundOf = (form) => {
+      const name = String(new FormData(form).get('design') || 'holly')
+      return paperColor.value || (DESIGNS[name] || DESIGNS.holly).bg
+    }
+    const setPaper = (form, color) => {
+      paperColor.value = color
+      const ground = groundOf(form)
+      pen.value = inkOn(ground, pen.value)
+      texts.value = texts.value.map((item) => ({ ...item, color: inkOn(ground, item.color) }))
+      redraw(form)
+    }
+    const choosePaper = (e, color) => setPaper(e.currentTarget.form, color)
+    const customPaper = (e) => setPaper(e.target.form, String(e.target.value || '').toLowerCase())
+    const chooseSize = (size) => { penSize.value = size; tool.value = 'draw' }
+    const togglePlain = (e) => { plain.value = e.target.checked; redraw(e.target.form) }
+    const undo = (e) => {
+      const prev = past.value.at(-1)
+      if (!prev) return
+      past.value = past.value.slice(0, -1)
+      stuck.value = prev.stuck
+      marks.value = prev.marks
+      texts.value = prev.texts
+      pictures.value = prev.pictures
+      paperColor.value = prev.paperColor
+      plain.value = prev.plain
+      picked.value = null
+      gesture.current = null
+      redraw(e.currentTarget.form)
+    }
+    const clearArt = (e) => {
+      remember()
+      stuck.value = []
+      marks.value = []
+      texts.value = []
+      pictures.value = []
+      plain.value = false
+      paperColor.value = ''
+      picked.value = null
+      gesture.current = null
+      redraw(e.currentTarget.form)
+    }
+    const placeText = (form, x, y) => {
+      const input = form.querySelector('#gift-place')
+      const words = String(input ? input.value : '').replace(/\s+/g, ' ').trim()
+      if (!words) { problem.value = 'Write the words in the box, then tap the card where they should go.'; return }
+      if (words.length > 80 || texts.value.length >= 12) { problem.value = WHY['bad-text']; return }
+      remember()
+      texts.value = [...texts.value, { text: words, x: Math.round(clamp(x, 0, 100)), y: Math.round(clamp(y, 0, 100)), size: 32, color: inkOn(groundOf(form), pen.value) }]
+      picked.value = { kind: 'text', index: texts.value.length - 1 }
+      tool.value = 'move'
+      if (input) input.value = ''
+      problem.value = ''
+      redraw(form)
+    }
+    const changePicked = (e, change) => {
+      if (!picked.value) return
+      const list = listOf(picked.value.kind)
+      const current = list[picked.value.index]
+      if (!current) return
+      remember()
+      const next = list.slice()
+      next[picked.value.index] = change({ ...current })
+      setList(picked.value.kind, next)
+      redraw(e.currentTarget.form)
+    }
+    const turnPicked = (e, by) => changePicked(e, (item) => {
+      const turn = Math.max(-180, Math.min(180, (item.turn || 0) + by))
+      if (turn) item.turn = turn
+      else delete item.turn
+      return item
+    })
+    const sizePicked = (e, by) => changePicked(e, (item) => {
+      if (picked.value.kind === 'text') {
+        const at = Math.max(0, TEXT_SIZES.indexOf(item.size))
+        item.size = TEXT_SIZES[Math.max(0, Math.min(TEXT_SIZES.length - 1, at + by))]
+        return item
+      }
+      if (picked.value.kind === 'picture') {
+        const factor = by > 0 ? 1.15 : 0.87
+        item.w = Math.max(8, Math.min(520, Math.round(item.w * factor)))
+        item.h = Math.max(8, Math.min(360, Math.round(item.h * factor)))
+        return item
+      }
+      const sizes = [40, 70, 100, 140, 180, 220]
+      const at = sizes.reduce((best, size, index) => (Math.abs(size - (item.size || 100)) < Math.abs(sizes[best] - (item.size || 100)) ? index : best), 0)
+      const next = sizes[Math.max(0, Math.min(sizes.length - 1, at + by))]
+      if (next === 100) delete item.size
+      else item.size = next
+      return item
+    })
+    const nudgePicked = (e, dx, dy) => changePicked(e, (item) => {
+      item.x = clamp(item.x + dx, 0, 100)
+      item.y = clamp(item.y + dy, 0, 100)
+      return item
+    })
+    const frontPicked = (e) => {
+      if (!picked.value) return
+      const list = listOf(picked.value.kind)
+      if (picked.value.index >= list.length - 1) return
+      remember()
+      const next = list.slice()
+      const [item] = next.splice(picked.value.index, 1)
+      next.push(item)
+      setList(picked.value.kind, next)
+      picked.value = { kind: picked.value.kind, index: next.length - 1 }
+      redraw(e.currentTarget.form)
+    }
+    const removePicked = (e) => {
+      if (!picked.value) return
+      remember()
+      const next = listOf(picked.value.kind).slice()
+      next.splice(picked.value.index, 1)
+      setList(picked.value.kind, next)
+      picked.value = null
+      redraw(e.currentTarget.form)
+    }
+    const onCardPointer = (e) => {
+      const form = e.currentTarget.closest('form')
+      const p = cardPoint(e)
+      if (!p || !form) return
+      if (e.type === 'pointerdown') {
+        if (e.cancelable) e.preventDefault()
+        try { e.currentTarget.setPointerCapture(e.pointerId) } catch (_) {}
+        if (tool.value === 'draw') {
+          if (marks.value.length >= 40) { problem.value = WHY['bad-drawing']; return }
+          remember()
+          gesture.current = { kind: 'draw', points: [[Math.round(p.x), Math.round(p.y)]] }
+          return
+        }
+        if (tool.value === 'erase') {
+          remember()
+          gesture.current = { kind: 'erase' }
+          eraseAt(p)
+          redraw(form)
+          return
+        }
+        if (tool.value === 'text') { placeText(form, (p.x / W) * 100, (p.y / H) * 100); return }
+        const found = hit(p)
+        picked.value = found
+        if (found) {
+          remember()
+          gesture.current = { kind: 'drag', itemKind: found.kind, index: found.index, x: p.x, y: p.y }
+        } else gesture.current = null
+        redraw(form)
+        return
+      }
+      const current = gesture.current
+      if (!current) return
+      if (e.type === 'pointermove') {
+        if (current.kind === 'draw') {
+          const last = current.points.at(-1)
+          if (Math.hypot(p.x - last[0], p.y - last[1]) < 4 || current.points.length >= 80) return
+          current.points.push([Math.round(p.x), Math.round(p.y)])
+          redraw(form, current)
+          return
+        }
+        if (current.kind === 'erase') { eraseAt(p); redraw(form); return }
+        if (current.kind === 'drag') {
+          shift(current.itemKind, current.index, p.x - current.x, p.y - current.y)
+          current.x = p.x
+          current.y = p.y
+          redraw(form)
+        }
+        return
+      }
+      if (e.type === 'pointerup' || e.type === 'pointercancel') {
+        if (current.kind === 'draw' && current.points.length) marks.value = [...marks.value, { color: pen.value, size: penSize.value, points: current.points }]
+        gesture.current = null
+        redraw(form)
+      }
+    }
+    const loadImage = (url) => new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve(img)
+      img.onerror = () => reject(new Error('image'))
+      img.src = url
+    })
+    const shrinkPhoto = (img) => {
+      let w = img.naturalWidth
+      let h = img.naturalHeight
+      if (!w || !h) return null
+      const scale = Math.min(1, 280 / Math.max(w, h))
+      w = Math.max(8, Math.round(w * scale))
+      h = Math.max(8, Math.round(h * scale))
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return null
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, w, h)
+      ctx.drawImage(img, 0, 0, w, h)
+      let quality = 0.72
+      let src = canvas.toDataURL('image/jpeg', quality)
+      while (src.length > 70000 && quality > 0.4) {
+        quality = Math.round((quality - 0.1) * 10) / 10
+        src = canvas.toDataURL('image/jpeg', quality)
+      }
+      if (!safePhoto(src) || src.length > 70000) return null
+      return { src, w: Math.min(520, w), h: Math.min(360, h) }
+    }
+    const addPhoto = async (e) => {
+      const input = e.currentTarget
+      const file = input.files && input.files[0]
+      input.value = ''
+      const form = input.form
+      if (!file) return
+      if (pictures.value.length >= 2) { problem.value = WHY['too-many-pictures']; return }
+      if (!/^image\/(png|jpeg)$/.test(file.type)) { problem.value = WHY['bad-picture']; return }
+      const url = URL.createObjectURL(file)
+      try {
+        const made = shrinkPhoto(await loadImage(url))
+        if (!made || pictures.value.length >= 2) { problem.value = pictures.value.length >= 2 ? WHY['too-many-pictures'] : WHY['bad-picture']; return }
+        remember()
+        pictures.value = [...pictures.value, { ...made, x: 50, y: 46 }]
+        picked.value = { kind: 'picture', index: pictures.value.length - 1 }
+        tool.value = 'move'
+        problem.value = ''
+        redraw(form)
+      } catch (_) {
+        problem.value = WHY['bad-picture']
+      } finally {
+        URL.revokeObjectURL(url)
+      }
     }
 
     const WHY = {
@@ -442,8 +889,16 @@ export class GiftMaker extends HTMLElement {
       token: 'That took a while. Press the button once more.',
       'from-length': 'Add your name, 40 letters at most.',
       'note-length': 'Write your note, 1,000 letters at most.',
-      'message-length': 'Write a few words for the card, 300 letters at most.',
+      'message-length': 'Write a few words for the card, or draw, place words, or add a sticker.',
       'sign-off-length': 'The sign-off can be 40 letters at most.',
+      'bad-sticker': 'That sticker didn’t stick. Take it off and try again.',
+      'too-many-stickers': 'Eight stickers is the most.',
+      'bad-drawing': 'The card is full of drawing. Erase a line to add more.',
+      'bad-text': 'Keep each bit of writing short, and on the card.',
+      'bad-picture': 'Use a photo that’s a JPG or PNG, and not too big.',
+      'too-many-pictures': 'Two photos is the most a card can hold.',
+      'bad-color': 'Pick a color for the card.',
+      'card-too-big': 'That card is too full. Take a photo or a drawing off.',
     }
 
     const send = async (e) => {
@@ -454,17 +909,19 @@ export class GiftMaker extends HTMLElement {
       const from = String(data.get('from') || '').trim()
       const note = String(data.get('note') || '').trim()
       const card = cardFrom(form)
-      problem.value = !from ? WHY['from-length'] : kind.value === 'note' && !note ? WHY['note-length'] : kind.value === 'card' && !card.message ? WHY['message-length'] : ''
+      const made = card.message || card.signOff || card.stickers.length || card.marks.length || card.texts.length || card.pictures.length
+      problem.value = !from ? WHY['from-length'] : kind.value === 'note' && !note ? WHY['note-length'] : kind.value === 'card' && !made ? WHY['message-length'] : ''
       if (problem.value) return
       busy.value = true
       try {
         // The form's own fields, and what it holds outside them: the token, where the box was set down,
-        // and the card's stickers.
+        // the stickers, and anything drawn or placed on the card.
         data.set('kind', kind.value)
         data.set('token', token.value)
         data.set('spotX', String(spot.value.x))
         data.set('spotY', String(spot.value.y))
-        data.set('stickers', JSON.stringify(card.stickers))
+        data.set('stickers', JSON.stringify(stickerPayload()))
+        data.set('scene', JSON.stringify(scenePayload()))
         const answer = await call(leave, data)
         if (answer.error) {
           problem.value = WHY[answer.error] || 'That didn’t go under the tree. Try again in a minute.'
@@ -476,9 +933,10 @@ export class GiftMaker extends HTMLElement {
           ribbon.value = 'gold'
           said.value = 'Your gift is under the tree. Grammi opens it on Christmas morning.'
           open.value = false
-          stuck.value = []
+          resetCard()
           form.reset()
           kind.value = 'note'
+          requestAnimationFrame(tuck)
         }
       } catch (_) {
         problem.value = 'That didn’t go under the tree. Check your connection and try again.'
@@ -575,20 +1033,61 @@ export class GiftMaker extends HTMLElement {
         <div class="choices">
           <!--each--><!--/each-->
         </div>
+        <p class="help">Pick a design, or a paper color of your own. Plain paper leaves the design’s drawings off. Then draw, write, and drag things where you want them.</p>
+        <div class="swatches" role="group" aria-label="Card color">
+          <!--each--><!--/each-->
+          <label class="choice">Other <input type="color" aria-label="Another card color"></label>
+        </div>
+        <label class="choice"><input type="checkbox"> Plain paper</label>
+        <div class="tools" role="group" aria-label="Card tools">
+          <button type="button">Move</button>
+          <button type="button">Draw</button>
+          <button type="button">Erase</button>
+          <button type="button">Words</button>
+        </div>
+        <div class="tools">
+          <!--each--><!--/each-->
+          <label class="choice">Other <input type="color" aria-label="Another pen color"></label>
+          <!--each--><!--/each-->
+        </div>
         <div class="field">
-          <label for="gift-message">What the card says</label>
+          <label for="gift-place">Words to put on the card</label>
+          <input id="gift-place" type="text" maxlength="80" autocomplete="off">
+          <button type="button">Put them in the middle</button>
+        </div>
+        <div class="stickers">
+          <!--each--><!--/each-->
+          <button class="clear" type="button">Take the stickers off</button>
+        </div>
+        <label class="file">Add a photo
+          <input type="file" accept="image/jpeg,image/png">
+        </label>
+        <p class="help"></p>
+        <div class="nudges">
+          <button type="button">Left</button>
+          <button type="button">Right</button>
+          <button type="button">Up</button>
+          <button type="button">Down</button>
+          <button type="button">Turn left</button>
+          <button type="button">Turn right</button>
+          <button type="button">Smaller</button>
+          <button type="button">Bigger</button>
+          <button type="button">In front</button>
+          <button type="button">Remove</button>
+        </div>
+        <div class="nudges">
+          <button class="clear" type="button">Undo</button>
+          <button class="clear" type="button">Start this card over</button>
+        </div>
+        <div class="preview" aria-label="Your card. Draw on it, or drag what you added."></div>
+        <div class="field">
+          <label for="gift-message">Words in the middle</label>
           <textarea id="gift-message" name="message" maxlength="300"></textarea>
         </div>
         <div class="field">
           <label for="gift-sign">How you sign it</label>
           <input id="gift-sign" name="signOff" type="text" maxlength="40">
         </div>
-        <p class="help">Add up to eight stickers. Each one goes to the next open spot around the edge.</p>
-        <div class="stickers">
-          <!--each--><!--/each-->
-          <button class="clear" type="button">Take the stickers off</button>
-        </div>
-        <div class="preview"></div>
       </fieldset>
       <fieldset>
         <legend>Wrapping paper</legend>
@@ -650,12 +1149,98 @@ export class GiftMaker extends HTMLElement {
     });
     const field = form2.children[4];
     const fieldset = form2.children[5];
-    const clear = fieldset.children[5].children[0];
+    const input3 = fieldset.children[3].children[0].children[0];
+    input3.addEventListener("input", (event) => {
+      const handler = customPaper;
+      if (typeof handler === "function") handler.call(input3, event);
+    });
+    const input4 = fieldset.children[4].children[0];
+    input4.addEventListener("input", (event) => {
+      const handler = togglePlain;
+      if (typeof handler === "function") handler.call(input4, event);
+    });
+    const button = fieldset.children[5].children[0];
+    button.addEventListener("click", (e) => useTool(e, 'move'));
+    const button2 = fieldset.children[5].children[1];
+    button2.addEventListener("click", (e) => useTool(e, 'draw'));
+    const button3 = fieldset.children[5].children[2];
+    button3.addEventListener("click", (e) => useTool(e, 'erase'));
+    const button4 = fieldset.children[5].children[3];
+    button4.addEventListener("click", (e) => useTool(e, 'text'));
+    const tools = fieldset.children[6];
+    const input5 = tools.children[0].children[0];
+    input5.addEventListener("input", (event) => {
+      const handler = customPen;
+      if (typeof handler === "function") handler.call(input5, event);
+    });
+    const field2 = fieldset.children[7];
+    const button6 = field2.children[2];
+    button6.addEventListener("click", (e) => placeText(e.currentTarget.form, 50, 42));
+    const clear = fieldset.children[8].children[0];
     clear.addEventListener("click", (event) => {
       const handler = unstick;
       if (typeof handler === "function") handler.call(clear, event);
     });
-    const help = form2.children[8].children[2];
+    const input6 = fieldset.children[9].children[0];
+    input6.addEventListener("change", (event) => {
+      const handler = addPhoto;
+      if (typeof handler === "function") handler.call(input6, event);
+    });
+    const help = fieldset.children[10];
+    const button8 = fieldset.children[11].children[0];
+    button8.addEventListener("click", (e) => nudgePicked(e, -4, 0));
+    const button9 = fieldset.children[11].children[1];
+    button9.addEventListener("click", (e) => nudgePicked(e, 4, 0));
+    const button10 = fieldset.children[11].children[2];
+    button10.addEventListener("click", (e) => nudgePicked(e, 0, -4));
+    const button11 = fieldset.children[11].children[3];
+    button11.addEventListener("click", (e) => nudgePicked(e, 0, 4));
+    const button12 = fieldset.children[11].children[4];
+    button12.addEventListener("click", (e) => turnPicked(e, -15));
+    const button13 = fieldset.children[11].children[5];
+    button13.addEventListener("click", (e) => turnPicked(e, 15));
+    const button14 = fieldset.children[11].children[6];
+    button14.addEventListener("click", (e) => sizePicked(e, -1));
+    const button15 = fieldset.children[11].children[7];
+    button15.addEventListener("click", (e) => sizePicked(e, 1));
+    const button16 = fieldset.children[11].children[8];
+    button16.addEventListener("click", (event) => {
+      const handler = frontPicked;
+      if (typeof handler === "function") handler.call(button16, event);
+    });
+    const button17 = fieldset.children[11].children[9];
+    button17.addEventListener("click", (event) => {
+      const handler = removePicked;
+      if (typeof handler === "function") handler.call(button17, event);
+    });
+    const clear2 = fieldset.children[12].children[0];
+    clear2.addEventListener("click", (event) => {
+      const handler = undo;
+      if (typeof handler === "function") handler.call(clear2, event);
+    });
+    const clear3 = fieldset.children[12].children[1];
+    clear3.addEventListener("click", (event) => {
+      const handler = clearArt;
+      if (typeof handler === "function") handler.call(clear3, event);
+    });
+    const preview2 = fieldset.children[13];
+    preview2.addEventListener("pointerdown", (event) => {
+      const handler = onCardPointer;
+      if (typeof handler === "function") handler.call(preview2, event);
+    });
+    preview2.addEventListener("pointermove", (event) => {
+      const handler = onCardPointer;
+      if (typeof handler === "function") handler.call(preview2, event);
+    });
+    preview2.addEventListener("pointerup", (event) => {
+      const handler = onCardPointer;
+      if (typeof handler === "function") handler.call(preview2, event);
+    });
+    preview2.addEventListener("pointercancel", (event) => {
+      const handler = onCardPointer;
+      if (typeof handler === "function") handler.call(preview2, event);
+    });
+    const help2 = form2.children[8].children[2];
     const placementTree = form2.children[8].children[3];
     const floor2 = form2.children[8].children[4];
     floor2.addEventListener("pointerdown", (event) => {
@@ -666,15 +1251,15 @@ export class GiftMaker extends HTMLElement {
       const handler = point;
       if (typeof handler === "function") handler.call(floor2, event);
     });
-    const button2 = form2.children[8].children[5].children[0];
-    button2.addEventListener("click", () => nudge(-6, 0));
-    const button3 = form2.children[8].children[5].children[1];
-    button3.addEventListener("click", () => nudge(6, 0));
-    const button4 = form2.children[8].children[5].children[2];
-    button4.addEventListener("click", () => nudge(0, -15));
-    const button5 = form2.children[8].children[5].children[3];
-    button5.addEventListener("click", () => nudge(0, 15));
-    const field2 = form2.children[9];
+    const button18 = form2.children[8].children[5].children[0];
+    button18.addEventListener("click", () => nudge(-6, 0));
+    const button19 = form2.children[8].children[5].children[1];
+    button19.addEventListener("click", () => nudge(6, 0));
+    const button20 = form2.children[8].children[5].children[2];
+    button20.addEventListener("click", () => nudge(0, -15));
+    const button21 = form2.children[8].children[5].children[3];
+    button21.addEventListener("click", () => nudge(0, 15));
+    const field3 = form2.children[9];
     const problem2 = form2.children[11];
     const send2 = form2.children[12];
     this.#updates = [
@@ -699,7 +1284,7 @@ export class GiftMaker extends HTMLElement {
           bind(() => wide(b), (value) => setStyle(box2, "--w", value)),
           bind(() => near(b), (value) => setStyle(box2, "--z", value)),
         ];
-        return { nodes: row, update(next2, at) { b = next2; index2 = at; for (const update of updates) update(); } };
+        return { nodes: row, update(next2, at2) { b = next2; index2 = at2; for (const update of updates) update(); } };
       }),
       bind(() => (fromWhom()) ?? "", (value) => (names2.textContent = value)),
       bind(() => said.value ?? "", (value) => (said2.textContent = value)),
@@ -712,73 +1297,138 @@ export class GiftMaker extends HTMLElement {
         const row2 = clone(`
             <label class="choice"><input type="radio" name="design"><!--text--></label>
           `);
-        const input = row2.children[0].children[0];
+        const input2 = row2.children[0].children[0];
         const dText = new Text();
         row2.children[0].childNodes[1].replaceWith(dText);
         const updates2 = [
-          bind(() => d[0], (value) => setValue(input, value)),
-          bind(() => d[0] === "holly", (value) => input.toggleAttribute("checked", Boolean(value))),
+          bind(() => d[0], (value) => setValue(input2, value)),
+          bind(() => d[0] === "holly", (value) => input2.toggleAttribute("checked", Boolean(value))),
           bind(() => ` ${(d[1]) ?? ""}`, (value) => (dText.data = value)),
         ];
-        return { nodes: row2, update(next3, at2) { d = next3; index3 = at2; for (const update of updates2) update(); } };
+        return { nodes: row2, update(next3, at3) { d = next3; index3 = at3; for (const update of updates2) update(); } };
       }),
-      // <zb-each items={STICKER_NAMES} as="s" key={s[0]}>
-      $list(fieldset.children[5].childNodes[1], fieldset.children[5].childNodes[2], () => STICKER_NAMES, (s, index4) => s[0], (s, index4) => {
+      // <zb-each items={PAPERS} as="c" key={c[1]}>
+      $list(fieldset.children[3].childNodes[1], fieldset.children[3].childNodes[2], () => PAPERS, (c, index4) => c[1], (c, index4) => {
         const row3 = clone(`
+            <button type="button" class="swatch"></button>
+          `);
+        const swatch = row3.children[0];
+        swatch.addEventListener("click", (e) => choosePaper(e, c[0]));
+        const updates3 = [
+          bind(() => c[0] || "design", (value) => attribute(swatch, "data-paper", value)),
+          bind(() => c[0] || "#f7f3e8", (value) => setStyle(swatch, "--ink", value)),
+          bind(() => (paperColor.value === c[0]) ? "true" : "false", (value) => attribute(swatch, "aria-pressed", value)),
+          bind(() => c[1], (value) => attribute(swatch, "aria-label", value)),
+        ];
+        return { nodes: row3, update(next4, at4) { c = next4; index4 = at4; for (const update of updates3) update(); } };
+      }),
+      bind(() => paperColor.value || "#fffdf8", (value) => setValue(input3, value)),
+      bind(() => plain.value, (value) => input4.toggleAttribute("checked", Boolean(value))),
+      bind(() => (tool.value === "move") ? "true" : "false", (value) => attribute(button, "aria-pressed", value)),
+      bind(() => (tool.value === "draw") ? "true" : "false", (value) => attribute(button2, "aria-pressed", value)),
+      bind(() => (tool.value === "erase") ? "true" : "false", (value) => attribute(button3, "aria-pressed", value)),
+      bind(() => (tool.value === "text") ? "true" : "false", (value) => attribute(button4, "aria-pressed", value)),
+      bind(() => tool.value !== "draw", (value) => tools.toggleAttribute("hidden", Boolean(value))),
+      // <zb-each items={INKS} as="c" key={c[0]}>
+      $list(tools.childNodes[1], tools.childNodes[2], () => INKS, (c, index5) => c[0], (c, index5) => {
+        const row4 = clone(`
+            <button type="button" class="swatch"></button>
+          `);
+        const swatch2 = row4.children[0];
+        swatch2.addEventListener("click", (e) => choosePen(e, c[0]));
+        const updates4 = [
+          bind(() => c[0], (value) => setStyle(swatch2, "--ink", value)),
+          bind(() => (pen.value === c[0]) ? "true" : "false", (value) => attribute(swatch2, "aria-pressed", value)),
+          bind(() => c[1], (value) => attribute(swatch2, "aria-label", value)),
+        ];
+        return { nodes: row4, update(next5, at5) { c = next5; index5 = at5; for (const update of updates4) update(); } };
+      }),
+      bind(() => pen.value, (value) => setValue(input5, value)),
+      // <zb-each items={PEN_SIZES} as="s" key={s[0]}>
+      $list(tools.childNodes[6], tools.childNodes[7], () => PEN_SIZES, (s, index6) => s[0], (s, index6) => {
+        const row5 = clone(`
             <button type="button"></button>
           `);
-        const button = row3.children[0];
-        button.addEventListener("click", (e) => stick(e, s[0]));
-        const updates3 = [
-          bind(() => stuck.value.length >= 8, (value) => button.toggleAttribute("disabled", Boolean(value))),
-          bind(() => (s[1]) ?? "", (value) => (button.textContent = value)),
+        const button5 = row5.children[0];
+        button5.addEventListener("click", () => chooseSize(s[0]));
+        const updates5 = [
+          bind(() => (penSize.value === s[0]) ? "true" : "false", (value) => attribute(button5, "aria-pressed", value)),
+          bind(() => (s[1]) ?? "", (value) => (button5.textContent = value)),
         ];
-        return { nodes: row3, update(next4, at3) { s = next4; index4 = at3; for (const update of updates3) update(); } };
+        return { nodes: row5, update(next6, at6) { s = next6; index6 = at6; for (const update of updates5) update(); } };
+      }),
+      bind(() => tool.value !== "text", (value) => field2.toggleAttribute("hidden", Boolean(value))),
+      // <zb-each items={STICKER_NAMES} as="s" key={s[0]}>
+      $list(fieldset.children[8].childNodes[1], fieldset.children[8].childNodes[2], () => STICKER_NAMES, (s, index7) => s[0], (s, index7) => {
+        const row6 = clone(`
+            <button type="button"></button>
+          `);
+        const button7 = row6.children[0];
+        button7.addEventListener("click", (e) => stick(e, s[0]));
+        const updates6 = [
+          bind(() => stuck.value.length >= 8, (value) => button7.toggleAttribute("disabled", Boolean(value))),
+          bind(() => (s[1]) ?? "", (value) => (button7.textContent = value)),
+        ];
+        return { nodes: row6, update(next7, at7) { s = next7; index7 = at7; for (const update of updates6) update(); } };
       }),
       bind(() => stuck.value.length === 0, (value) => clear.toggleAttribute("disabled", Boolean(value))),
+      bind(() => pictures.value.length >= 2, (value) => input6.toggleAttribute("disabled", Boolean(value))),
+      bind(() => (pickedHelp()) ?? "", (value) => (help.textContent = value)),
+      bind(() => picked.value === null, (value) => button8.toggleAttribute("disabled", Boolean(value))),
+      bind(() => picked.value === null, (value) => button9.toggleAttribute("disabled", Boolean(value))),
+      bind(() => picked.value === null, (value) => button10.toggleAttribute("disabled", Boolean(value))),
+      bind(() => picked.value === null, (value) => button11.toggleAttribute("disabled", Boolean(value))),
+      bind(() => picked.value === null, (value) => button12.toggleAttribute("disabled", Boolean(value))),
+      bind(() => picked.value === null, (value) => button13.toggleAttribute("disabled", Boolean(value))),
+      bind(() => picked.value === null, (value) => button14.toggleAttribute("disabled", Boolean(value))),
+      bind(() => picked.value === null, (value) => button15.toggleAttribute("disabled", Boolean(value))),
+      bind(() => picked.value === null, (value) => button16.toggleAttribute("disabled", Boolean(value))),
+      bind(() => picked.value === null, (value) => button17.toggleAttribute("disabled", Boolean(value))),
+      bind(() => past.value.length === 0, (value) => clear2.toggleAttribute("disabled", Boolean(value))),
+      bind(() => tool.value, (value) => attribute(preview2, "data-tool", value)),
       // <zb-each items={WRAPS} as="w" key={w[0]}>
-      $list(form2.children[6].children[1].childNodes[1], form2.children[6].children[1].childNodes[2], () => WRAPS, (w, index5) => w[0], (w, index5) => {
-        const row4 = clone(`
+      $list(form2.children[6].children[1].childNodes[1], form2.children[6].children[1].childNodes[2], () => WRAPS, (w, index8) => w[0], (w, index8) => {
+        const row7 = clone(`
             <label class="choice paper"><input type="radio" name="wrap"><!--text--></label>
           `);
-        const choice = row4.children[0];
-        const input2 = choice.children[0];
+        const choice = row7.children[0];
+        const input7 = choice.children[0];
         const wText = new Text();
         choice.childNodes[1].replaceWith(wText);
-        const updates4 = [
+        const updates7 = [
           bind(() => w[0], (value) => attribute(choice, "data-wrap", value)),
-          bind(() => w[0], (value) => setValue(input2, value)),
-          bind(() => w[0] === "red", (value) => input2.toggleAttribute("checked", Boolean(value))),
+          bind(() => w[0], (value) => setValue(input7, value)),
+          bind(() => w[0] === "red", (value) => input7.toggleAttribute("checked", Boolean(value))),
           bind(() => ` ${(w[1]) ?? ""}`, (value) => (wText.data = value)),
         ];
-        return { nodes: row4, update(next5, at4) { w = next5; index5 = at4; for (const update of updates4) update(); } };
+        return { nodes: row7, update(next8, at8) { w = next8; index8 = at8; for (const update of updates7) update(); } };
       }),
       // <zb-each items={BOWS} as="w" key={w[0]}>
-      $list(form2.children[7].children[1].childNodes[1], form2.children[7].children[1].childNodes[2], () => BOWS, (w, index6) => w[0], (w, index6) => {
-        const row5 = clone(`
+      $list(form2.children[7].children[1].childNodes[1], form2.children[7].children[1].childNodes[2], () => BOWS, (w, index9) => w[0], (w, index9) => {
+        const row8 = clone(`
             <label class="choice ribbon"><input type="radio" name="bow"><!--text--></label>
           `);
-        const choice2 = row5.children[0];
-        const input3 = choice2.children[0];
+        const choice2 = row8.children[0];
+        const input8 = choice2.children[0];
         const wText2 = new Text();
         choice2.childNodes[1].replaceWith(wText2);
-        const updates5 = [
+        const updates8 = [
           bind(() => w[0], (value) => attribute(choice2, "data-bow", value)),
-          bind(() => w[0], (value) => setValue(input3, value)),
-          bind(() => w[0] === "gold", (value) => input3.toggleAttribute("checked", Boolean(value))),
+          bind(() => w[0], (value) => setValue(input8, value)),
+          bind(() => w[0] === "gold", (value) => input8.toggleAttribute("checked", Boolean(value))),
           bind(() => ` ${(w[1]) ?? ""}`, (value) => (wText2.data = value)),
         ];
-        return { nodes: row5, update(next6, at5) { w = next6; index6 = at5; for (const update of updates5) update(); } };
+        return { nodes: row8, update(next9, at9) { w = next9; index9 = at9; for (const update of updates8) update(); } };
       }),
-      bind(() => tucked.value, (value) => help.toggleAttribute("hidden", Boolean(value))),
+      bind(() => tucked.value, (value) => help2.toggleAttribute("hidden", Boolean(value))),
       bind(() => !(tucked.value), (value) => placementTree.toggleAttribute("hidden", Boolean(value))),
       // <zb-each items={withMine()} as="b" key={b.id}>
-      $list(floor2.childNodes[1], floor2.childNodes[2], () => withMine(), (b, index7) => b.id, (b, index7) => {
-        const row6 = clone(`
+      $list(floor2.childNodes[1], floor2.childNodes[2], () => withMine(), (b, index10) => b.id, (b, index10) => {
+        const row9 = clone(`
             <span class="box"></span>
           `);
-        const box3 = row6.children[0];
-        const updates6 = [
+        const box3 = row9.children[0];
+        const updates9 = [
           bind(() => b.wrap, (value) => attribute(box3, "data-wrap", value)),
           bind(() => b.bow, (value) => attribute(box3, "data-bow", value)),
           bind(() => b.mine ? "true" : "false", (value) => attribute(box3, "data-mine", value)),
@@ -787,9 +1437,9 @@ export class GiftMaker extends HTMLElement {
           bind(() => wide(b), (value) => setStyle(box3, "--w", value)),
           bind(() => near(b), (value) => setStyle(box3, "--z", value)),
         ];
-        return { nodes: row6, update(next7, at6) { b = next7; index7 = at6; for (const update of updates6) update(); } };
+        return { nodes: row9, update(next10, at10) { b = next10; index10 = at10; for (const update of updates9) update(); } };
       }),
-      bind(() => !(asks.value), (value) => field2.toggleAttribute("hidden", Boolean(value))),
+      bind(() => !(asks.value), (value) => field3.toggleAttribute("hidden", Boolean(value))),
       bind(() => problem.value ?? "", (value) => (problem2.textContent = value)),
       bind(() => busy.value, (value) => send2.toggleAttribute("disabled", Boolean(value))),
       bind(() => (busy.value ? "Putting it under the tree…" : "Put it under the tree") ?? "", (value) => (send2.textContent = value)),
