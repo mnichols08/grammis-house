@@ -4,6 +4,7 @@
 @scope (gift-maker) to ([data-zb-slotted="gift-maker"]) {
   :scope { display: block; }
   .under { display: none; max-width: 34rem; margin: 1.5rem auto; padding: 0 0.5rem; color: var(--foreground, #1f2633); }
+  .under:has(form:not([hidden])) { max-width: 42rem; }
   .under[data-state="shown"] { display: block; }
   .heading { margin: 0 0 0.3rem; text-align: center; font-family: var(--ob-font-heading, Georgia, serif); font-size: 1.5rem; }
   .count, .said, .problem, .help { margin: 0.3rem 0; text-align: center; }
@@ -46,11 +47,12 @@
   .names { margin: 0.2rem 0; text-align: center; font-size: 0.95rem; overflow-wrap: anywhere; }
   .nudges { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .nudges button { min-height: 44px; padding: 0.4rem 0.7rem; font: inherit; border-radius: 8px; cursor: pointer; background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border: 2px solid var(--border, #b9b4a6); }
-  .go, .send, .stickers button, .clear {
+  .go, .send, .stickers button, .tools button, .clear {
     min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
     border: 2px solid var(--primary, #a11224); background: var(--primary, #a11224); color: var(--primary-foreground, #ffffff); }
   .go { display: block; margin: 0.6rem auto; }
-  .stickers button, .clear { background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); padding: 0.4rem 0.7rem; }
+  .stickers button, .tools button, .clear { background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); padding: 0.4rem 0.7rem; }
+  .tools button[aria-pressed="true"] { background: var(--primary, #a11224); color: var(--primary-foreground, #ffffff); border-color: var(--primary, #a11224); }
   button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
   button:disabled { opacity: 0.6; cursor: default; }
   form { display: grid; gap: 0.9rem; margin-top: 0.8rem; padding: 1rem; border: 1px solid var(--border, #b9b4a6); border-radius: 10px; background: var(--card, #fffdf8); }
@@ -63,7 +65,16 @@
   .choices { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; }
   .choice { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; font-weight: 400; }
   .paper::before { content: ""; width: 1.4rem; height: 1.4rem; border-radius: 3px; background: var(--paper); border: 1px solid rgb(0 0 0 / 0.3); }
-  .stickers { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .stickers, .swatches, .tools { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .swatch { width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 8px; border: 2px solid var(--border, #b9b4a6); background: var(--ink, #fffdf8); cursor: pointer; }
+  .swatch[aria-pressed="true"] { outline: 3px solid var(--foreground, #1f2633); outline-offset: 2px; }
+  .swatch[data-paper="design"] { background: linear-gradient(135deg, #1f3a5f 50%, #f7f3e8 50%); }
+  input[type="color"] { width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+  .file { font-weight: 600; }
+  .preview { touch-action: none; user-select: none; }
+  .preview[data-tool="draw"], .preview[data-tool="text"] { cursor: crosshair; }
+  .preview[data-tool="move"] { cursor: grab; }
+  .preview[data-tool="erase"] { cursor: cell; }
   .preview svg { display: block; width: 100%; height: auto; border-radius: 10px; }
   .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
 }

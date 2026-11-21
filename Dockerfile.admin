@@ -3,11 +3,13 @@
 
 FROM rust:1-bookworm AS build
 COPY docker/openblog-password-setup.patch /tmp/openblog-password-setup.patch
+COPY docker/openblog-gift-card.patch /tmp/openblog-gift-card.patch
 RUN git init /tmp/openblog \
     && cd /tmp/openblog \
     && git fetch --depth 1 https://github.com/journey-to-code-org/open.blog 718c91393a72a2e282c2585a3ba7cfa763f7c410 \
     && git checkout --detach FETCH_HEAD \
     && git apply /tmp/openblog-password-setup.patch \
+    && git apply /tmp/openblog-gift-card.patch \
     && cargo install --path crates/openblog-cli
 
 FROM debian:bookworm-slim

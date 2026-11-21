@@ -14,7 +14,8 @@
 // copied at the pinned revision (vendor/openblog/lib/gift-card.mjs).
 
 import { createHash } from "node:crypto";
-import { CardError, LATE_DAYS, LIMITS, WRAPS, bowOf, checkFamilyCode, checkFormToken, checkGift, makeFormToken, opensAt, sameCode, spotOf } from "./vendor/openblog/lib/gift-card.mjs";
+import { CardError, LATE_DAYS, LIMITS, WRAPS, bowOf, checkFamilyCode, checkFormToken, makeFormToken, opensAt, sameCode, spotOf } from "./vendor/openblog/lib/gift-card.mjs";
+import { checkGiftWithScene, sceneFromForm } from "./lib/gift-scene.js";
 import { isUuid } from "./vendor/openblog/lib/greeting-card.mjs";
 import { withinLimit } from "./lib/db.js";
 import { hourOf, reply, sameSecret } from "./lib/http.js";
@@ -108,7 +109,7 @@ export function giftFromForm(form) {
     spot: { x: number("spotX"), y: number("spotY") },
     ...(kind === "note"
       ? { note: field("note") }
-      : { card: { design: field("design"), message: field("message"), signOff: field("signOff"), stickers: stickers ?? [{ kind: "" }] } }),
+      : { card: { design: field("design"), message: field("message"), signOff: field("signOff"), stickers: stickers ?? [{ kind: "" }], ...sceneFromForm(field("scene")) } }),
   };
 }
 
@@ -159,7 +160,7 @@ export function createGifts({ db, settings, now = () => Date.now() }) {
       const owner = await store.settings();
       if (!owner.ready) throw new CardError(403, "not-ready", "ready");
       if (!owner.anyone && !sameCode(value("code"), owner.familyCode)) throw new CardError(403, "family-code", "code");
-      const gift = checkGift(giftFromForm(fields));
+      const gift = checkGiftWithScene(giftFromForm(fields));
       const digest = createHash("sha256").update(`${salt}\0gifts\0${client}`).digest("hex");
       if (await store.fromSender(digest, new Date(at - 60 * 60 * 1000).toISOString()) >= LIMITS.perVisitorPerHour) return { error: "slow-down", status: 429 };
       const opens = opensAt(at, zone, opensOn);

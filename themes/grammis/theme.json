@@ -482,7 +482,7 @@
     },
     "gift-maker": {
       "label": "Gifts under the tree",
-      "description": "The wrapped boxes people have left you, and a little form for leaving one: a note, or a card they make. You open them on Christmas morning.",
+      "description": "The wrapped boxes people have left you, and a little form for leaving one: a note, or a card they draw, write on, and decorate. You open them on Christmas morning.",
       "script": "components/gift-maker.js",
       "source": "components/gift-maker.zb",
       "fallback": "Gifts for Grammi go under the tree here in December.",
