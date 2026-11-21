@@ -65,7 +65,7 @@ by itself. Open **Front page**, then the sign, to change it:
 - **Gifts under the tree** (Add a section → Gifts under the tree; put it right after the tree and the boxes sit at its foot): the
   wrapped boxes people have left you, piled on the floor where each giver set theirs down (boxes can
   lean on each other, never cover one), and a form for leaving one. A gift is a note, or a card made right
-  there (a design, a few words, up to eight stickers), with a choice of wrapping paper and a bow. A name shows on
+  there (a design, words in the middle, a drawing, words placed anywhere, stickers you can drag, and up to two small photos), with a choice of wrapping paper and a bow. A name shows on
   a box only when the giver ticks it and you allow it in **Gifts**; what a gift says is never on the
   site. Open them in **Gifts** from midnight on Christmas morning. The form asks for the family
   password unless you switch on **Let anyone leave you a gift**. Nothing shows, and nobody can leave a gift, until you turn on **My tree is ready for gifts** in
@@ -293,7 +293,7 @@ On the first start after this change, an existing configured login is reset once
 If she forgets it, run `openblog user passwd grammi --temporary-password` from a shell in the
 editor's site checkout; the prompt shows what you type, so use a private terminal. Give her
 that temporary password so she can choose another.
-The admin image applies `docker/openblog-password-setup.patch` to its pinned open.blog revision;
+The admin image applies `docker/openblog-password-setup.patch` and `docker/openblog-gift-card.patch` to its pinned open.blog revision;
 recheck the patch and password-setup tests when updating that revision.
 
 ### The site and the family service (`Dockerfile`, `family/`)

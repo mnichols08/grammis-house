@@ -1,0 +1,116 @@
+diff --git a/web/studio/parts/gift-card.js b/web/studio/parts/gift-card.js
+--- a/web/studio/parts/gift-card.js
++++ b/web/studio/parts/gift-card.js
+@@ -1,11 +1,12 @@
+-// A family member's card, drawn from its data: a design, a message, a sign-off and stickers, all
+-// from fixed lists (the gifts service and Admin's proxy both check them). Everything is built with
+-// createElementNS and textContent, so nothing anyone wrote can become markup. Studio slice 3b.
++// A family member's card, drawn from its data: a design, a message, a sign-off and stickers, and,
++// when a guest added them, a paper color, a drawing, words placed on the card, and small photos.
++// Everything is built with createElementNS and textContent, so nothing anyone wrote can become
++// markup. A photo is drawn only when it is a JPEG or PNG data URL. Studio slice 3b.
+ 
+ const NS = "http://www.w3.org/2000/svg";
+ const W = 600;
+ const H = 400;
+ 
+ // Each design: a background, a border colour, a text colour, and a few shapes of its own.
+ export const DESIGNS = {
+   "snowy-night": { label: "Snowy night", bg: "#1f3a5f", ink: "#ffffff", edge: "#9cc3e6", shapes: [["circle", { cx: 80, cy: 70, r: 4, fill: "#fff" }], ["circle", { cx: 520, cy: 60, r: 3, fill: "#fff" }], ["circle", { cx: 460, cy: 340, r: 5, fill: "#fff" }], ["circle", { cx: 120, cy: 330, r: 3, fill: "#fff" }], ["path", { d: "M0 360 Q150 330 300 360 T600 350 V400 H0Z", fill: "#e8f1fa" }]] },
+@@ -44,44 +45,91 @@ export function wrapLines(words, width = 38, max = 9) {
+       const next = line ? `${line} ${word}` : word;
+       if (next.length > width && line) { lines.push(line); line = word.slice(0, width); } else line = next.slice(0, width + 10);
+     }
+     lines.push(line);
+   }
+   return lines.length > max ? [...lines.slice(0, max - 1), `${lines[max - 1]}…`] : lines;
+ }
+ 
++const safePhoto = (src) => /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/.test(String(src || ""));
++const lum = (hex) => {
++  const part = (i) => Number.parseInt(String(hex).slice(1 + i * 2, 3 + i * 2), 16) / 255;
++  const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
++  const [r, g, b] = [0, 1, 2].map((i) => lin(part(i)));
++  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
++};
++const readable = (hex) => (lum(hex) > 0.4 ? "#1f2633" : "#fffdf8");
++
++function drawStroke(svg, stroke) {
++  const points = Array.isArray(stroke?.points) ? stroke.points : [];
++  if (!points.length) return;
++  const color = String(stroke.color || "#1f2633");
++  const width = Number(stroke.size) || 4;
++  if (points.length < 2) {
++    const [x, y] = points[0];
++    svg.append(el("circle", { cx: x, cy: y, r: Math.max(1, width / 2), fill: color }));
++    return;
++  }
++  svg.append(el("polyline", {
++    points: points.map((point) => `${Number(point[0])},${Number(point[1])}`).join(" "),
++    fill: "none", stroke: color, "stroke-width": width, "stroke-linecap": "round", "stroke-linejoin": "round",
++  }));
++}
++
+ /** The card as an SVG element, described for screen readers by `label`. */
+ export function drawCard(card, { label = "A card" } = {}) {
+   const design = DESIGNS[card?.design] || DESIGNS.holly;
+   const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", class: "studio-gift-card" });
+   const title = el("title");
+   title.textContent = label;
+-  svg.append(title, el("rect", { width: W, height: H, rx: 18, fill: design.bg, stroke: design.edge, "stroke-width": 6 }));
+-  for (const [name, attributes] of design.shapes) svg.append(el(name, attributes));
++  svg.append(title, el("rect", { width: W, height: H, rx: 18, fill: card?.bg || design.bg, stroke: design.edge, "stroke-width": 6 }));
++  if (card?.plain !== true) for (const [name, attributes] of design.shapes) svg.append(el(name, attributes));
++  for (const picture of card?.pictures || []) {
++    if (!safePhoto(picture?.src)) continue;
++    const cx = (Number(picture.x) / 100) * W;
++    const cy = (Number(picture.y) / 100) * H;
++    const image = el("image", { href: picture.src, x: cx - picture.w / 2, y: cy - picture.h / 2, width: picture.w, height: picture.h });
++    if (picture.turn) image.setAttribute("transform", `rotate(${Number(picture.turn)} ${cx} ${cy})`);
++    svg.append(image);
++  }
++  for (const stroke of card?.marks || []) drawStroke(svg, stroke);
+   // A long message gets smaller writing rather than being cut short.
+   let lines = wrapLines(card?.message);
+   const small = lines.length > 6 || lines.some((line) => line.endsWith("…"));
+   if (small) lines = wrapLines(card?.message, 50, 12);
+   const size = small ? 19 : 26;
+   const step = small ? 23 : 32;
+   const top = H / 2 - ((lines.length - 1) * step) / 2;
+-  const text = el("text", { x: W / 2, y: top, "text-anchor": "middle", "dominant-baseline": "middle", fill: design.ink, "font-size": size, "font-family": "Georgia, serif" });
++  const ink = card?.bg ? readable(card.bg) : design.ink;
++  const text = el("text", { x: W / 2, y: top, "text-anchor": "middle", "dominant-baseline": "middle", fill: ink, "font-size": size, "font-family": "Georgia, serif" });
+   lines.forEach((line, index) => {
+     const span = el("tspan", { x: W / 2, dy: index === 0 ? 0 : step });
+     span.textContent = line;
+     text.append(span);
+   });
+   svg.append(text);
+   if (card?.signOff) {
+-    const sign = el("text", { x: W - 60, y: H - 50, "text-anchor": "end", fill: design.ink, "font-size": 24, "font-style": "italic", "font-family": "Georgia, serif" });
++    const sign = el("text", { x: W - 60, y: H - 50, "text-anchor": "end", fill: ink, "font-size": 24, "font-style": "italic", "font-family": "Georgia, serif" });
+     sign.textContent = `— ${card.signOff}`;
+     svg.append(sign);
+   }
++  for (const item of card?.texts || []) {
++    const x = (Number(item.x) / 100) * W;
++    const y = (Number(item.y) / 100) * H;
++    const node = el("text", { x, y, "text-anchor": "middle", "dominant-baseline": "middle", fill: item.color || design.ink, "font-size": item.size || 32, "font-family": "Georgia, serif" });
++    if (item.turn) node.setAttribute("transform", `rotate(${Number(item.turn)} ${x} ${y})`);
++    node.textContent = String(item.text || "");
++    svg.append(node);
++  }
+   for (const sticker of card?.stickers || []) {
+     const shapes = STICKERS[sticker.kind];
+     if (!shapes) continue;
+-    const group = el("g", { transform: `translate(${30 + (sticker.x / 100) * (W - 60)} ${30 + (sticker.y / 100) * (H - 60)}) scale(1.8)` });
++    const tx = 30 + (sticker.x / 100) * (W - 60);
++    const ty = 30 + (sticker.y / 100) * (H - 60);
++    const scale = sticker.size && sticker.size !== 100 ? 1.8 * sticker.size / 100 : 1.8;
++    const transform = sticker.turn ? `translate(${tx} ${ty}) rotate(${sticker.turn}) scale(${scale})` : `translate(${tx} ${ty}) scale(${scale})`;
++    const group = el("g", { transform });
+     for (const [name, attributes] of shapes) group.append(el(name, attributes));
+     svg.append(group);
+   }
+   return svg;
+ }
