@@ -5,13 +5,18 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import pg from "pg";
 import { createActions } from "@zubra/actions";
-import { COMPONENTS, createFamily } from "../server.js";
+import { COMPONENTS, MAX_FORM, createFamily } from "../server.js";
 import { createDatabase } from "../lib/db.js";
 import { migrate } from "../lib/migrate.js";
 import { readSettings } from "../lib/settings.js";
+import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { collect } from "../../docker/recipe-inbox.mjs";
+import { JPEG } from "./recipes.test.js";
 
 const admin = process.env.FAMILY_TEST_DATABASE_URL;
-const KEYS = { notes: "n".repeat(40), cards: "c".repeat(40), gifts: "g".repeat(40) };
+const KEYS = { notes: "n".repeat(40), cards: "c".repeat(40), gifts: "g".repeat(40), recipes: "r".repeat(40) };
 
 test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABASE_URL to run" }, async (t) => {
   const name = `family_test_${process.pid}`;
@@ -29,18 +34,19 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
     OPENBLOG_ANALYTICS_SALT: "s".repeat(32), OPENBLOG_ADMIN_API_KEY: KEYS.notes,
     OPENBLOG_GREETINGS_ENABLED: "true", OPENBLOG_GREETINGS_ADMIN_KEY: KEYS.cards, BREVO_API_KEY: "test", OPENBLOG_GREETINGS_FROM: "Grammi <g@example.com>",
     OPENBLOG_GIFTS_ENABLED: "true", OPENBLOG_GIFTS_ADMIN_KEY: KEYS.gifts,
+    OPENBLOG_RECIPES_ENABLED: "true", OPENBLOG_RECIPES_ADMIN_KEY: KEYS.recipes, OPENBLOG_RECIPES_FAMILY_CODE: "Sunday Dinner",
   });
   await migrate(db);
   await migrate(db); // a second start changes nothing
-  const actions = await createActions({ components: COMPONENTS });
+  const actions = await createActions({ components: COMPONENTS, maxBytes: MAX_FORM });
   const family = createFamily({ settings, db, actions, now: () => clock, transport: async (mail) => { sent.push(mail); return { ok: true, id: "m1" }; } });
   family.server.listen(0, "127.0.0.1");
   await once(family.server, "listening");
   const base = `http://127.0.0.1:${family.server.address().port}`;
-  const call = async (fn, fields = {}) => {
-    const form = new FormData();
-    for (const [key, value] of Object.entries(fields)) form.set(key, value);
-    const response = await fetch(`${base}/_zb/action/gift-maker/${fn}`, { method: "POST", body: form, headers: { accept: "application/json", "sec-fetch-site": "same-origin", "x-real-ip": "203.0.113.7" } });
+  const call = async (fn, fields = {}, component = "gift-maker") => {
+    const form = fields instanceof FormData ? fields : new FormData();
+    if (!(fields instanceof FormData)) for (const [key, value] of Object.entries(fields)) form.set(key, value);
+    const response = await fetch(`${base}/_zb/action/${component}/${fn}`, { method: "POST", body: form, headers: { accept: "application/json", "sec-fetch-site": "same-origin", "x-real-ip": "203.0.113.7" } });
     assert.equal(response.status, 200, `${fn} answers`);
     return response.json();
   };
@@ -66,6 +72,84 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
       const opened = await owner(`/api/gifts/admin/${left.gift.id}/open`, KEYS.gifts, { method: "POST" });
       assert.equal(opened.body.gift.note, "Merry Christmas");
       assert.equal((await owner("/api/gifts/admin/list", "wrong".repeat(10))).status, 401);
+    });
+
+    await t.test("recipes: sent from the form with photos, collected by her editor as a draft", async () => {
+      const look = await call("look", {}, "recipe-share");
+      assert.deepEqual([look.open, look.asks], [true, true]);
+      const form = () => {
+        const fields = new FormData();
+        for (const [key, value] of Object.entries({ token: look.token, name: "Aunt Linda", link: "instagram.com/lindabakes", title: "Peanut Butter Fudge", course: "Dessert", story: "Every Christmas Eve.", notes: "Don't double it." })) fields.set(key, value);
+        for (const line of ["2 cups sugar", "1 cup peanut butter"]) fields.append("ingredient", line);
+        fields.append("step", "Boil for 5 minutes.");
+        fields.append("photo", new Blob([JPEG], { type: "image/jpeg" }), "fudge.jpg");
+        return fields;
+      };
+      clock += 5000;
+      const wrong = form();
+      wrong.set("code", "apple pie");
+      assert.deepEqual(await call("share", wrong, "recipe-share"), { error: "family-code", field: "code" });
+      const right = form();
+      right.set("code", "sunday-DINNER");
+      assert.deepEqual(await call("share", right, "recipe-share"), { ok: true });
+      const robot = form();
+      robot.set("code", "Sunday Dinner");
+      robot.set("website", "https://spam.example");
+      assert.deepEqual(await call("share", robot, "recipe-share"), { ok: true }, "a robot is thanked and nothing is kept");
+
+      assert.equal((await owner("/api/recipes/admin/pending", KEYS.gifts)).status, 401, "another part's key opens nothing here");
+      const pending = await owner("/api/recipes/admin/pending", KEYS.recipes);
+      assert.equal(pending.body.recipes.length, 1);
+      const [shared] = pending.body.recipes;
+      assert.deepEqual(shared.author, { name: "Aunt Linda", link: "https://instagram.com/lindabakes" });
+      assert.equal(shared.recipe.title, "Peanut Butter Fudge");
+      assert.equal(Buffer.from(shared.photos[0], "base64").includes(Buffer.from("GPS")), false, "stored without where it was taken");
+
+      const site = await mkdtemp(join(tmpdir(), "recipe-site-"));
+      try {
+        const written = await collect({ endpoint: `${base}/api/recipes`, key: KEYS.recipes, site, stateFile: join(site, "inbox.json"), today: "2026-12-01" });
+        assert.equal(written, 1);
+        const day = new Date(clock).toISOString().slice(0, 10); // the day it was sent, by the service's clock
+        const posts = await readdir(join(site, "content", "posts"));
+        assert.deepEqual(posts.sort(), [`${day}-peanut-butter-fudge.credits.json`, `${day}-peanut-butter-fudge.md`]);
+        assert.match(await readFile(join(site, "content", "posts", `${day}-peanut-butter-fudge.md`), "utf8"), /draft: true/);
+        assert.deepEqual((await owner("/api/recipes/admin/pending", KEYS.recipes)).body.recipes, [], "delivered: it isn't offered again");
+        const row = await db.one("select delivered_as, (select count(*)::int from public.grammis_recipe_photos p where p.submission_id = s.id) as photos from public.grammis_recipe_submissions s");
+        assert.deepEqual(row, { delivered_as: `content/posts/${day}-peanut-butter-fudge.md`, photos: 0 }, "the service's copy of the photos is gone");
+      } finally {
+        await rm(site, { recursive: true, force: true });
+      }
+    });
+
+    await t.test("recipe requests: asked for through the same form, collected as one draft for her to write", async () => {
+      const { token } = await call("look", {}, "recipe-share");
+      clock += 5000;
+      const ask = (name, details = "") => {
+        const fields = new FormData();
+        for (const [key, value] of Object.entries({ token, kind: "request", name, title: "Pecan Pie", details, code: "Sunday Dinner" })) fields.set(key, value);
+        return call("share", fields, "recipe-share");
+      };
+      assert.deepEqual(await ask("Jimmy", "the one with the crumble top"), { ok: true });
+      assert.deepEqual(await ask("Linda"), { ok: true });
+      const noTitle = new FormData();
+      for (const [key, value] of Object.entries({ token, kind: "request", name: "Ricky", code: "Sunday Dinner" })) noTitle.set(key, value);
+      assert.deepEqual(await call("share", noTitle, "recipe-share"), { error: "title", field: "title" });
+
+      const pending = (await owner("/api/recipes/admin/pending", KEYS.recipes)).body.recipes;
+      assert.deepEqual(pending.map((r) => [r.kind, r.author.name, r.recipe.title, r.photos.length]), [["request", "Jimmy", "Pecan Pie", 0], ["request", "Linda", "Pecan Pie", 0]]);
+      const site = await mkdtemp(join(tmpdir(), "request-site-"));
+      try {
+        assert.equal(await collect({ endpoint: `${base}/api/recipes`, key: KEYS.recipes, site, stateFile: join(site, "inbox.json"), today: "2026-12-01" }), 2);
+        const posts = await readdir(join(site, "content", "posts"));
+        assert.equal(posts.length, 1, "both asked for the same recipe: one draft");
+        const text = await readFile(join(site, "content", "posts", posts[0]), "utf8");
+        assert.match(text, /tags: \[requested\]/);
+        assert.match(text, /Asked for by Jimmy\./);
+        assert.match(text, /Also asked for by Linda\./);
+        assert.deepEqual((await owner("/api/recipes/admin/pending", KEYS.recipes)).body.recipes, []);
+      } finally {
+        await rm(site, { recursive: true, force: true });
+      }
     });
 
     await t.test("greeting cards: written in Studio, sent when due, a yearly one moved to next year", async () => {

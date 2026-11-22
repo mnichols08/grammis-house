@@ -27,6 +27,28 @@ export async function lookAtTree() {
   }
 }
 
+/** Whether the recipe form is open, whether it asks for the family password, and a form token. Off: { open: false }. */
+export async function lookAtRecipes() {
+  try {
+    if (!parts?.recipes) return { open: false };
+    return parts.recipes.look();
+  } catch {
+    return { open: false };
+  }
+}
+
+/** One recipe from the form, photos and all. Answers { ok } or { error, field }. */
+export async function shareRecipe(formData, request) {
+  try {
+    if (!parts?.recipes) return { error: "off" };
+    const answer = await parts.recipes.share(formData, { address: visitorAddress(request.headers, parts.trustRealIp) });
+    if (answer.error) return { error: answer.error, field: answer.field ?? null };
+    return { ok: true };
+  } catch {
+    return { error: "off" };
+  }
+}
+
 /** One gift from the form. Answers { ok, gift, opensAt } or { error }. */
 export async function leaveGift(formData, request) {
   try {

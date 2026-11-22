@@ -61,11 +61,23 @@ export function readSettings(env = process.env) {
     gifts = problems.length ? { enabled: false, problems } : { enabled: true, problems: [], adminKey: text(env.OPENBLOG_GIFTS_ADMIN_KEY), code, opensOn };
   }
 
+  // Recipes from the family: a form on her front page, collected by her editor as drafts. The family
+  // password is optional: without one anyone may send a recipe (she still reads each before it's up).
+  let recipes = { enabled: false, problems: [] };
+  if (on(env.OPENBLOG_RECIPES_ENABLED)) {
+    const problems = [...shared];
+    const code = text(env.OPENBLOG_RECIPES_FAMILY_CODE);
+    if (!longKey(env.OPENBLOG_RECIPES_ADMIN_KEY)) problems.push("OPENBLOG_RECIPES_ADMIN_KEY");
+    if (code && code.replace(/[^\p{L}\p{N}]+/gu, "").length < 6) problems.push("OPENBLOG_RECIPES_FAMILY_CODE");
+    recipes = problems.length ? { enabled: false, problems } : { enabled: true, problems: [], adminKey: text(env.OPENBLOG_RECIPES_ADMIN_KEY), code };
+  }
+
   return {
     site,
     notes,
     cards,
     gifts,
+    recipes,
     databaseUrl: text(env.DATABASE_URL).trim(),
     port: Number(env.PORT || 8080),
     // Behind Railway's proxy the visitor's address is X-Real-IP; anywhere else, say false.

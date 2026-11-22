@@ -24,6 +24,20 @@ Everything is done in the editor in your web browser. You never have to touch a 
    your changes on the site (**Update** on a recipe that's already published).
 5. **Write something new** on Home starts a new recipe with everything ready to fill in.
 
+**Recipes the family sends you** show up in **Posts** as drafts, tagged `from-the-family`, with the
+sender's name on them ("By Aunt Linda", linked to their Instagram or other page if they gave one).
+Open one, read it, change anything you like, and **Publish** it to put it on the site with their name.
+Don't want it? Delete the draft; nothing of it was ever on the site. The sender's name is kept as
+they wrote it (the editor calls it "frozen publication credits"); to put your own name on it instead,
+choose another author under **About this post**.
+
+**Recipes the family asks you for** show up in **Posts** too, as drafts tagged `requested` with
+your usual empty Ingredients and Steps, and a line at the top: "Asked for by Jimmy", with what
+they said ("the one with the crumble top from Easter"). When someone else asks for the same one
+before you've published it, their name is added under the first ("Also asked for by Linda"). Write
+it like any recipe and publish it; keep the "asked for" lines or delete them. The recipe is yours:
+it has your name on it, not theirs.
+
 **Changing the decorations:** open **Decorations**. The top says what's up today and when it changes.
 - **Put (a look) up now** hangs a look today and hands back to your calendar afterwards.
 - **What's hanging** takes one decoration down (the garland, the banner, the falling leaves) or
@@ -75,6 +89,15 @@ by itself. Open **Front page**, then the sign, to change it:
   already addressed. Fill in **Your email address** on it (Front page → Write to Grammi); it stays
   hidden until you do. Put your favorite notes on **The Family Wall** page, the fridge: each note
   is a quote (the **"** button in the editor), with who it's from on the last line.
+- **Share a recipe with Grammi.** A recipe card on the front page (Front page → Add a section → Share a
+  recipe with Grammi) opens a form with the same parts as Grammi's own recipes: a line about it, the
+  story, course, servings and times, the ingredients and steps one at a time (a whole list can be
+  pasted in), notes, and up to four photos, the first the cover. They add their name, and a link to
+  their page only if they want one. Photos are redrawn before they're sent, so where and when they were
+  taken isn't. Nothing is on the site until Grammi publishes it (above). The card's other button,
+  **Ask Grammi for one**, asks her for one of her recipes: which one, a few words to help her remember
+  it, and who's asking; it becomes a draft for her to write (above). It works on the Railway address;
+  set `OPENBLOG_RECIPES_FAMILY_CODE` to ask for a family password.
 - **Quizzes.** "How well do you know Grammi's kitchen?" is a draft with three questions to fill
   in. **Add knowledge check** in the editor makes more. Answers stay on the reader's own device.
 - **Greeting cards.** Open **Greeting cards** (under Family) and add the people you send cards to:
@@ -140,9 +163,6 @@ for family stories, airmail stationery for letters, blue-willow china for Sunday
 The pictures are drawn in code by `scripts/draw_decorations.py` (Thanksgiving and Christmas) and
 `scripts/draw_themes.py` (every other month, and the collection looks), and
 `scripts/decorate.py` turns them into tokens. Decorating never means editing `house.css`.
-Leaves, snow, petals and the rest of the weather (the `weather` token: `snow`, `hearts`, `clover`,
-`petals`, `leaves`, `confetti` or `none`, drawn by `themes/grammis/weather.js`) hold still for anyone whose device asks for less motion,
-and recipe pages stay quiet because people are cooking. Phones get the garland, sign and banner, but not the corner piece.
 
 **The house decorates itself.** This is open.blog's `seasons` setting in `openblog.json`
 (added in [open.blog#649](https://github.com/journey-to-code-org/open.blog/pull/649)), edited on
@@ -289,6 +309,7 @@ The editor Grammi uses runs on Railway (`Dockerfile.admin`). Its variables:
 | `OPENBLOG_BEHIND_PROXY` | Secure sign-in cookies behind Railway's HTTPS; the entrypoint sets it to `1` unless you set it |
 | `OPENBLOG_GREETINGS_ENDPOINT`, `OPENBLOG_GREETINGS_ADMIN_KEY` | Greeting cards: the family service's `…/api/greetings` and its key |
 | `OPENBLOG_GIFTS_ENDPOINT`, `OPENBLOG_GIFTS_ADMIN_KEY` | Gifts: the family service's `…/api/gifts` and its key |
+| `OPENBLOG_RECIPES_ENDPOINT`, `OPENBLOG_RECIPES_ADMIN_KEY` | Recipes from the family: the family service's `…/api/recipes` and its key. `docker/recipe-inbox.mjs` checks every minute and writes new ones into Posts as drafts |
 
 On the first start after this change, an existing configured login is reset once to
 `OPENBLOG_ADMIN_PASSWORD` and asked to choose a new password. Later starts do not reset it.
@@ -314,6 +335,11 @@ project: no Netlify, no Supabase. `Dockerfile` builds the site with open.blog an
   the placement form previews that same decorated tree and the gifts together.
 - **Greeting cards**, Studio's side at `/api/greetings/…` (`family/cards.js`); the cards that are due
   go out every hour through Brevo.
+- **Recipes from the family.** The recipe form (`themes/grammis/components/recipe-share.zb`) has two
+  `'use server'` functions, `look` and `share` (photos as files; a form post may be up to 4 MB). They call
+  `family/recipes.js`, which checks a recipe with `family/lib/recipe-check.js`, takes the camera's notes out
+  of each photo, and keeps it in Postgres. Her editor's side is `/api/recipes/admin/pending` and
+  `/api/recipes/admin/<id>/delivered`: once the editor has written the draft, the service deletes its photos.
 - **Notes on recipes**, page views and the moderation inbox at `/api/…` (`family/notes.js`), the
   addresses open.blog's pages and Studio already use.
 - **The database** is set up when the server starts (`family/lib/migrate.js`).

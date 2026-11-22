@@ -21,6 +21,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends git ca-certific
 COPY --from=build /usr/local/cargo/bin/openblog /usr/local/bin/openblog
 COPY docker/admin-entrypoint.sh /usr/local/bin/admin-entrypoint.sh
 RUN chmod +x /usr/local/bin/admin-entrypoint.sh
+# Collects recipes the family shares into Posts as drafts; it reads the same rules the family service checks with.
+COPY docker/recipe-inbox.mjs /opt/grammis/docker/recipe-inbox.mjs
+COPY family/lib/recipe-check.js /opt/grammis/family/lib/recipe-check.js
+COPY docker/recipe-inbox.package.json /opt/grammis/package.json
 # The site checkout and Studio's private files (logins, drafts) live in /data. On Railway, attach a
 # volume there (the service's Settings > Volumes, mount path /data); a Dockerfile can't declare one.
 ENTRYPOINT ["/usr/local/bin/admin-entrypoint.sh"]
