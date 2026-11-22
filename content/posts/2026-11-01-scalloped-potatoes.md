@@ -1,7 +1,6 @@
 ---
 title: Grammi's Scalloped Potatoes
 date: 2026-11-08
-draft: false
 series: thanksgiving
 profile: recipe
 course: Side dish
@@ -11,6 +10,7 @@ prep: 15 min
 cook: 1 to 1 1/2 hours
 tags: [thanksgiving]
 description: "Grammi's scalloped potatoes: sliced russets and onion rings baked in a cheddar sauce until tender."
+cover: false
 ---
 
 
