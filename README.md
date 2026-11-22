@@ -316,7 +316,8 @@ On the first start after this change, an existing configured login is reset once
 If she forgets it, run `openblog user passwd grammi --temporary-password` from a shell in the
 editor's site checkout; the prompt shows what you type, so use a private terminal. Give her
 that temporary password so she can choose another.
-The admin image applies `docker/openblog-password-setup.patch`, `docker/openblog-gift-card.patch`, and `docker/openblog-cover.patch` to its pinned open.blog revision.
+The admin image applies `docker/openblog-password-setup.patch`, `docker/openblog-gift-card.patch`, `docker/openblog-cover.patch`, and `docker/openblog-family-recipes.patch` to its pinned open.blog revision.
+The family-recipes patch keeps a draft's `.credits.json`, and any photo under `static/images/family-recipes/` that no published post shows, out of what **Publish** sends to GitHub, so a recipe she hasn't approved (or deleted) never reaches the public repository.
 The site image and the Pages workflow apply the cover patch too, so a removed cover stays off the published page.
 Recheck the patches and password-setup tests when updating that revision.
 

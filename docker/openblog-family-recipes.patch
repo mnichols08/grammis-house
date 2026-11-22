@@ -1,0 +1,164 @@
+diff --git a/crates/openblog-cli/src/publish.rs b/crates/openblog-cli/src/publish.rs
+index bd6bd3e..816bde4 100644
+--- a/crates/openblog-cli/src/publish.rs
++++ b/crates/openblog-cli/src/publish.rs
+@@ -34,9 +34,17 @@ pub struct Outcome {
+ }
+ 
+ /// Paths under `content/` that hold drafts, so they can be kept out of a commit.
++///
++/// Grammi's House: with a draft go the files that are part of it. Its credit sidecar names the
++/// people on the post, so it stays back while the post is a draft or has been deleted. The photos of
++/// a recipe the family shared (`static/images/family-recipes/`) stay back until a published post
++/// shows them, so a recipe she hasn't approved, or deleted, never reaches the repository.
+ fn draft_files(root: &Path, config: &SiteConfig) -> Vec<String> {
+     let mut out = Vec::new();
++    let content = config.paths.content.trim_end_matches('/');
+     if let Ok(sources) = site::read_sources(root, config) {
++        let mut published = Vec::new();
++        let mut shown = std::collections::BTreeSet::new();
+         for file in &sources.posts {
+             if let Ok(doc) = frontmatter::parse(&file.contents) {
+                 let draft = doc.front_matter.get_bool("draft").unwrap_or(false)
+@@ -45,15 +53,62 @@ fn draft_files(root: &Path, config: &SiteConfig) -> Vec<String> {
+                         .get("status")
+                         .is_some_and(|s| s.eq_ignore_ascii_case("draft"));
+                 if draft {
+-                    out.push(format!(
+-                        "{}/{}",
+-                        config.paths.content.trim_end_matches('/'),
+-                        file.path
+-                    ));
++                    out.push(format!("{}/{}", content, file.path));
++                } else {
++                    published.push(file.contents.as_str());
++                    shown.insert(file.path.replace('\\', "/"));
+                 }
+             }
+         }
++        for sidecar in &sources.credits {
++            let path = sidecar.path.replace('\\', "/");
++            let Some(stem) = path.strip_suffix(".credits.json") else {
++                continue;
++            };
++            if ![".md", ".markdown"]
++                .iter()
++                .any(|ext| shown.contains(&format!("{stem}{ext}")))
++            {
++                out.push(format!("{content}/{path}"));
++            }
++        }
++        out.extend(unshown_family_photos(root, config, &published));
++    }
++    out
++}
++
++/// Where the editor puts the photos of recipes the family shares, under the static folder.
++const FAMILY_PHOTOS: &str = "images/family-recipes";
++
++/// The family's recipe photos that no published post shows (by its address, `/images/…`).
++fn unshown_family_photos(root: &Path, config: &SiteConfig, published: &[&str]) -> Vec<String> {
++    let static_dir = config.paths.static_dir.trim_end_matches('/');
++    let base = root.join(static_dir);
++    let mut out = Vec::new();
++    let mut folders = vec![base.join(FAMILY_PHOTOS)];
++    while let Some(folder) = folders.pop() {
++        let Ok(entries) = std::fs::read_dir(&folder) else {
++            continue;
++        };
++        for entry in entries.flatten() {
++            let path = entry.path();
++            match entry.file_type() {
++                Ok(kind) if kind.is_dir() => folders.push(path),
++                Ok(kind) if kind.is_file() => {
++                    let Ok(rel) = path.strip_prefix(&base) else {
++                        continue;
++                    };
++                    let rel = rel.to_string_lossy().replace('\\', "/");
++                    let address = format!("/{rel}");
++                    if !published.iter().any(|text| text.contains(&address)) {
++                        out.push(format!("{static_dir}/{rel}"));
++                    }
++                }
++                _ => {}
++            }
++        }
+     }
++    out.sort();
+     out
+ }
+ 
+@@ -478,6 +533,73 @@ mod tests {
+         assert!(again.pushed && again.commit.is_none());
+     }
+ 
++    #[test]
++    fn keeps_a_family_recipes_credits_and_photos_back_until_it_is_published() {
++        let fixture = RemoteFixture::new("family-recipe");
++        let posts = fixture.root.join("content/posts");
++        let post = "---\ntitle: Fudge\ndate: 2026-11-22\ndraft: true\ncover: \"/images/family-recipes/fudge-ab12/1.jpg\"\n---\nFudge\n\n![More fudge](/images/family-recipes/fudge-ab12/2.jpg)\n";
++        let credits = r#"{"version":2,"credits":[{"identity":{"kind":"profile","contributor":"jane","profile":{"name":"Jane","url":"https://social.example/jane","sameAs":[],"orcid":""}},"roles":[{"vocabulary":"crossref","role":"author"}]}]}"#;
++        fs::write(posts.join("2026-11-22-fudge.md"), post).unwrap();
++        fs::write(posts.join("2026-11-22-fudge.credits.json"), credits).unwrap();
++        let photos = fixture.root.join("static/images/family-recipes/fudge-ab12");
++        fs::create_dir_all(&photos).unwrap();
++        fs::write(photos.join("1.jpg"), b"cover").unwrap();
++        fs::write(photos.join("2.jpg"), b"more").unwrap();
++        // One she deleted: its post is gone, its credits and photo are left behind.
++        fs::write(posts.join("2026-11-20-gone.credits.json"), credits).unwrap();
++        let gone = fixture.root.join("static/images/family-recipes/gone-cd34");
++        fs::create_dir_all(&gone).unwrap();
++        fs::write(gone.join("1.jpg"), b"gone").unwrap();
++
++        let status = status(&fixture.root, &fixture.config).unwrap();
++        let changed = status["changed"].as_array().unwrap();
++        assert!(
++            !changed
++                .iter()
++                .any(|path| path.as_str().unwrap().contains("fudge")
++                    || path.as_str().unwrap().contains("gone")),
++            "{changed:?}"
++        );
++
++        let first = publish(&fixture.root, &fixture.config, Some("Something else")).unwrap();
++        assert!(first.pushed);
++        let files = fixture
++            .remote(&["ls-tree", "-r", "--name-only", "main"])
++            .unwrap();
++        assert!(files.contains("content/posts/hello-world.md"));
++        assert!(
++            !files.contains("fudge") && !files.contains("gone"),
++            "{files}"
++        );
++
++        fs::write(
++            posts.join("2026-11-22-fudge.md"),
++            post.replace("draft: true", "draft: false"),
++        )
++        .unwrap();
++        let second = publish(&fixture.root, &fixture.config, Some("Fudge")).unwrap();
++        assert!(second.pushed);
++        let files = fixture
++            .remote(&["ls-tree", "-r", "--name-only", "main"])
++            .unwrap();
++        for path in [
++            "content/posts/2026-11-22-fudge.md",
++            "content/posts/2026-11-22-fudge.credits.json",
++            "static/images/family-recipes/fudge-ab12/1.jpg",
++            "static/images/family-recipes/fudge-ab12/2.jpg",
++        ] {
++            assert!(
++                files.contains(path),
++                "{path} is published with its post: {files}"
++            );
++        }
++        assert!(!files.contains("gone"), "a deleted one never goes: {files}");
++        assert!(second
++            .skipped_drafts
++            .iter()
++            .any(|path| path == "static/images/family-recipes/gone-cd34/1.jpg"));
++    }
++
+     #[test]
+     fn refuses_pre_staged_drafts_and_unrelated_files() {
+         let fixture = RemoteFixture::new("staged");

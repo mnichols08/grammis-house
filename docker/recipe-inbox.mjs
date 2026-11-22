@@ -11,7 +11,8 @@
 // `requested`, saying who asked; another request for the same recipe adds a name to that draft.
 //
 // Studio reads its folders fresh, so the draft is in Posts the next time she looks. She reads it,
-// changes what she likes, and publishes it (or deletes it).
+// changes what she likes, and publishes it (or deletes it). Until she does, her publishing leaves all
+// three out of what it sends to GitHub (docker/openblog-family-recipes.patch).
 //
 // Then it tells the service the recipe is delivered, and the service deletes its copy of the photos.
 // A recipe already written (the service didn't hear back) is never written twice: the ones delivered
