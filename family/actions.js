@@ -49,6 +49,28 @@ export async function shareRecipe(formData, request) {
   }
 }
 
+/** The fridge: a call to one of its parts, or { error: "off" } (the page then leaves the fridge out). */
+async function atFridge(part, formData, request) {
+  try {
+    if (!parts?.fridge) return { error: "off" };
+    const answer = await parts.fridge[part](formData, { address: visitorAddress(request.headers, parts.trustRealIp) });
+    if (answer.error) return { error: answer.error, field: answer.field ?? null };
+    return answer;
+  } catch {
+    return { error: "off" };
+  }
+}
+export async function lookAtFridge() {
+  try {
+    return parts?.fridge ? await parts.fridge.look() : { error: "off" };
+  } catch {
+    return { error: "off" };
+  }
+}
+export const moveOnFridge = (formData, request) => atFridge("move", formData, request);
+export const drawForFridge = (formData, request) => atFridge("draw", formData, request);
+export const grammisCorner = (formData, request) => atFridge("grammi", formData, request);
+
 /** One gift from the form. Answers { ok, gift, opensAt } or { error }. */
 export async function leaveGift(formData, request) {
   try {

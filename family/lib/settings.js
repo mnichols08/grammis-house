@@ -72,12 +72,23 @@ export function readSettings(env = process.env) {
     recipes = problems.length ? { enabled: false, problems } : { enabled: true, problems: [], adminKey: text(env.OPENBLOG_RECIPES_ADMIN_KEY), code };
   }
 
+  // The fridge on The Family Wall: magnets anyone may move, drawings Grammi puts up. Her word (her
+  // "tidy word") is what she types in Grammi's corner on the page; it is needed to switch it on.
+  let fridge = { enabled: false, problems: [] };
+  if (on(env.OPENBLOG_FRIDGE_ENABLED)) {
+    const problems = [...shared];
+    const word = text(env.OPENBLOG_FRIDGE_WORD);
+    if (word.replace(/[^\p{L}\p{N}]+/gu, "").length < 6) problems.push("OPENBLOG_FRIDGE_WORD");
+    fridge = problems.length ? { enabled: false, problems } : { enabled: true, problems: [], word };
+  }
+
   return {
     site,
     notes,
     cards,
     gifts,
     recipes,
+    fridge,
     databaseUrl: text(env.DATABASE_URL).trim(),
     port: Number(env.PORT || 8080),
     // Behind Railway's proxy the visitor's address is X-Real-IP; anywhere else, say false.

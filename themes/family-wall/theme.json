@@ -54,6 +54,9 @@
   "stylesheets": [
     "fridge.css"
   ],
+  "scripts": [
+    "fridge-loader.js"
+  ],
   "decorations": {
     "garland": {
       "label": "Garland",

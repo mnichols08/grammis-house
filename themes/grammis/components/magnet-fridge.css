@@ -1,0 +1,88 @@
+/* magnet-fridge */
+@layer theme, base, components, utilities;
+@layer components {
+@scope (magnet-fridge) to ([data-zb-slotted="magnet-fridge"]) {
+  :scope { display: block; }
+  .fridge {
+    --door-hi: #fbf6e8; --door: #f1e7cf; --door-lo: #e2d4b2; --door-edge: #cdbb92;
+    --handle-hi: #ffffff; --handle-lo: #9da3a9; --paper: #fffdf5; --paper-2: #fff4c6; --paper-3: #e6f1fb; --ink: #2b2b2b;
+    --shade: 40 25 5; --depth: 0.55; --tray: #f3e9d2; --brushed: transparent; --sheen: rgb(255 255 255 / 0.35);
+    display: none; margin: 1.5rem 0 2rem; color: var(--foreground, #1f2522);
+  }
+  .fridge[data-state="shown"] { display: block; }
+  [hidden] { display: none !important; }
+  .door {
+    position: relative; container-type: inline-size; aspect-ratio: 4 / 5; max-height: 90vh; margin: 0 auto; border-radius: 26px; overflow: hidden; touch-action: none;
+    /* The dark door's colours (brushed steel) are set by the Family Wall theme's fridge.css. */
+    background:
+      repeating-linear-gradient(90deg, var(--brushed) 0 2px, transparent 2px 5px),
+      linear-gradient(100deg, transparent 0 8%, var(--sheen) 12%, transparent 22%),
+      linear-gradient(180deg, var(--door-hi), var(--door) 35%, var(--door-lo));
+    box-shadow: inset 0 0 0 2px var(--door-edge), inset 0 -10px 24px rgb(var(--shade) / 0.12), 0 24px 40px -22px rgb(var(--shade) / 0.55);
+  }
+  @media (max-width: 40rem) { .door { aspect-ratio: 3 / 5; } }
+  .handle { position: absolute; right: 3.2%; top: 6%; width: 2.2%; min-width: 10px; height: 26%; border-radius: 99px; pointer-events: none;
+    background: linear-gradient(90deg, var(--handle-lo), var(--handle-hi) 45%, var(--handle-lo)); box-shadow: -3px 4px 8px rgb(var(--shade) / 0.35); }
+  .badge { position: absolute; left: 50%; bottom: 2.5%; translate: -50% 0; pointer-events: none; font-family: var(--ob-font-hand, cursive); font-weight: 700; font-size: max(15px, 3.2cqw);
+    color: transparent; background: linear-gradient(180deg, var(--handle-hi), var(--handle-lo)); -webkit-background-clip: text; background-clip: text; }
+  .mag, .picture {
+    position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); translate: -50% -50%; rotate: calc(var(--r) * 1deg);
+    margin: 0; border: 0; background: none; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
+  }
+  .mag {
+    --c: #d7263d; padding: 0 0.04em; line-height: 1; font-family: "Baloo 2", "Arial Rounded MT Bold", "Arial Black", sans-serif; font-weight: 800; font-size: max(26px, 6.2cqw); color: var(--c);
+    text-shadow: 0 1px 0 color-mix(in srgb, var(--c) 72%, black), 0 2px 0 color-mix(in srgb, var(--c) 66%, black),
+      0 3px 0 color-mix(in srgb, var(--c) 60%, black), 0 7px 7px rgb(var(--shade) / var(--depth));
+    transition: scale 0.12s ease;
+  }
+  .mag.heart { font-family: "Segoe UI Symbol", "Apple Symbols", sans-serif; }
+  .mag.lift, .picture.lift { scale: 1.12; cursor: grabbing; }
+  .mag:focus-visible, .picture:focus-visible { outline: 3px dashed var(--foreground, #1f2522); outline-offset: 4px; border-radius: 6px; }
+  .picture { width: 24%; padding: 5% 5% 3%; background: #fffdf8; box-shadow: 0 10px 16px -10px rgb(var(--shade) / 0.6); }
+  .picture svg { display: block; width: 100%; height: auto; }
+  .picture::before { content: ""; position: absolute; top: -0.5rem; left: 50%; width: 1.2rem; height: 1.2rem; translate: -50% 0; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.7) 0 18%, transparent 32%), #8e44c9; box-shadow: 0 3px 4px rgb(0 0 0 / 0.35); }
+  .picture-by { display: block; margin-top: 0.2rem; font-family: var(--ob-font-hand, cursive); font-size: max(13px, 2cqw); color: #3a342c; text-align: center; overflow-wrap: anywhere; }
+  .note { position: absolute; width: 36%; padding: 1rem 0.9rem 0.7rem; background: var(--paper); color: var(--ink); pointer-events: none;
+    font-family: var(--ob-font-hand, cursive); font-weight: 700; font-size: max(16px, 2.6cqw); line-height: 1.2; rotate: var(--turn, -2deg);
+    box-shadow: 0 10px 16px -10px rgb(var(--shade) / 0.6); }
+  .note small { display: block; margin-top: 0.4rem; font: 0.8rem/1.3 Georgia, serif; color: #5a5348; text-align: right; }
+  .note::before { content: ""; position: absolute; top: -0.55rem; left: 50%; width: 1.3rem; height: 1.3rem; translate: -50% 0; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.7) 0 18%, transparent 32%), var(--pin, #d7263d); box-shadow: 0 3px 4px rgb(0 0 0 / 0.35); }
+  .note.n2 { background: var(--paper-2); --pin: #1b6fd1; }
+  .note.n3 { background: var(--paper-3); --pin: #1f9d55; }
+  @media (max-width: 40rem) { .note { width: 41%; } }
+  .help, .said, .problem { margin: 0.6rem 0; text-align: center; }
+  .help { color: var(--muted-foreground, #4a524d); font-size: 0.95rem; }
+  .said { font-weight: 600; }
+  .problem { color: #b3262f; font-weight: 600; }
+  .said:empty, .problem:empty { display: none; }
+  .problem { color: var(--warn, #b3262f); }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-top: 1rem; }
+  .go, .send, .tool, .quiet, .pick button {
+    min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
+    border: 2px solid var(--primary, #b3262f); background: var(--primary, #b3262f); color: var(--primary-foreground, #ffffff); }
+  .tool, .quiet, .pick button { background: var(--card, #fbfcfa); color: var(--foreground, #1f2522); border-color: var(--border, #cfd5d0); }
+  .quiet { min-height: 36px; padding: 0.3rem 0.8rem; font-size: 0.9rem; }
+  .tool[aria-pressed="true"] { border-color: var(--foreground, #1f2522); box-shadow: inset 0 0 0 2px var(--foreground, #1f2522); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .drawing { display: grid; gap: 0.8rem; max-width: 26rem; margin: 1rem auto 0; padding: 1rem; border-radius: 14px; background: var(--card, #fbfcfa); border: 1px solid var(--border, #cfd5d0); }
+  .pad { touch-action: none; cursor: crosshair; border-radius: 6px; box-shadow: 0 0 0 1px var(--border, #cfd5d0); background: #fffdf8; }
+  .pad svg { display: block; width: 100%; height: auto; border-radius: 6px; }
+  .crayons, .pens, .row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .crayon { width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; border: 3px solid var(--card, #fbfcfa); background: var(--ink-c); box-shadow: 0 0 0 1px var(--border, #cfd5d0); cursor: pointer; }
+  .crayon[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--foreground, #1f2522); }
+  .field { display: grid; gap: 0.3rem; }
+  label { font-weight: 600; }
+  input[type="text"], input[type="password"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
+  .corner { max-width: 34rem; margin: 1.2rem auto 0; padding: 1rem; border-radius: 14px; border: 1px dashed var(--border, #cfd5d0); }
+  .corner h3 { margin: 0.2rem 0 0.6rem; font-size: 1.1rem; }
+  .picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.8rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+  .picks:empty::after { content: "Nothing here right now."; color: var(--muted-foreground, #4a524d); }
+  .pick { display: grid; gap: 0.35rem; }
+  .pick svg { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--border, #cfd5d0); }
+  .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
+  @media (prefers-reduced-motion: reduce) { .mag { transition: none; } }
+}
+}

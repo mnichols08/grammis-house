@@ -7,6 +7,7 @@
 #   Gifts: anyone can leave Grammi a wrapped note or card under her tree, opened on Christmas morning.
 #   Recipes from the family: the family sends Grammi recipes of their own, which arrive in her editor's
 #   Posts as drafts with their name on them; nothing is on the site until she publishes one.
+#   The fridge: letter magnets anyone moves on The Family Wall, and drawings Grammi puts up with her word.
 #
 # They live in the family service (family/, on Zubra), which the site's own Railway service runs next
 # to her pages (Dockerfile), with Railway's Postgres. This walks you through the clicks only you can
@@ -60,6 +61,7 @@ cat <<EOF
 EOF
 wait_enter
 DOMAIN=$(ask "The site service's domain (like grammis-house-production.up.railway.app)")
+FRIDGE_WORD=$(ask "Grammi's word for tidying the fridge and putting up drawings (6+ letters, easy for her to type)")
 DOMAIN=${DOMAIN#https://}
 DOMAIN=${DOMAIN%%/*}
 SITE="https://$DOMAIN"
@@ -68,7 +70,7 @@ step "3 of 4: switch the family service on"
 cat <<EOF
   In the site service > Variables > Raw editor, paste ALL of this and click Update variables. It
   rebuilds and starts; the first start sets up the database. $SITE/health then answers
-  {"ok":true,"notes":true,"cards":true,"gifts":true,"recipes":true}.
+  {"ok":true,"notes":true,"cards":true,"gifts":true,"recipes":true,"fridge":true}.
 
 DATABASE_URL=\${{Postgres.DATABASE_URL}}
 OPENBLOG_SITE_ID=grammis-house
@@ -86,6 +88,8 @@ OPENBLOG_GIFTS_ENABLED=true
 OPENBLOG_GIFTS_ADMIN_KEY=$GIFTS_KEY
 OPENBLOG_RECIPES_ENABLED=true
 OPENBLOG_RECIPES_ADMIN_KEY=$RECIPES_KEY
+OPENBLOG_FRIDGE_ENABLED=true
+OPENBLOG_FRIDGE_WORD="$FRIDGE_WORD"
 
   Then, in her editor's service > Variables > Raw editor, add these and click Update variables:
 

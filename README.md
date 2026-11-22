@@ -89,6 +89,14 @@ by itself. Open **Front page**, then the sign, to change it:
   already addressed. Fill in **Your email address** on it (Front page → Write to Grammi); it stays
   hidden until you do. Put your favorite notes on **The Family Wall** page, the fridge: each note
   is a quote (the **"** button in the editor), with who it's from on the last line.
+- **The fridge.** The Family Wall has a real fridge door: a box of plastic letter magnets that
+  everybody shares and drags around to spell things (nobody can add letters, so the E's get shared),
+  with your first four notes hanging at the top. The family can also **Draw Grammi a picture**; it
+  waits for you. Under the fridge, **Grammi's corner** asks for your word, then shows the drawings
+  waiting (**Put it on the fridge** or **Not this one**), the ones up (**Take it down**), and
+  **Tidy the fridge**, which puts every letter back to "WE ♥ GRAMMI". Eight drawings hang at most;
+  putting up another takes down the oldest. It works on the Railway address; elsewhere the page
+  shows your notes as before.
 - **Share a recipe with Grammi.** A recipe card on the front page (Front page → Add a section → Share a
   recipe with Grammi) opens a form with the same parts as Grammi's own recipes: a line about it, the
   story, course, servings and times, the ingredients and steps one at a time (a whole list can be
@@ -336,6 +344,11 @@ project: no Netlify, no Supabase. `Dockerfile` builds the site with open.blog an
   the placement form previews that same decorated tree and the gifts together.
 - **Greeting cards**, Studio's side at `/api/greetings/…` (`family/cards.js`); the cards that are due
   go out every hour through Brevo.
+- **The fridge** on The Family Wall. `themes/family-wall/fridge-loader.js` puts
+  `themes/grammis/components/magnet-fridge.zb` on that page only; its `'use server'` functions (`look`,
+  `move`, `draw`, `grammi`) call `family/fridge.js`. Where each magnet and drawing sits is kept in
+  Postgres as percents of the door; a drawing is pen strokes checked by `family/lib/fridge.js`, never
+  a picture file. Grammi's word (`OPENBLOG_FRIDGE_WORD`) is the only key to tidying and to drawings.
 - **Recipes from the family.** The recipe form (`themes/grammis/components/recipe-share.zb`) has two
   `'use server'` functions, `look` and `share` (photos as files; a form post may be up to 4 MB). They call
   `family/recipes.js`, which checks a recipe with `family/lib/recipe-check.js`, takes the camera's notes out

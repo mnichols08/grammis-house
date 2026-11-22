@@ -35,6 +35,7 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
     OPENBLOG_GREETINGS_ENABLED: "true", OPENBLOG_GREETINGS_ADMIN_KEY: KEYS.cards, BREVO_API_KEY: "test", OPENBLOG_GREETINGS_FROM: "Grammi <g@example.com>",
     OPENBLOG_GIFTS_ENABLED: "true", OPENBLOG_GIFTS_ADMIN_KEY: KEYS.gifts,
     OPENBLOG_RECIPES_ENABLED: "true", OPENBLOG_RECIPES_ADMIN_KEY: KEYS.recipes, OPENBLOG_RECIPES_FAMILY_CODE: "Sunday Dinner",
+    OPENBLOG_FRIDGE_ENABLED: "true", OPENBLOG_FRIDGE_WORD: "Pumpkin Pie",
   });
   await migrate(db);
   await migrate(db); // a second start changes nothing
@@ -150,6 +151,44 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
       } finally {
         await rm(site, { recursive: true, force: true });
       }
+    });
+
+    await t.test("the fridge: letters anyone moves, drawings Grammi puts up, tidying with her word", async () => {
+      const fridge = (fn, fields = {}) => call(fn, fields, "magnet-fridge");
+      const first = await fridge("look");
+      assert.equal(first.magnets.length, 57, "the box is set out the first time anyone looks");
+      assert.deepEqual(first.drawings, []);
+      const w = first.magnets.find((m) => m.ch === "W");
+
+      assert.deepEqual(await fridge("move", { kind: "magnet", id: String(w.id), x: "20.5", y: "80", r: "5" }), { ok: true });
+      const moved = (await fridge("look")).magnets;
+      assert.deepEqual(moved.at(-1), { ...w, x: 20.5, y: 80, r: 5 }, "where it was set down, and on top of the rest");
+      assert.deepEqual(await fridge("move", { kind: "magnet", id: "999", x: "20", y: "80" }), { error: "magnet", field: "id" });
+      assert.deepEqual(await fridge("move", { kind: "magnet", id: String(w.id), x: "120", y: "80" }), { error: "spot", field: "spot" });
+
+      const strokes = JSON.stringify({ strokes: [{ c: "#d7263d", s: 7, p: [10, 10, 200, 200] }] });
+      assert.deepEqual(await fridge("draw", { token: first.token, drawing: strokes, by: "Jimmy" }), { error: "token", field: "token" }, "too quick");
+      clock += 5000;
+      assert.deepEqual(await fridge("draw", { token: first.token, drawing: strokes, by: "Jimmy" }), { ok: true });
+      assert.deepEqual((await fridge("look")).drawings, [], "nothing is up until Grammi says so");
+
+      assert.deepEqual(await fridge("grammi", { word: "apple pie", action: "look" }), { error: "word", field: "word" });
+      const corner = await fridge("grammi", { word: "pumpkin-PIE", action: "look" });
+      assert.equal(corner.waiting.length, 1);
+      assert.equal(corner.waiting[0].by, "Jimmy");
+      const put = await fridge("grammi", { word: "Pumpkin Pie", action: "up", id: corner.waiting[0].id });
+      assert.deepEqual([put.waiting.length, put.up.length], [0, 1]);
+      const up = (await fridge("look")).drawings;
+      assert.deepEqual(up.map((d) => [d.by, d.drawing]), [["Jimmy", JSON.parse(strokes)]]);
+      assert.deepEqual(await fridge("move", { kind: "drawing", id: up[0].id, x: "70", y: "30", r: "-3" }), { ok: true }, "a drawing that's up moves like a magnet");
+
+      const tidied = await fridge("grammi", { word: "Pumpkin Pie", action: "tidy" });
+      assert.equal(tidied.ok, true);
+      const back = (await fridge("look")).magnets.find((m) => m.id === w.id);
+      assert.ok(back.y > 40 && back.y < 50, "the W is back in WE ♥ GRAMMI");
+      const down = await fridge("grammi", { word: "Pumpkin Pie", action: "down", id: up[0].id });
+      assert.equal(down.up.length, 0);
+      assert.deepEqual(await fridge("move", { kind: "drawing", id: up[0].id, x: "70", y: "30" }), { error: "gone", field: "id" }, "one taken down can't be moved");
     });
 
     await t.test("greeting cards: written in Studio, sent when due, a yearly one moved to next year", async () => {
