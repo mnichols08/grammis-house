@@ -59,10 +59,10 @@
   .said:empty, .problem:empty { display: none; }
   .problem { color: var(--warn, #b3262f); }
   .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-top: 1rem; }
-  .go, .send, .tool, .quiet, .pick button {
+  .go, .send, .tool {
     min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
     border: 2px solid var(--primary, #b3262f); background: var(--primary, #b3262f); color: var(--primary-foreground, #ffffff); }
-  .tool, .quiet, .pick button { background: var(--card, #fbfcfa); color: var(--foreground, #1f2522); border-color: var(--border, #cfd5d0); }
+  .tool { background: var(--card, #fbfcfa); color: var(--foreground, #1f2522); border-color: var(--border, #cfd5d0); }
   .quiet { min-height: 36px; padding: 0.3rem 0.8rem; font-size: 0.9rem; }
   .tool[aria-pressed="true"] { border-color: var(--foreground, #1f2522); box-shadow: inset 0 0 0 2px var(--foreground, #1f2522); }
   button:focus-visible, input:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
@@ -76,12 +76,6 @@
   .field { display: grid; gap: 0.3rem; }
   label { font-weight: 600; }
   input[type="text"], input[type="password"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
-  .corner { max-width: 34rem; margin: 1.2rem auto 0; padding: 1rem; border-radius: 14px; border: 1px dashed var(--border, #cfd5d0); }
-  .corner h3 { margin: 0.2rem 0 0.6rem; font-size: 1.1rem; }
-  .picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.8rem; margin: 0 0 1rem; padding: 0; list-style: none; }
-  .picks:empty::after { content: "Nothing here right now."; color: var(--muted-foreground, #4a524d); }
-  .pick { display: grid; gap: 0.35rem; }
-  .pick svg { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--border, #cfd5d0); }
   .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
   @media (prefers-reduced-motion: reduce) { .mag { transition: none; } }
 }

@@ -72,14 +72,13 @@ export function readSettings(env = process.env) {
     recipes = problems.length ? { enabled: false, problems } : { enabled: true, problems: [], adminKey: text(env.OPENBLOG_RECIPES_ADMIN_KEY), code };
   }
 
-  // The fridge on The Family Wall: magnets anyone may move, drawings Grammi puts up. Her word (her
-  // "tidy word") is what she types in Grammi's corner on the page; it is needed to switch it on.
+  // The fridge on The Family Wall: magnets anyone may move, drawings Grammi puts up in Studio's Fridge
+  // screen, which reaches the service with this key (as Gifts does).
   let fridge = { enabled: false, problems: [] };
   if (on(env.OPENBLOG_FRIDGE_ENABLED)) {
     const problems = [...shared];
-    const word = text(env.OPENBLOG_FRIDGE_WORD);
-    if (word.replace(/[^\p{L}\p{N}]+/gu, "").length < 6) problems.push("OPENBLOG_FRIDGE_WORD");
-    fridge = problems.length ? { enabled: false, problems } : { enabled: true, problems: [], word };
+    if (!longKey(env.OPENBLOG_FRIDGE_ADMIN_KEY)) problems.push("OPENBLOG_FRIDGE_ADMIN_KEY");
+    fridge = problems.length ? { enabled: false, problems } : { enabled: true, problems: [], adminKey: text(env.OPENBLOG_FRIDGE_ADMIN_KEY) };
   }
 
   return {

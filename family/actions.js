@@ -69,7 +69,6 @@ export async function lookAtFridge() {
 }
 export const moveOnFridge = (formData, request) => atFridge("move", formData, request);
 export const drawForFridge = (formData, request) => atFridge("draw", formData, request);
-export const grammisCorner = (formData, request) => atFridge("grammi", formData, request);
 
 /** One gift from the form. Answers { ok, gift, opensAt } or { error }. */
 export async function leaveGift(formData, request) {
