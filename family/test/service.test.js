@@ -211,7 +211,7 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
       assert.equal((await family.cards.sendCards()).sent, 0, "never twice");
     });
 
-    await t.test("letters: a note goes to her by email, kept, with reply-to the writer", async () => {
+    await t.test("letters: a note goes to her by email; what comes in, she's told once, in one email", async () => {
       const mailbox = (fn, fields = {}) => call(fn, fields, "family-mailbox");
       const before = sent.length;
       const { open, token } = await mailbox("look");
@@ -225,6 +225,23 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
       assert.match(letter.html, /Made your stuffing &lt;3/);
       assert.equal((await db.one("select count(*)::int as n from public.grammis_letters where mailed_at is not null")).n, 1, "kept, and marked sent");
 
+      // The first ping only marks the time: she isn't told about everything from before.
+      assert.equal((await family.letters.ping()).told, false);
+      const at = new Date(clock + 1000).toISOString();
+      await db.rows("insert into public.grammis_recipe_submissions (site_id, kind, author_name, recipe, sender_digest, created_at) values ('grammis-house', 'request', 'Linda', '{\"title\":\"Pie\"}', 'x', $1), ('grammis-house', 'recipe', 'Linda', '{\"title\":\"Fudge\"}', 'x', $1)", [at]);
+      await db.rows("insert into public.openblog_comments (site_id, path, author_name, body, created_at) values ('grammis-house', '/posts/stuffing/', 'Ricky', 'Yum', $1)", [at]);
+      clock += 10 * 60 * 1000;
+      const sentBefore = sent.length;
+      const pinged = await family.letters.ping();
+      assert.equal(pinged.told, true);
+      assert.deepEqual(pinged.counts, { recipes: 1, requests: 1, drawings: 0, comments: 1 });
+      const ping = sent[sentBefore];
+      assert.equal(sent.length, sentBefore + 1, "one email for all of it");
+      assert.equal(ping.to.email, "grammi@example.org");
+      assert.match(ping.text, /1 recipe from the family[\s\S]*1 request[\s\S]*1 note on your recipes[\s\S]*https:\/\/editor\.example\/admin\/#\/readers/);
+      clock += 10 * 60 * 1000;
+      assert.equal((await family.letters.ping()).told, false, "nothing new: no email");
+      assert.equal(sent.length, sentBefore + 1);
     });
 
     await t.test("notes: left on a page, approved in the inbox, then shown", async () => {

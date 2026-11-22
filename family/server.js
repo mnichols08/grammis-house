@@ -33,6 +33,8 @@ import { createFridge } from "./fridge.js";
 import { createLetters } from "./letters.js";
 
 const HOUR = 60 * 60 * 1000;
+// How often Grammi's pings look for what's come in (one email per look, only when something has).
+const PING_EVERY = 10 * 60 * 1000;
 const MAX_JSON = 32 * 1024;
 // The largest form post: a recipe with four photos (each at most 900 KB) and its words. Every form
 // checks what it was sent on top of this, so a gift is still only as big as a gift may be.
@@ -187,6 +189,7 @@ async function main() {
   const on = ["notes", "cards", "gifts", "recipes", "fridge", "letters"].filter((part) => family[part]);
   log(`database ready: ${on.length ? on.join(", ") : "nothing switched on"}`);
   if (family.cards) repeat(family.cards.sendCards, { log, label: "sending cards" });
+  if (family.letters) repeat(family.letters.ping, { every: PING_EVERY, first: 60000, log, label: "pinging Grammi" });
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

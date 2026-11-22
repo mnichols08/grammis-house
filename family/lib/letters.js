@@ -2,7 +2,8 @@
 //
 // A note is what someone writes in "Write to Grammi" on the Family Wall: their name, the note, and,
 // if they'd like her to write back, their email address. It goes to her by email; her own address is
-// never on the site.
+// never on the site. A ping is one short email saying what has come in since the last one (recipes,
+// requests, drawings, notes on recipes), with links into her editor.
 //
 // Everything anyone wrote is escaped before it goes into an email's HTML.
 
@@ -54,5 +55,28 @@ export function letterEmail({ name, note, reply }, { siteName = "your site" } = 
   const html = page(`<p style="margin:0 0 12px;color:#6b6258">${escapeHtml(name)} wrote to you on ${escapeHtml(siteName)}:</p>
 <div style="white-space:pre-wrap;font-size:19px;margin:0 0 18px">${escapeHtml(note)}</div>
 <p style="margin:0;color:#6b6258;font-size:15px">${escapeHtml(back)}</p>`);
+  return { subject, text, html };
+}
+
+const plural = (count, one, many) => `${count} ${count === 1 ? one : many}`;
+
+/**
+ * The ping: what has come in since the last one. `counts` is { recipes, requests, drawings, comments };
+ * `editorUrl` her editor's address (…/admin/), or "" to leave the links out. Null when nothing came.
+ */
+export function pingEmail(counts, { editorUrl = "", siteName = "your site" } = {}) {
+  const base = editorUrl.replace(/\/+$/, "/");
+  const lines = [
+    counts.recipes ? { words: `${plural(counts.recipes, "recipe", "recipes")} from the family`, where: "Posts", path: "#/posts" } : null,
+    counts.requests ? { words: `${plural(counts.requests, "request", "requests")} for one of your recipes`, where: "Posts", path: "#/posts" } : null,
+    counts.drawings ? { words: `${plural(counts.drawings, "drawing", "drawings")} for your fridge`, where: "Fridge", path: "#/fridge" } : null,
+    counts.comments ? { words: `${plural(counts.comments, "note", "notes")} on your recipes waiting for you to approve`, where: "Readers", path: "#/readers" } : null,
+  ].filter(Boolean);
+  if (!lines.length) return null;
+  const subject = lines.length === 1 ? `New on ${siteName}: ${lines[0].words}` : `New on ${siteName}: ${lines.map((l) => l.words.split(" ").slice(0, 2).join(" ")).join(", ")}`;
+  const text = `Here's what's come in on ${siteName}:\n\n${lines.map((l) => `- ${l.words} (in ${l.where}${base ? `: ${base}${l.path}` : ""})`).join("\n")}\n\nNothing goes on your site until you say so.\n`;
+  const html = page(`<p style="margin:0 0 12px">Here's what's come in on ${escapeHtml(siteName)}:</p>
+<ul style="margin:0 0 16px;padding-left:20px">${lines.map((l) => `<li style="margin:6px 0">${escapeHtml(l.words)}: ${base ? `<a href="${escapeHtml(base + l.path)}" style="color:#a3172b">open ${escapeHtml(l.where)}</a>` : `in ${escapeHtml(l.where)}`}</li>`).join("")}</ul>
+<p style="margin:0;color:#6b6258;font-size:15px">Nothing goes on your site until you say so.</p>`);
   return { subject, text, html };
 }

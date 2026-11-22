@@ -1,7 +1,7 @@
-// Notes to Grammi: what a note may hold, and the email it becomes.
+// Notes to Grammi, and her pings: what a note may hold, and the emails that tell her.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { LetterError, checkAddress, checkLetter, letterEmail } from "../lib/letters.js";
+import { LetterError, checkAddress, checkLetter, letterEmail, pingEmail } from "../lib/letters.js";
 import { readSettings } from "../lib/settings.js";
 
 test("a note needs a name and words; an address only when they want her to write back", () => {
@@ -25,7 +25,18 @@ test("the note reaches her as written, and nothing in it becomes markup", () => 
   assert.match(letterEmail({ name: "Ann", note: "Hi", reply: "" }).text, /Ann didn't leave an email address/);
 });
 
-test("notes are on once her address is set, with the cards' sender and Brevo key", () => {
+test("a ping says what came in, with a link to each place, and is nothing when nothing came", () => {
+  assert.equal(pingEmail({ recipes: 0, requests: 0, drawings: 0, comments: 0 }), null);
+  const one = pingEmail({ recipes: 0, requests: 1, drawings: 0, comments: 0 }, { editorUrl: "https://editor.example/admin/", siteName: "Grammi's House" });
+  assert.equal(one.subject, "New on Grammi's House: 1 request for one of your recipes");
+  assert.match(one.text, /- 1 request for one of your recipes \(in Posts: https:\/\/editor\.example\/admin\/#\/posts\)/);
+  const many = pingEmail({ recipes: 2, requests: 0, drawings: 1, comments: 3 }, { editorUrl: "https://editor.example/admin/" });
+  assert.match(many.text, /2 recipes from the family[\s\S]*1 drawing for your fridge \(in Fridge: https:\/\/editor\.example\/admin\/#\/fridge\)[\s\S]*3 notes on your recipes waiting for you to approve \(in Readers/);
+  assert.match(many.html, /href="https:\/\/editor\.example\/admin\/#\/readers"/);
+  assert.doesNotMatch(pingEmail({ recipes: 1 }).text, /http/, "no editor address: no links");
+});
+
+test("notes and pings are on once her address is set, with the cards' sender and Brevo key", () => {
   const base = { OPENBLOG_SITE_ID: "grammis-house", OPENBLOG_SITE_ORIGIN: "https://grammi.example", OPENBLOG_ANALYTICS_SALT: "s".repeat(16) };
   assert.equal(readSettings(base).letters.enabled, false);
   assert.deepEqual(readSettings({ ...base, OPENBLOG_NOTIFY_EMAIL: "grammi@example.org" }).letters.problems, ["BREVO_API_KEY", "OPENBLOG_GREETINGS_FROM"]);

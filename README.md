@@ -91,6 +91,10 @@ by itself. Open **Front page**, then the sign, to change it:
   in the family service's settings (`OPENBLOG_NOTIFY_EMAIL`). Put your favorite notes on the same
   page: each note is a quote (the **"** button in the editor), with who it's from on the last line.
   (The postcard can go on the front page too: Front page → Add a section → Write to Grammi.)
+- **Emails when something comes in.** Every ten minutes the family service looks for anything new:
+  recipes and requests from the family, drawings for the fridge, notes on your recipes waiting to be
+  approved. When there is, you get one short email saying what, with a link to each place in your
+  editor. Nothing new, no email.
 - **The fridge.** The Family Wall has a real fridge door: a box of plastic letter magnets that
   everybody shares and drags around to spell things (nobody can add letters, so the E's get shared),
   with your first four notes hanging at the top. The family can also **Draw Grammi a picture**; it
@@ -369,7 +373,9 @@ project: no Netlify, no Supabase. `Dockerfile` builds the site with open.blog an
 - **Notes to Grammi and her emails.** The postcard (`themes/grammis/components/family-mailbox.zb`) has two
   `'use server'` functions, `look` and `write`; they call `family/letters.js`, which keeps each note and
   emails it to `OPENBLOG_NOTIFY_EMAIL` through Brevo (reply-to the sender, when they gave an address).
-  It uses the greeting cards' `BREVO_API_KEY` and `OPENBLOG_GREETINGS_FROM`.
+  Every ten minutes it counts what came in since the last email across recipes, requests, drawings
+  and pending notes on recipes, and sends one when there's anything; a note that didn't go out goes
+  then. It uses the greeting cards' `BREVO_API_KEY` and `OPENBLOG_GREETINGS_FROM`.
 - **The fridge** on The Family Wall. `themes/family-wall/fridge-loader.js` puts
   `themes/grammis/components/magnet-fridge.zb` on that page only; its `'use server'` functions (`look`,
   `move`, `draw`) call `family/fridge.js`. Where each magnet and drawing sits is kept in

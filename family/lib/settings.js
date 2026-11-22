@@ -81,7 +81,7 @@ export function readSettings(env = process.env) {
     fridge = problems.length ? { enabled: false, problems } : { enabled: true, problems: [], adminKey: text(env.OPENBLOG_FRIDGE_ADMIN_KEY) };
   }
 
-  // Notes to Grammi ("Write to Grammi"): on once her address is
+  // Notes to Grammi ("Write to Grammi") and her pings about what's come in: on once her address is
   // set. They go out through Brevo from the greeting cards' sender, so those two are needed too.
   let letters = { enabled: false, problems: [] };
   const notifyTo = text(env.OPENBLOG_NOTIFY_EMAIL).trim();
