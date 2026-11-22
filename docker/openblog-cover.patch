@@ -1,0 +1,379 @@
+diff --git a/crates/openblog-core/src/frontmatter.rs b/crates/openblog-core/src/frontmatter.rs
+index 50b3bfd..74d8546 100644
+--- a/crates/openblog-core/src/frontmatter.rs
++++ b/crates/openblog-core/src/frontmatter.rs
+@@ -1217,7 +1217,7 @@ fn render_changed(key: &str, old_lines: &[String], value: &Value, eol: &str) ->
+ 
+ /// Front matter keys the engine reads as a switch (`get_bool`): written bare, `nav: true`, as people
+ /// write them by hand, not as the text `"true"`.
+-const SWITCH_KEYS: [&str; 7] = [
++const SWITCH_KEYS: [&str; 8] = [
+     "draft",
+     "nav",
+     "recipe",
+@@ -1225,6 +1225,8 @@ const SWITCH_KEYS: [&str; 7] = [
+     "lineNumbers",
+     "showLineNumbers",
+     "codeHighlighting",
++    // Removing a cover writes `cover: false`, not the text "false".
++    "cover",
+ ];
+ 
+ /// A bare scalar. A switch key, and any value that was a bare true/false before, stays a bare
+diff --git a/crates/openblog-core/src/model.rs b/crates/openblog-core/src/model.rs
+index 65ff23f..ebc76ae 100644
+--- a/crates/openblog-core/src/model.rs
++++ b/crates/openblog-core/src/model.rs
+@@ -2506,16 +2506,38 @@ fn load_post_in(
+         .map(str::to_string)
+         .unwrap_or_else(|| markdown::excerpt(&rendered.lead, 180));
+     let diagram_cover = cover_diagram(fm, &rendered.diagrams)?;
+-    if diagram_cover.is_some() && first(fm, &["cover", "image", "coverImage", "hero"]).is_some() {
++    // `cover: false` is a cover she removed. An empty or missing cover still uses the first
++    // picture in the post; false does not, and it does not fight with `coverDiagram`.
++    let cover_off = fm.get_bool("cover") == Some(false);
++    if diagram_cover.is_some()
++        && !cover_off
++        && first(fm, &["cover", "image", "coverImage", "hero"]).is_some()
++    {
+         return Err(
+             "`coverDiagram` and `cover` both name the cover image; keep one of them".to_string(),
+         );
+     }
+-    let authored_cover = optional_string(first(fm, &["cover", "image", "coverImage", "hero"]))
+-        .or_else(|| diagram_cover.map(|asset| format!("/{}", asset.card_png_path())));
+-    let cover = authored_cover.clone().or(rendered.first_image.clone());
+-    let cover_light = optional_string(first(fm, &["coverLight", "cover_light"]));
+-    let cover_dark = optional_string(first(fm, &["coverDark", "cover_dark"]));
++    let authored_cover = if cover_off {
++        None
++    } else {
++        optional_string(first(fm, &["cover", "image", "coverImage", "hero"]))
++            .or_else(|| diagram_cover.map(|asset| format!("/{}", asset.card_png_path())))
++    };
++    let cover = if cover_off {
++        None
++    } else {
++        authored_cover.clone().or(rendered.first_image.clone())
++    };
++    let cover_light = if cover_off {
++        None
++    } else {
++        optional_string(first(fm, &["coverLight", "cover_light"]))
++    };
++    let cover_dark = if cover_off {
++        None
++    } else {
++        optional_string(first(fm, &["coverDark", "cover_dark"]))
++    };
+     if let Some(video) = &video {
+         if video.url.is_none() {
+             profile
+@@ -3368,6 +3390,57 @@ docs: Vec::new(),
+         assert!(s.pages[0].nav);
+     }
+ 
++    #[test]
++    fn cover_false_drops_the_cover_and_leaves_the_picture_in_the_post() {
++        let s = site(Sources {
++            posts: vec![
++                post(
++                    "posts/kept.md",
++                    "---\ntitle: Kept\ndate: 2026-01-01\n---\n![The card](/images/card.jpg)\n",
++                ),
++                post(
++                    "posts/removed.md",
++                    "---\ntitle: Removed\ndate: 2026-01-02\ncover: false\n---\n![The card](/images/card.jpg)\n",
++                ),
++                post(
++                    "posts/blank.md",
++                    "---\ntitle: Blank\ndate: 2026-01-03\ncover: \"\"\n---\n![The card](/images/card.jpg)\n",
++                ),
++                post(
++                    "posts/quoted.md",
++                    "---\ntitle: Quoted\ndate: 2026-01-04\ncover: \"false\"\n---\n![The card](/images/card.jpg)\n",
++                ),
++            ],
++            credits: Vec::new(),
++            audio_files: None,
++            series: Vec::new(),
++            pages: Vec::new(),
++            docs: Vec::new(),
++            services: Vec::new(),
++            proof: Vec::new(),
++            source_library: None,
++            claim_evidence: None,
++            reader_feedback: None,
++            third_perspectives: None,
++            community_features: None,
++            continuations: None,
++            webmentions: None,
++            landing: None,
++        });
++        let cover_of = |slug: &str| {
++            s.posts
++                .iter()
++                .find(|post| post.slug == slug)
++                .and_then(|post| post.cover.clone())
++        };
++        assert_eq!(cover_of("kept").as_deref(), Some("/images/card.jpg"));
++        assert_eq!(cover_of("blank").as_deref(), Some("/images/card.jpg"));
++        assert_eq!(cover_of("removed"), None);
++        assert_eq!(cover_of("quoted"), None);
++        assert!(s.posts.iter().any(|post| post.slug == "removed"
++            && post.authored_markdown.contains("![The card](/images/card.jpg)")));
++    }
++
+     #[test]
+     fn series_with_the_same_priority_are_ordered_by_their_latest_post() {
+         let s = site(Sources {
+diff --git a/crates/openblog-core/src/visual_card.rs b/crates/openblog-core/src/visual_card.rs
+index e6dbf7c..3303652 100644
+--- a/crates/openblog-core/src/visual_card.rs
++++ b/crates/openblog-core/src/visual_card.rs
+@@ -196,17 +196,20 @@ pub fn image_candidates(source: &CardSource<'_>) -> Vec<ImageCandidate> {
+         );
+         push(candidate, &mut out);
+     }
+-    if let Some(src) = scalar(fm, &["cover", "image", "coverImage", "hero"]) {
+-        let candidate = candidate(
+-            ImageOrigin::Cover,
+-            src,
+-            scalar(fm, &["coverAlt", "imageAlt", "cover_alt"]),
+-            fm,
+-            ["coverCredit", "coverCreditUrl"],
+-            source,
+-            false,
+-        );
+-        push(candidate, &mut out);
++    // `cover: false` is a cover she removed, not an image address.
++    if fm.get_bool("cover") != Some(false) {
++        if let Some(src) = scalar(fm, &["cover", "image", "coverImage", "hero"]) {
++            let candidate = candidate(
++                ImageOrigin::Cover,
++                src,
++                scalar(fm, &["coverAlt", "imageAlt", "cover_alt"]),
++                fm,
++                ["coverCredit", "coverCreditUrl"],
++                source,
++                false,
++            );
++            push(candidate, &mut out);
++        }
+     }
+     if uses_body_images(source.profile) {
+         for (src, alt) in body_images(source.markdown)
+@@ -1545,6 +1548,18 @@ mod tests {
+         }
+     }
+ 
++    #[test]
++    fn a_removed_cover_is_not_an_image_address() {
++        let front = fm("cover: false\n");
++        let article = image_candidates(&source(&front, "article", "![The card](/images/card.jpg)"));
++        assert!(article.is_empty());
++        let recipe = image_candidates(&source(&front, "recipe", "![The card](/images/card.jpg)"));
++        assert!(recipe.iter().all(|image| image.src != "false"));
++        assert_eq!(recipe.len(), 1);
++        assert_eq!(recipe[0].origin, ImageOrigin::BodyImage);
++        assert_eq!(recipe[0].src, "/images/card.jpg");
++    }
++
+     #[test]
+     fn an_article_offers_its_card_image_then_its_cover_and_never_its_body() {
+         let front = fm("cardImage: /img/card.png\ncardImageAlt: A tart on a blue plate\ncover: /img/cover.jpg\ncoverAlt: The kitchen\ncoverCredit: Ana Ruiz\ncoverCreditUrl: https://photos.example.net/ana");
+diff --git a/web/studio/parts/before-publish.js b/web/studio/parts/before-publish.js
+index dd0504d..7046813 100644
+--- a/web/studio/parts/before-publish.js
++++ b/web/studio/parts/before-publish.js
+@@ -13,7 +13,7 @@ import { createShareCard } from "./share-card.js";
+ import { createResearchReview } from "./research-review.js";
+ import { postBoundary } from "./post-boundary.js";
+ import { adviceFor } from "./recipe-advice.js";
+-import { a11yItems, buildProblems, mergeSuggestions, readyLine, readyProblem, readyState, searchHints } from "./ready-rules.js";
++import { a11yItems, buildProblems, coverChosen, mergeSuggestions, readyLine, readyProblem, readyState, searchHints } from "./ready-rules.js";
+ import { researchReviewApplies } from "./review-rules.js";
+ import { releaseRow, releaseWords } from "./video-rules.js";
+ import { routeLine, tripSuggestions } from "./route-rules.js";
+@@ -107,7 +107,7 @@ export async function createBeforePublish({ api, meta, write }) {
+     const hints = searchHints({ title: form.title, subtitle: form.subtitle, description: form.description, tags: form.tags, body: form.body, credited: form.credited }, meta);
+     const engine = view.server ? a11yItems(view.server.accessibility, { body: form.body, firstBodyLine: view.server.firstBodyLine, coverAlt: form.coverAlt }) : { suggestions: [], worth: [], details: [] };
+     const recipe = (view.server?.recipeProblems || []).map((problem) => ({ id: `recipe:${problem.code}`, problem, ...adviceFor(problem, form.fields) }));
+-    const has = { noName: hints.her.some((x) => x.id === "no-name"), noPicture: !form.cover };
++    const has = { noName: hints.her.some((x) => x.id === "no-name"), noPicture: !coverChosen(form.cover) };
+     const merged = mergeSuggestions(local.filter((x) => !x.details), [...hints.her, ...engine.suggestions, ...recipe], { has });
+     const trip = kind === "field-journal" ? tripSuggestions({ ...form.fields, profile: "field-journal" }) : [];
+     const kit = kind === "video" ? write.kit(view.video) : null;
+diff --git a/web/studio/parts/cover-picker.js b/web/studio/parts/cover-picker.js
+index 4237928..e0fc455 100644
+--- a/web/studio/parts/cover-picker.js
++++ b/web/studio/parts/cover-picker.js
+@@ -1,14 +1,24 @@
+ // The cover photo: add one from the phone or computer, or use a picture already on the site, then
+ // describe it for people who can't see it, and say who took it (Photo by, R5). Calls `onChange`
+-// with { cover, coverAlt, coverCredit }. Changing or removing the photo clears both.
++// with { cover, coverAlt, coverCredit }. Removing the photo sets cover to "false", so the first
++// picture in the post is not used in its place. Changing the photo keeps the old one until a new
++// one is chosen.
+ import { h } from "./dom.js";
+ import { use } from "../zubra.js";
+ import { choosePicture, photoProblem, uploadPhoto } from "./picture-picker.js";
+ 
+-export async function coverPicker({ api, cover = "", coverAlt = "", coverCredit = "", maxBytes = 0, onChange }) {
++const refused = (value) => /^(false|no|off)$/i.test(String(value || "").trim());
++
++/** The first picture in the post, outside a code fence. Empty when there isn't one. */
++function firstPicture(markdown) {
++  const text = String(markdown || "").replace(/```[\s\S]*?```/g, "").replace(/~~~[\s\S]*?~~~/g, "");
++  const match = /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/.exec(text);
++  return match ? match[1] : "";
++}
++
++export async function coverPicker({ api, cover = "", coverAlt = "", coverCredit = "", words = () => "", maxBytes = 0, onChange }) {
+   await use("file-drop", "action-button", "text-field", "modal-dialog", "loading-spinner", "alert-banner");
+-  const state = { cover, coverAlt, coverCredit };
+-  const clear = () => { state.cover = ""; state.coverAlt = ""; state.coverCredit = ""; };
++  const state = { cover: refused(cover) ? "false" : cover, coverAlt, coverCredit };
+   const root = h("fieldset", { class: "studio-cover" }, h("legend", { text: "Cover photo" }));
+   const body = h("div", { class: "studio-cover-body" });
+   const problem = h("div", { "aria-live": "assertive" });
+@@ -16,8 +26,20 @@ export async function coverPicker({ api, cover = "", coverAlt = "", coverCredit
+ 
+   const changed = () => onChange?.({ ...state });
+ 
++  const remove = () => {
++    state.cover = "false";
++    state.coverAlt = "";
++    state.coverCredit = "";
++    draw();
++    changed();
++  };
++
+   function draw() {
+-    if (state.cover) {
++    const off = refused(state.cover);
++    const fromPost = !off && !state.cover ? firstPicture(words()) : "";
++    const showing = off ? "" : (state.cover || fromPost);
++    const borrowed = Boolean(fromPost);
++    if (showing) {
+       const notYet = h("p", { class: "studio-help", text: "Not described yet. A few words let everyone enjoy it, including people who use a screen reader.", hidden: Boolean(String(state.coverAlt || "").trim()) });
+       const alt = h("text-field", {
+         label: "Describe the picture", value: state.coverAlt,
+@@ -29,18 +51,24 @@ export async function coverPicker({ api, cover = "", coverAlt = "", coverCredit
+         description: "If someone else took it, their name. Leave empty if you did.",
+         onValuechange: (e) => { state.coverCredit = String(e.detail || ""); changed(); },
+       });
+-      const elsewhere = /^https?:\/\//i.test(state.cover) && !state.cover.startsWith(globalThis.location?.origin || "-");
+-      body.replaceChildren(
+-        h("img", { class: "studio-cover-img", src: state.cover, alt: state.coverAlt || "The cover photo" }),
++      const elsewhere = /^https?:\/\//i.test(showing) && !showing.startsWith(globalThis.location?.origin || "-");
++      body.replaceChildren(...[
++        h("img", { class: "studio-cover-img", src: showing, alt: state.coverAlt || "The cover photo" }),
++        borrowed ? h("p", { class: "studio-help", text: "This picture is in the post, so it is used as the cover. Remove the cover here and the picture stays in the post." }) : null,
+         elsewhere ? h("p", { class: "studio-help", text: "This photo is on another website." }) : null,
+         alt, notYet, credit,
+         h("div", { class: "studio-row" },
+-          h("action-button", { variant: "secondary", onClick: () => { clear(); draw(); changed(); body.querySelector("input[type=file]")?.focus(); } }, "Change the photo"),
+-          h("action-button", { variant: "ghost", onClick: () => { clear(); draw(); changed(); } }, "Remove it")));
++          h("action-button", { variant: "secondary", onClick: chooseFromSite }, "Change the photo"),
++          h("action-button", { onClick: remove }, "Remove the cover photo")),
++      ].filter(Boolean));
+     } else {
+       const drop = h("file-drop", { label: "Add a photo", hint: "From your phone or computer.", accept: "image/*", multiple: false, "max-size": maxBytes ? Math.floor(maxBytes / 1048576) : 0 });
+       drop.addEventListener("fileschange", (e) => { const [file] = e.detail || []; if (file) upload(file); });
+-      body.replaceChildren(drop, h("action-button", { variant: "secondary", onClick: chooseFromSite }, "Use a photo already on my site"));
++      body.replaceChildren(...[
++        off ? h("p", { class: "studio-help", text: "No cover photo. A picture in the post stays in the post, and is not used as the cover." }) : null,
++        drop,
++        h("action-button", { variant: "secondary", onClick: chooseFromSite }, "Use a photo already on my site"),
++      ].filter(Boolean));
+     }
+   }
+ 
+@@ -74,7 +102,16 @@ export async function coverPicker({ api, cover = "", coverAlt = "", coverCredit
+     element: root,
+     value: () => ({ ...state }),
+     /** A cover by web address (Details): shown at once, words and Photo by kept. */
+-    setAddress(url) { if (url === state.cover) return; state.cover = url; draw(); changed(); },
++    setAddress(url) {
++      const next = String(url || "").trim();
++      if (!next) { remove(); return; }
++      if (next === state.cover) return;
++      state.cover = next;
++      draw();
++      changed();
++    },
++    /** Redraw a cover borrowed from the post after the words change. */
++    refresh() { if (!refused(state.cover) && !state.cover) draw(); },
+     focusCredit: () => root.querySelectorAll("text-field")[1]?.querySelector("input")?.focus(),
+     /** Describe the picture from elsewhere (Before you publish's Describe it), and its Undo. */
+     setAlt(text) { if (text === state.coverAlt) return; state.coverAlt = String(text); draw(); changed(); },
+diff --git a/web/studio/parts/ready-rules.js b/web/studio/parts/ready-rules.js
+index 0b1b663..b27b1b8 100644
+--- a/web/studio/parts/ready-rules.js
++++ b/web/studio/parts/ready-rules.js
+@@ -134,7 +134,7 @@ export function cardNotes(social, { description = "", cover = "" } = {}) {
+   const summary = String(description || "").trim();
+   if (!summary) notes.push({ id: "no-summary", words: say("ready.cardNoSummary"), button: say("ready.writeSummary"), target: "summary" });
+   else if (chars(summary) > LONG_SUMMARY) notes.push({ id: "long-summary", words: say("ready.cardLongSummary", { count: String(chars(summary)) }), button: say("ready.changeSummary"), target: "summary" });
+-  if (!String(social?.image || cover || "").trim()) notes.push({ id: "no-picture", words: say("ready.cardNoPicture"), button: say("ready.addCover"), target: "cover" });
++  if (!String(social?.image || "").trim() && !coverChosen(cover)) notes.push({ id: "no-picture", words: say("ready.cardNoPicture"), button: say("ready.addCover"), target: "cover" });
+   return notes;
+ }
+ 
+@@ -142,6 +142,12 @@ export function cardNotes(social, { description = "", cover = "" } = {}) {
+  * Where the card's picture is loaded from: the site-relative path when the address is the blog's
+  * own, an https address as it is, and nothing else (no http, no data, no other scheme).
+  */
++/** A cover she chose. `false`, `no`, and `off` mean she removed it. */
++export function coverChosen(cover) {
++  const value = String(cover || "").trim();
++  return Boolean(value) && !/^(false|no|off)$/i.test(value);
++}
++
+ export function cardImageSrc(image, siteUrl = "") {
+   const value = String(image || "").trim();
+   if (!value) return "";
+diff --git a/web/studio/parts/write-actions.js b/web/studio/parts/write-actions.js
+index ed3064c..5383ddd 100644
+--- a/web/studio/parts/write-actions.js
++++ b/web/studio/parts/write-actions.js
+@@ -4,6 +4,7 @@
+ import { h, toast } from "./dom.js";
+ import { sendOut, wentOutWords } from "./publish.js";
+ import { statusLine } from "./post-fields.js";
++import { coverChosen } from "./ready-rules.js";
+ import { takeOffQuestion } from "./take-off.js";
+ import { say } from "./words.js";
+ 
+@@ -71,7 +72,7 @@ export function postActions({ api, meta, ask, kept, keptKey, doc, context, title
+     if (!isDirty()) return true;
+     const values = read();
+     if (doc.state === "new" && !values.title.trim()) {
+-      if (!values.body.trim() && !form().cover) { kept.clear(keptKey); return true; }
++      if (!values.body.trim() && !coverChosen(form().cover)) { kept.clear(keptKey); return true; }
+       const choice = await ask({ heading: "Leave without a title?", text: ["A post needs a title to be kept as a draft.", "If you leave, your words wait on this device for next time."], choices: [{ label: "Add a title", value: "stay" }, { label: "Leave for now", value: "go", variant: "secondary" }, { label: "Throw it away", value: "discard", variant: "destructive" }] });
+       if (choice === "stay" || choice === null) { setTimeout(() => focusTitle(), 0); return false; }
+       if (choice === "discard") kept.clear(keptKey);
+diff --git a/web/studio/screens/write.js b/web/studio/screens/write.js
+index d5f44a5..c48d339 100644
+--- a/web/studio/screens/write.js
++++ b/web/studio/screens/write.js
+@@ -99,7 +99,7 @@ export async function createWrite(context, arg, route = {}) {
+     helper: { ready: () => Boolean(helper?.confirmed()), company: () => helper.company(), form: () => helper.form(), offsetOf: (box) => helper.offsetOf(box) },
+     research: hooks,
+   });
+-  body = await createBodyHost({ onChange: () => changed(), pieces: addMenu.host, moreHelp: hooks ? say("cite.wordsHelp") : "" });
++  body = await createBodyHost({ onChange: () => { changed(); picker?.refresh?.(); }, pieces: addMenu.host, moreHelp: hooks ? say("cite.wordsHelp") : "" });
+   suggestions = createSuggestions({ boxes: () => body.boxes(), did: (box, before, words) => addMenu.did(box, before, words), reveal: (box, start, end) => box.reveal(start, end),
+     body: () => body.text(), checkEverything: () => sheets?.open("ready", suggestions.element) });
+   const { trail, status, banner, title, numbersHost, day, time, tags, cover, collection, saveLabel, save, primaryLabel, primary, look, more, whenHelp, about: aboutButton, aboutLine, element } = writePage({
+@@ -274,7 +274,7 @@ export async function createWrite(context, arg, route = {}) {
+   }
+ 
+   async function buildCover() {
+-    picker = await coverPicker({ api, cover: form.cover, coverAlt: form.coverAlt, coverCredit: about.value("coverCredit"), maxBytes: meta.capture?.maxPhotoBytes || 0,
++    picker = await coverPicker({ api, cover: form.cover, coverAlt: form.coverAlt, coverCredit: about.value("coverCredit"), words: () => bodyText(), maxBytes: meta.capture?.maxPhotoBytes || 0,
+       onChange: (v) => { form.cover = v.cover; form.coverAlt = v.coverAlt; about.setValue("coverCredit", v.coverCredit); about.paintCard(); changed(); } });
+     cover.replaceChildren(picker.element);
+   }
