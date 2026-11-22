@@ -10,6 +10,7 @@ import { readSettings } from "../lib/settings.js";
 import { createSite, parseRedirects } from "../lib/site.js";
 import { visitorAddress } from "../lib/http.js";
 import { giftFromForm } from "../gifts.js";
+import { checkGiftWithScene } from "../lib/gift-scene.js";
 import { cleanPath, commentStateCondition } from "../notes.js";
 import { checkGift } from "../vendor/openblog/lib/gift-card.mjs";
 
@@ -55,6 +56,53 @@ test("a gift from the form's fields is what open.blog's check reads", () => {
   form.set("spotX", "1e3");
   form.set("stickers", "[]");
   assert.equal(checkGift(giftFromForm(form)).spot, null, "a place that isn't two whole numbers is no place");
+  assert.deepEqual(checkGiftWithScene(giftFromForm(form)), checkGift(giftFromForm(form)), "a card with no drawing is unchanged");
+});
+
+test("a card can hold a drawing, placed words, a turned sticker and a small photo", () => {
+  const jpeg = `data:image/jpeg;base64,${Buffer.from([0xff, 0xd8, 0xff, 0xd9]).toString("base64")}`;
+  const png = `data:image/png;base64,${Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).toString("base64")}`;
+  const scene = {
+    bg: "#FFFDF8",
+    plain: true,
+    marks: [{ color: "#1f2633", size: 4, points: [[10, 20], [12, 22]] }],
+    texts: [{ text: "Hi Grammi", x: 40, y: 30, size: 32, color: "#a11224" }],
+    pictures: [{ src: jpeg, x: 50, y: 40, w: 80, h: 60 }],
+  };
+  const form = new FormData();
+  for (const [k, v] of Object.entries({
+    from: "Jimmy", kind: "card", design: "holly", message: "", signOff: "",
+    stickers: '[{"kind":"star","x":50,"y":40,"turn":15,"size":140}]',
+    scene: JSON.stringify(scene), wrap: "red",
+  })) form.set(k, v);
+  const card = checkGiftWithScene(giftFromForm(form)).card;
+  assert.equal(card.message, "");
+  assert.equal(card.bg, "#fffdf8");
+  assert.equal(card.plain, true);
+  assert.equal(card.stickers[0].turn, 15);
+  assert.equal(card.stickers[0].size, 140);
+  assert.equal(card.texts[0].text, "Hi Grammi");
+  assert.equal(card.pictures[0].src, jpeg);
+  assert.deepEqual(card.marks[0].points, [[10, 20], [12, 22]]);
+
+  const classic = new FormData();
+  for (const [k, v] of Object.entries({ from: "Jimmy", kind: "card", design: "holly", message: "Love", signOff: "J", stickers: "[]" })) classic.set(k, v);
+  assert.deepEqual(checkGiftWithScene(giftFromForm(classic)).card, { design: "holly", message: "Love", signOff: "J", stickers: [] });
+
+  form.set("scene", JSON.stringify({ ...scene, pictures: [{ src: png, x: 1, y: 1, w: 8, h: 8 }, { src: jpeg, x: 2, y: 2, w: 8, h: 8 }, { src: jpeg, x: 3, y: 3, w: 8, h: 8 }] }));
+  assert.throws(() => checkGiftWithScene(giftFromForm(form)), /too-many-pictures/);
+  form.set("scene", JSON.stringify({ pictures: [{ src: "data:image/svg+xml;base64,PHN2Zy8+", x: 1, y: 1, w: 8, h: 8 }] }));
+  assert.throws(() => checkGiftWithScene(giftFromForm(form)), /bad-picture/);
+  form.set("scene", JSON.stringify({ bg: "red" }));
+  form.set("message", "Love");
+  assert.throws(() => checkGiftWithScene(giftFromForm(form)), /bad-color/);
+  form.set("scene", "{}");
+  form.set("message", "");
+  form.set("stickers", "[]");
+  assert.throws(() => checkGiftWithScene(giftFromForm(form)), /message-length/);
+  const note = new FormData();
+  for (const [k, v] of Object.entries({ from: "Jimmy", kind: "note", note: "Hi", wrap: "red" })) note.set(k, v);
+  assert.equal(checkGiftWithScene(giftFromForm(note)).note, "Hi");
 });
 
 test("comment states become the same rows open.blog's filter matches", () => {
