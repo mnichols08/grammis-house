@@ -7,7 +7,7 @@ description: Notes, pictures and stories the family sends Grammi, stuck on the f
 
 This is the fridge. Write to me, and I'll put my favorites up here.
 
-TODO(Grammi): put your email address here between the < and > signs, like <your.name@example.com>,
+TODO(Grammi): put your email address here between the <scubygal@hotmail.com> signs, like <your.name@example.com>,
 and a "Write to Grammi" postcard appears on this page.
 
 > TODO(Grammi): this is an example note. Replace it with one the family sends you.
