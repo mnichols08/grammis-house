@@ -1,0 +1,559 @@
+<!--
+  The fridge on The Family Wall. One box of plastic letter magnets that everybody shares: drag them
+  anywhere on the door to spell something, and the next visitor sees what you left. Nobody adds
+  letters, so the E's have to be shared. Grammi's favorite notes (the quotes on the page) hang at the
+  top, each held up by a magnet.
+
+  Anyone can also draw Grammi a picture. It waits until she puts it up; then it hangs on the door and
+  moves like the letters. Drawings are pen strokes, never picture files, so nothing but lines in a
+  few crayon colors can ever show.
+
+  "Grammi's corner", under the fridge, asks for her word (OPENBLOG_FRIDGE_WORD in the family
+  service): with it she sees the drawings waiting, puts them up or takes them down, and tidies the
+  letters back to "WE ♥ GRAMMI".
+
+  The Family Wall theme puts this on the page (themes/family-wall/fridge-loader.js). It talks to the
+  family service through its own server functions; on a copy of the site anywhere else it stays
+  hidden and the notes show as they always have.
+-->
+<script>
+  import { onMount } from '@zubra/runtime'
+  import { lookAtFridge, moveOnFridge, drawForFridge, grammisCorner } from '../../../family/actions.js'
+
+  // The family service's side (family/fridge.js). These run on the server; the page only has their addresses.
+  export async function look() {
+    'use server'
+    return lookAtFridge()
+  }
+  export async function move(formData, { request }) {
+    'use server'
+    return moveOnFridge(formData, request)
+  }
+  export async function draw(formData, { request }) {
+    'use server'
+    return drawForFridge(formData, request)
+  }
+  export async function grammi(formData, { request }) {
+    'use server'
+    return grammisCorner(formData, request)
+  }
+
+  // The same crayons and pens family/lib/fridge.js takes; the paper is 300 by 300.
+  const INKS = [['#1f2633', 'Black'], ['#d7263d', 'Red'], ['#1b6fd1', 'Blue'], ['#1f9d55', 'Green'], ['#f2b600', 'Yellow'], ['#f47b20', 'Orange'], ['#8e44c9', 'Purple'], ['#8b5a2b', 'Brown']]
+  const PENS = [[3, 'Thin'], [7, 'Medium'], [14, 'Thick']]
+  const PAPER = 300
+  const NS = 'http://www.w3.org/2000/svg'
+  // Where Grammi's notes hang: left, top (percent of the door), turn.
+  const NOTE_SPOTS = [[6, 4, -2], [53, 6, 2.5], [9, 18, 1.2], [55, 20, -1.5]]
+  const REFRESH = 30000
+
+  const WHY = {
+    'slow-down': 'That’s a lot of moving for one hour. Give the fridge a rest and come back later.',
+    full: 'Grammi has a lot of drawings to look at today. Try again tomorrow.',
+    token: 'That took a while. Press the button once more.',
+    'drawing-empty': 'Draw something first.',
+    'drawing-full': 'That drawing is too full. Undo a few lines.',
+    drawing: 'That drawing didn’t come through. Try again.',
+    by: 'Keep your name to 40 letters.',
+    word: 'That isn’t Grammi’s word.',
+    gone: 'That one isn’t there any more.',
+  }
+
+  const call = async (fn, data = new FormData()) => {
+    const reply = await fetch(fn, { method: 'POST', headers: { accept: 'application/json' }, body: data })
+    if (!reply.ok) throw new Error(String(reply.status))
+    return reply.json()
+  }
+  const form = (fields) => {
+    const data = new FormData()
+    for (const [key, value] of Object.entries(fields)) data.set(key, String(value))
+    return data
+  }
+  const clamp = (value, lo, hi) => Math.min(hi, Math.max(lo, value))
+  const svgEl = (name, attributes = {}) => {
+    const node = document.createElementNS(NS, name)
+    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value))
+    return node
+  }
+  /** A drawing as an SVG: its strokes, nothing else. */
+  const drawingSvg = (drawing, label) => {
+    const svg = svgEl('svg', { viewBox: `0 0 ${PAPER} ${PAPER}`, role: 'img' })
+    const title = svgEl('title')
+    title.textContent = label
+    svg.append(title, svgEl('rect', { width: PAPER, height: PAPER, fill: '#fffdf8' }))
+    for (const stroke of (drawing && drawing.strokes) || []) {
+      const p = stroke.p || []
+      if (p.length === 2) { svg.append(svgEl('circle', { cx: p[0], cy: p[1], r: stroke.s / 2, fill: stroke.c })); continue }
+      const points = []
+      for (let i = 0; i < p.length; i += 2) points.push(`${p[i]},${p[i + 1]}`)
+      svg.append(svgEl('polyline', { points: points.join(' '), fill: 'none', stroke: stroke.c, 'stroke-width': stroke.s, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }))
+    }
+    return svg
+  }
+
+  let state = 'hidden'
+  let said = ''
+  let problem = ''
+  let token = ''
+  let drawing = false
+  let busy = false
+  let corner = 'closed'
+  let cornerSaid = ''
+  let ink = '#1f2633'
+  let pen = 7
+  // What's drawn so far, kept out of the page's state (like the gift card's gesture): only the pad shows it.
+  const sketch = { strokes: [], line: null }
+  let confirmTidy = false
+
+  let door = null
+  let items = new Map()
+  let dragging = 0
+  let word = ''
+  let waiting = []
+  let upNow = []
+  let raised = 10
+
+  // ---- the door ----
+  const place = (item) => {
+    item.el.style.setProperty('--x', String(item.x))
+    item.el.style.setProperty('--y', String(item.y))
+    item.el.style.setProperty('--r', String(item.r || 0))
+  }
+  const save = async (item) => {
+    try {
+      const answer = await call(move, form({ kind: item.kind, id: item.id, x: item.x.toFixed(1), y: item.y.toFixed(1), r: (item.r || 0).toFixed(1) }))
+      if (answer.error) said = WHY[answer.error] || ''
+    } catch (_) {}
+  }
+  const draggable = (item) => {
+    const el = item.el
+    el.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return
+      e.preventDefault()
+      el.focus({ preventScroll: true })
+      el.setPointerCapture(e.pointerId)
+      const box = door.getBoundingClientRect()
+      const dx = e.clientX - (box.left + (item.x / 100) * box.width)
+      const dy = e.clientY - (box.top + (item.y / 100) * box.height)
+      raised += 1
+      el.style.zIndex = String(raised)
+      el.classList.add('lift')
+      dragging += 1
+      const follow = (ev) => {
+        item.x = clamp(((ev.clientX - dx - box.left) / box.width) * 100, 3, 97)
+        item.y = clamp(((ev.clientY - dy - box.top) / box.height) * 100, 3, 97)
+        place(item)
+      }
+      const drop = () => {
+        el.classList.remove('lift')
+        el.removeEventListener('pointermove', follow)
+        el.removeEventListener('pointerup', drop)
+        el.removeEventListener('pointercancel', drop)
+        dragging -= 1
+        save(item)
+      }
+      el.addEventListener('pointermove', follow)
+      el.addEventListener('pointerup', drop)
+      el.addEventListener('pointercancel', drop)
+    })
+    // The arrow keys nudge what's picked up (Shift for bigger steps); it's saved when they stop.
+    let later = null
+    el.addEventListener('keydown', (e) => {
+      const step = e.shiftKey ? 5 : 1
+      const by = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key]
+      if (!by) return
+      e.preventDefault()
+      item.x = clamp(item.x + by[0], 3, 97)
+      item.y = clamp(item.y + by[1], 3, 97)
+      place(item)
+      clearTimeout(later)
+      later = setTimeout(() => save(item), 600)
+    })
+  }
+  const magnetItem = (m) => {
+    const el = document.createElement('button')
+    el.type = 'button'
+    el.className = m.ch === '♥' ? 'mag heart' : 'mag'
+    el.textContent = m.ch
+    el.setAttribute('aria-label', m.ch === '♥' ? 'Heart magnet' : `Letter ${m.ch} magnet`)
+    el.style.setProperty('--c', m.color)
+    const item = { kind: 'magnet', id: m.id, x: m.x, y: m.y, r: m.r, el }
+    place(item)
+    draggable(item)
+    return item
+  }
+  const drawingItem = (d) => {
+    const el = document.createElement('button')
+    el.type = 'button'
+    el.className = 'picture'
+    const label = d.by ? `A drawing by ${d.by}` : 'A drawing from the family'
+    el.setAttribute('aria-label', label)
+    el.append(drawingSvg(d.drawing, label))
+    if (d.by) {
+      const by = document.createElement('span')
+      by.className = 'picture-by'
+      by.textContent = d.by
+      el.append(by)
+    }
+    const item = { kind: 'drawing', id: d.id, x: d.x, y: d.y, r: d.r, el }
+    place(item)
+    draggable(item)
+    return item
+  }
+  /** Grammi's notes: the quotes on the page, the first four hung on the door. */
+  const hangNotes = (root) => {
+    const quotes = Array.from(document.querySelectorAll('.ob-page .ob-prose blockquote')).slice(0, NOTE_SPOTS.length)
+    quotes.forEach((quote, index) => {
+      const parts = Array.from(quote.querySelectorAll('p')).map((p) => p.textContent.trim()).filter(Boolean)
+      if (!parts.length) return
+      const from = parts.length > 1 ? parts.pop() : ''
+      const note = document.createElement('div')
+      note.className = `note n${(index % 3) + 1}`
+      const [left, topAt, turn] = NOTE_SPOTS[index]
+      note.style.left = `${left}%`
+      note.style.top = `${topAt}%`
+      note.style.setProperty('--turn', `${turn}deg`)
+      const words = document.createElement('span')
+      words.textContent = parts.join(' ')
+      note.append(words)
+      if (from) {
+        const who = document.createElement('small')
+        who.textContent = `— ${from}`
+        note.append(who)
+      }
+      root.append(note)
+      quote.setAttribute('data-on-fridge', '')
+    })
+  }
+  /** Everything on the door, from what the service says; what's being dragged stays in hand. */
+  const show = (answer) => {
+    if (!door) return
+    const seen = new Set()
+    const list = [
+      ...(answer.drawings || []).map((d) => ({ key: `d:${d.id}`, data: d, make: drawingItem })),
+      ...(answer.magnets || []).map((m) => ({ key: `m:${m.id}`, data: m, make: magnetItem })),
+    ]
+    for (const { key, data, make } of list) {
+      seen.add(key)
+      const item = items.get(key)
+      if (!item) {
+        const made = make(data)
+        items.set(key, made)
+        door.append(made.el)
+      } else if (!item.el.classList.contains('lift') && document.activeElement !== item.el) {
+        item.x = data.x
+        item.y = data.y
+        item.r = data.r
+        place(item)
+        door.append(item.el)
+      }
+    }
+    for (const [key, item] of items) if (!seen.has(key)) { item.el.remove(); items.delete(key) }
+  }
+  const refresh = async () => {
+    if (dragging || document.hidden) return
+    try {
+      const answer = await call(look)
+      if (!answer.error) { show(answer); token = answer.token || token }
+    } catch (_) {}
+  }
+
+  // ---- the drawing pad ----
+  const pad = () => document.querySelector('magnet-fridge .pad')
+  const redrawPad = () => {
+    const holder = pad()
+    if (!holder) return
+    holder.replaceChildren(drawingSvg({ strokes: sketch.strokes }, 'Your drawing'))
+  }
+  const startDrawing = () => { drawing = true; said = ''; problem = ''; requestAnimationFrame(redrawPad) }
+  const padPoint = (e) => {
+    const box = e.currentTarget.getBoundingClientRect()
+    return [Math.round(clamp(((e.clientX - box.left) / box.width) * PAPER, 0, PAPER)), Math.round(clamp(((e.clientY - box.top) / box.height) * PAPER, 0, PAPER))]
+  }
+  const onPad = (e) => {
+    if (e.type === 'pointerdown') {
+      if (sketch.strokes.length >= 150) { problem = WHY['drawing-full']; return }
+      e.preventDefault()
+      e.currentTarget.setPointerCapture(e.pointerId)
+      sketch.line = { c: ink, s: pen, p: padPoint(e) }
+      sketch.strokes.push(sketch.line)
+      redrawPad()
+      return
+    }
+    if (!sketch.line) return
+    if (e.type === 'pointermove') {
+      const [x, y] = padPoint(e)
+      const p = sketch.line.p
+      if (Math.hypot(x - p[p.length - 2], y - p[p.length - 1]) < 2 || p.length >= 1000) return
+      p.push(x, y)
+      redrawPad()
+      return
+    }
+    sketch.line = null
+  }
+  const pickInk = (value) => { ink = value }
+  const pickPen = (value) => { pen = value }
+  const undo = () => { sketch.strokes.pop(); redrawPad() }
+  const startOver = () => { sketch.strokes = []; redrawPad() }
+  const stopDrawing = () => { drawing = false; problem = '' }
+  const sendDrawing = async (e) => {
+    e.preventDefault()
+    if (busy) return
+    if (!sketch.strokes.length) { problem = WHY['drawing-empty']; return }
+    busy = true
+    problem = ''
+    const sheet = e.currentTarget
+    const data = new FormData(sheet)
+    data.set('drawing', JSON.stringify({ strokes: sketch.strokes }))
+    data.set('token', token)
+    try {
+      const answer = await call(draw, data)
+      if (answer.error) {
+        problem = WHY[answer.error] || 'That didn’t get to Grammi. Try again in a minute.'
+        if (answer.error === 'token') refresh()
+      } else {
+        sketch.strokes = []
+        drawing = false
+        sheet.reset()
+        said = 'Thank you! Grammi puts your drawing on the fridge once she’s seen it.'
+      }
+    } catch (_) {
+      problem = 'That didn’t get to Grammi. Check your connection and try again.'
+    }
+    busy = false
+  }
+
+  // ---- Grammi's corner ----
+  const showCorner = () => {
+    const shelf = document.querySelector('magnet-fridge .waiting')
+    const hanging = document.querySelector('magnet-fridge .hanging')
+    if (!shelf || !hanging) return
+    const card = (d, buttons) => {
+      const li = document.createElement('li')
+      li.className = 'pick'
+      const label = d.by ? `A drawing by ${d.by}` : 'A drawing'
+      li.append(drawingSvg(d.drawing, label))
+      const by = document.createElement('span')
+      by.textContent = d.by || 'No name'
+      li.append(by)
+      for (const [text, action] of buttons) {
+        const button = document.createElement('button')
+        button.type = 'button'
+        button.textContent = text
+        button.addEventListener('click', () => decide(action, d.id))
+        li.append(button)
+      }
+      return li
+    }
+    shelf.replaceChildren(...waiting.map((d) => card(d, [['Put it on the fridge', 'up'], ['Not this one', 'down']])))
+    hanging.replaceChildren(...upNow.map((d) => card(d, [['Take it down', 'down']])))
+  }
+  const ask = async (fields) => {
+    busy = true
+    try {
+      const answer = await call(grammi, form({ word, ...fields }))
+      if (answer.error) {
+        cornerSaid = WHY[answer.error] || 'That didn’t work. Try again in a minute.'
+        if (answer.error === 'word') { corner = 'asking'; word = '' }
+      } else {
+        corner = 'open'
+        waiting = answer.waiting || []
+        upNow = answer.up || []
+        requestAnimationFrame(showCorner)
+        return true
+      }
+    } catch (_) {
+      cornerSaid = 'That didn’t work. Check the connection and try again.'
+    }
+    busy = false
+    return false
+  }
+  const openCorner = () => { corner = corner === 'closed' ? 'asking' : 'closed'; cornerSaid = ''; confirmTidy = false }
+  const enter = async (e) => {
+    e.preventDefault()
+    word = String(new FormData(e.currentTarget).get('word') || '')
+    cornerSaid = ''
+    await ask({ action: 'look' })
+    busy = false
+  }
+  const decide = async (action, id) => {
+    const done = await ask({ action, id })
+    busy = false
+    if (done) { cornerSaid = action === 'up' ? 'It’s on the fridge.' : 'Taken down.'; refresh() }
+  }
+  const tidy = async () => {
+    if (!confirmTidy) { confirmTidy = true; return }
+    confirmTidy = false
+    const done = await ask({ action: 'tidy' })
+    busy = false
+    if (done) { cornerSaid = 'The letters are back where you started them.'; refresh() }
+  }
+  const leaveCorner = () => { corner = 'closed'; word = ''; waiting = []; upNow = []; cornerSaid = '' }
+
+  onMount(async () => {
+    try {
+      const answer = await call(look)
+      if (answer.error) return
+      token = answer.token || ''
+      state = 'shown'
+      requestAnimationFrame(() => {
+        door = document.querySelector('magnet-fridge .door')
+        if (!door) return
+        hangNotes(door)
+        show(answer)
+      })
+      setInterval(refresh, REFRESH)
+      document.addEventListener('visibilitychange', refresh)
+    } catch (_) {}
+  })
+</script>
+<style>
+  :host { display: block; }
+  .fridge {
+    --door-hi: #fbf6e8; --door: #f1e7cf; --door-lo: #e2d4b2; --door-edge: #cdbb92;
+    --handle-hi: #ffffff; --handle-lo: #9da3a9; --paper: #fffdf5; --paper-2: #fff4c6; --paper-3: #e6f1fb; --ink: #2b2b2b;
+    --shade: 40 25 5; --depth: 0.55; --tray: #f3e9d2; --brushed: transparent; --sheen: rgb(255 255 255 / 0.35);
+    display: none; margin: 1.5rem 0 2rem; color: var(--foreground, #1f2522);
+  }
+  .fridge[data-state="shown"] { display: block; }
+  [hidden] { display: none !important; }
+  .door {
+    position: relative; container-type: inline-size; aspect-ratio: 4 / 5; max-height: 90vh; margin: 0 auto; border-radius: 26px; overflow: hidden; touch-action: none;
+    /* The dark door's colours (brushed steel) are set by the Family Wall theme's fridge.css. */
+    background:
+      repeating-linear-gradient(90deg, var(--brushed) 0 2px, transparent 2px 5px),
+      linear-gradient(100deg, transparent 0 8%, var(--sheen) 12%, transparent 22%),
+      linear-gradient(180deg, var(--door-hi), var(--door) 35%, var(--door-lo));
+    box-shadow: inset 0 0 0 2px var(--door-edge), inset 0 -10px 24px rgb(var(--shade) / 0.12), 0 24px 40px -22px rgb(var(--shade) / 0.55);
+  }
+  @media (max-width: 40rem) { .door { aspect-ratio: 3 / 5; } }
+  .handle { position: absolute; right: 3.2%; top: 6%; width: 2.2%; min-width: 10px; height: 26%; border-radius: 99px; pointer-events: none;
+    background: linear-gradient(90deg, var(--handle-lo), var(--handle-hi) 45%, var(--handle-lo)); box-shadow: -3px 4px 8px rgb(var(--shade) / 0.35); }
+  .badge { position: absolute; left: 50%; bottom: 2.5%; translate: -50% 0; pointer-events: none; font-family: var(--ob-font-hand, cursive); font-weight: 700; font-size: max(15px, 3.2cqw);
+    color: transparent; background: linear-gradient(180deg, var(--handle-hi), var(--handle-lo)); -webkit-background-clip: text; background-clip: text; }
+  .mag, .picture {
+    position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); translate: -50% -50%; rotate: calc(var(--r) * 1deg);
+    margin: 0; border: 0; background: none; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
+  }
+  .mag {
+    --c: #d7263d; padding: 0 0.04em; line-height: 1; font-family: "Baloo 2", "Arial Rounded MT Bold", "Arial Black", sans-serif; font-weight: 800; font-size: max(26px, 6.2cqw); color: var(--c);
+    text-shadow: 0 1px 0 color-mix(in srgb, var(--c) 72%, black), 0 2px 0 color-mix(in srgb, var(--c) 66%, black),
+      0 3px 0 color-mix(in srgb, var(--c) 60%, black), 0 7px 7px rgb(var(--shade) / var(--depth));
+    transition: scale 0.12s ease;
+  }
+  .mag.heart { font-family: "Segoe UI Symbol", "Apple Symbols", sans-serif; }
+  .mag.lift, .picture.lift { scale: 1.12; cursor: grabbing; }
+  .mag:focus-visible, .picture:focus-visible { outline: 3px dashed var(--foreground, #1f2522); outline-offset: 4px; border-radius: 6px; }
+  .picture { width: 24%; padding: 5% 5% 3%; background: #fffdf8; box-shadow: 0 10px 16px -10px rgb(var(--shade) / 0.6); }
+  .picture svg { display: block; width: 100%; height: auto; }
+  .picture::before { content: ""; position: absolute; top: -0.5rem; left: 50%; width: 1.2rem; height: 1.2rem; translate: -50% 0; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.7) 0 18%, transparent 32%), #8e44c9; box-shadow: 0 3px 4px rgb(0 0 0 / 0.35); }
+  .picture-by { display: block; margin-top: 0.2rem; font-family: var(--ob-font-hand, cursive); font-size: max(13px, 2cqw); color: #3a342c; text-align: center; overflow-wrap: anywhere; }
+  .note { position: absolute; width: 36%; padding: 1rem 0.9rem 0.7rem; background: var(--paper); color: var(--ink); pointer-events: none;
+    font-family: var(--ob-font-hand, cursive); font-weight: 700; font-size: max(16px, 2.6cqw); line-height: 1.2; rotate: var(--turn, -2deg);
+    box-shadow: 0 10px 16px -10px rgb(var(--shade) / 0.6); }
+  .note small { display: block; margin-top: 0.4rem; font: 0.8rem/1.3 Georgia, serif; color: #5a5348; text-align: right; }
+  .note::before { content: ""; position: absolute; top: -0.55rem; left: 50%; width: 1.3rem; height: 1.3rem; translate: -50% 0; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.7) 0 18%, transparent 32%), var(--pin, #d7263d); box-shadow: 0 3px 4px rgb(0 0 0 / 0.35); }
+  .note.n2 { background: var(--paper-2); --pin: #1b6fd1; }
+  .note.n3 { background: var(--paper-3); --pin: #1f9d55; }
+  @media (max-width: 40rem) { .note { width: 41%; } }
+  .help, .said, .problem { margin: 0.6rem 0; text-align: center; }
+  .help { color: var(--muted-foreground, #4a524d); font-size: 0.95rem; }
+  .said { font-weight: 600; }
+  .problem { color: #b3262f; font-weight: 600; }
+  .said:empty, .problem:empty { display: none; }
+  .problem { color: var(--warn, #b3262f); }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-top: 1rem; }
+  .go, .send, .tool, .quiet, .pick button {
+    min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
+    border: 2px solid var(--primary, #b3262f); background: var(--primary, #b3262f); color: var(--primary-foreground, #ffffff); }
+  .tool, .quiet, .pick button { background: var(--card, #fbfcfa); color: var(--foreground, #1f2522); border-color: var(--border, #cfd5d0); }
+  .quiet { min-height: 36px; padding: 0.3rem 0.8rem; font-size: 0.9rem; }
+  .tool[aria-pressed="true"] { border-color: var(--foreground, #1f2522); box-shadow: inset 0 0 0 2px var(--foreground, #1f2522); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .drawing { display: grid; gap: 0.8rem; max-width: 26rem; margin: 1rem auto 0; padding: 1rem; border-radius: 14px; background: var(--card, #fbfcfa); border: 1px solid var(--border, #cfd5d0); }
+  .pad { touch-action: none; cursor: crosshair; border-radius: 6px; box-shadow: 0 0 0 1px var(--border, #cfd5d0); background: #fffdf8; }
+  .pad svg { display: block; width: 100%; height: auto; border-radius: 6px; }
+  .crayons, .pens, .row { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+  .crayon { width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; border: 3px solid var(--card, #fbfcfa); background: var(--ink-c); box-shadow: 0 0 0 1px var(--border, #cfd5d0); cursor: pointer; }
+  .crayon[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--foreground, #1f2522); }
+  .field { display: grid; gap: 0.3rem; }
+  label { font-weight: 600; }
+  input[type="text"], input[type="password"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
+  .corner { max-width: 34rem; margin: 1.2rem auto 0; padding: 1rem; border-radius: 14px; border: 1px dashed var(--border, #cfd5d0); }
+  .corner h3 { margin: 0.2rem 0 0.6rem; font-size: 1.1rem; }
+  .picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.8rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+  .picks:empty::after { content: "Nothing here right now."; color: var(--muted-foreground, #4a524d); }
+  .pick { display: grid; gap: 0.35rem; }
+  .pick svg { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--border, #cfd5d0); }
+  .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
+  @media (prefers-reduced-motion: reduce) { .mag { transition: none; } }
+</style>
+<magnet-fridge>
+  <section class="fridge" data-state={state} aria-label="The fridge">
+    <div class="door" aria-label="The fridge door. Drag the letters to spell something; arrow keys move the one you picked up.">
+      <div class="handle"></div>
+      <div class="badge" aria-hidden="true">Grammi's</div>
+    </div>
+    <p class="help">Everybody shares the same letters, so leave a few E's for the next person.</p>
+    <p class="said" role="status">{said}</p>
+    <div class="actions" hidden={drawing}>
+      <button class="go" type="button" onclick={startDrawing}>Draw Grammi a picture</button>
+    </div>
+    <form class="drawing" hidden={!drawing} onsubmit={sendDrawing} novalidate>
+      <div class="pad" aria-label="Your drawing paper. Draw with your finger or the mouse." onpointerdown={onPad} onpointermove={onPad} onpointerup={onPad} onpointercancel={onPad}></div>
+      <div class="crayons" role="group" aria-label="Crayon">
+        <zb-each items={INKS} as="c" key={c[0]}>
+          <button type="button" class="crayon" style:--ink-c={c[0]} aria-label={c[1]} aria-pressed={ink === c[0] ? 'true' : 'false'} onclick={() => pickInk(c[0])}></button>
+        </zb-each>
+      </div>
+      <div class="pens" role="group" aria-label="Pen">
+        <zb-each items={PENS} as="p" key={p[0]}>
+          <button type="button" class="tool" aria-pressed={pen === p[0] ? 'true' : 'false'} onclick={() => pickPen(p[0])}>{p[1]}</button>
+        </zb-each>
+        <button type="button" class="tool" onclick={undo}>Undo</button>
+        <button type="button" class="tool" onclick={startOver}>Start over</button>
+      </div>
+      <div class="field">
+        <label for="fridge-by">Your name (if you'd like it on the drawing)</label>
+        <input id="fridge-by" name="by" type="text" maxlength="40" autocomplete="given-name" />
+      </div>
+      <div class="trap" aria-hidden="true"><label>Leave this empty <input name="website" type="text" tabindex="-1" autocomplete="off" /></label></div>
+      <p class="help">Grammi sees it first, then puts it on the fridge.</p>
+      <p class="problem" role="alert">{problem}</p>
+      <div class="row">
+        <button class="send" type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send it to Grammi'}</button>
+        <button class="tool" type="button" onclick={stopDrawing}>Not now</button>
+      </div>
+    </form>
+    <div class="actions">
+      <button class="quiet" type="button" aria-expanded={corner === 'closed' ? 'false' : 'true'} onclick={openCorner}>Grammi's corner</button>
+    </div>
+    <div class="corner" hidden={corner === 'closed'}>
+      <form hidden={corner !== 'asking'} onsubmit={enter}>
+        <div class="field">
+          <label for="fridge-word">Grammi's word</label>
+          <input id="fridge-word" name="word" type="password" autocomplete="current-password" />
+        </div>
+        <div class="row" style="margin-top: 0.6rem">
+          <button class="send" type="submit" disabled={busy}>Open</button>
+        </div>
+      </form>
+      <div hidden={corner !== 'open'}>
+        <h3>Drawings waiting for you</h3>
+        <ul class="picks waiting"></ul>
+        <h3>On the fridge now</h3>
+        <ul class="picks hanging"></ul>
+        <h3>The letters</h3>
+        <div class="row">
+          <button class="tool" type="button" disabled={busy} onclick={tidy}>{confirmTidy ? 'Yes, put every letter back' : 'Tidy the fridge'}</button>
+          <button class="quiet" type="button" onclick={leaveCorner}>Close Grammi's corner</button>
+        </div>
+        <p class="help" hidden={!confirmTidy}>Every letter goes back to "WE ♥ GRAMMI" and the pile at the bottom.</p>
+      </div>
+      <p class="said" role="status">{cornerSaid}</p>
+    </div>
+  </section>
+</magnet-fridge>

@@ -8,6 +8,12 @@ body {
   background-image: var(--ob-decor-pattern);
   background-size: var(--ob-decor-pattern-size);
 }
+/* On a dark page, the wallpaper drawn for one (scripts/decorate.py makes it from the light one):
+   when the reader's device is dark and they haven't asked for light, or they asked for dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body { background-image: var(--ob-decor-pattern-dark, var(--ob-decor-pattern)); }
+}
+:root[data-theme="dark"] body { background-image: var(--ob-decor-pattern-dark, var(--ob-decor-pattern)); }
 
 /* ---- the brand, in Grammi's handwriting ---- */
 .ob-brand-name {

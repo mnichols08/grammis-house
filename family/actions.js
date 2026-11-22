@@ -27,6 +27,50 @@ export async function lookAtTree() {
   }
 }
 
+/** Whether the recipe form is open, whether it asks for the family password, and a form token. Off: { open: false }. */
+export async function lookAtRecipes() {
+  try {
+    if (!parts?.recipes) return { open: false };
+    return parts.recipes.look();
+  } catch {
+    return { open: false };
+  }
+}
+
+/** One recipe from the form, photos and all. Answers { ok } or { error, field }. */
+export async function shareRecipe(formData, request) {
+  try {
+    if (!parts?.recipes) return { error: "off" };
+    const answer = await parts.recipes.share(formData, { address: visitorAddress(request.headers, parts.trustRealIp) });
+    if (answer.error) return { error: answer.error, field: answer.field ?? null };
+    return { ok: true };
+  } catch {
+    return { error: "off" };
+  }
+}
+
+/** The fridge: a call to one of its parts, or { error: "off" } (the page then leaves the fridge out). */
+async function atFridge(part, formData, request) {
+  try {
+    if (!parts?.fridge) return { error: "off" };
+    const answer = await parts.fridge[part](formData, { address: visitorAddress(request.headers, parts.trustRealIp) });
+    if (answer.error) return { error: answer.error, field: answer.field ?? null };
+    return answer;
+  } catch {
+    return { error: "off" };
+  }
+}
+export async function lookAtFridge() {
+  try {
+    return parts?.fridge ? await parts.fridge.look() : { error: "off" };
+  } catch {
+    return { error: "off" };
+  }
+}
+export const moveOnFridge = (formData, request) => atFridge("move", formData, request);
+export const drawForFridge = (formData, request) => atFridge("draw", formData, request);
+export const grammisCorner = (formData, request) => atFridge("grammi", formData, request);
+
 /** One gift from the form. Answers { ok, gift, opensAt } or { error }. */
 export async function leaveGift(formData, request) {
   try {

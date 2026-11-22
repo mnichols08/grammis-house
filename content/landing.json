@@ -73,6 +73,15 @@
       },
       "tag": "family-mailbox",
       "type": "component"
+    },
+    {
+      "id": "share-a-recipe",
+      "props": {
+        "heading": "Share a recipe with Grammi",
+        "prompt": "Have a recipe of your own she should try? Send it to her, and if she puts it up it has your name on it. Or ask her for one of hers you'd love written down."
+      },
+      "tag": "recipe-share",
+      "type": "component"
     }
   ],
   "version": 4

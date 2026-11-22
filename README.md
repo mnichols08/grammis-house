@@ -24,6 +24,20 @@ Everything is done in the editor in your web browser. You never have to touch a 
    your changes on the site (**Update** on a recipe that's already published).
 5. **Write something new** on Home starts a new recipe with everything ready to fill in.
 
+**Recipes the family sends you** show up in **Posts** as drafts, tagged `from-the-family`, with the
+sender's name on them ("By Aunt Linda", linked to their Instagram or other page if they gave one).
+Open one, read it, change anything you like, and **Publish** it to put it on the site with their name.
+Don't want it? Delete the draft; nothing of it was ever on the site. The sender's name is kept as
+they wrote it (the editor calls it "frozen publication credits"); to put your own name on it instead,
+choose another author under **About this post**.
+
+**Recipes the family asks you for** show up in **Posts** too, as drafts tagged `requested` with
+your usual empty Ingredients and Steps, and a line at the top: "Asked for by Jimmy", with what
+they said ("the one with the crumble top from Easter"). When someone else asks for the same one
+before you've published it, their name is added under the first ("Also asked for by Linda"). Write
+it like any recipe and publish it; keep the "asked for" lines or delete them. The recipe is yours:
+it has your name on it, not theirs.
+
 **Changing the decorations:** open **Decorations**. The top says what's up today and when it changes.
 - **Put (a look) up now** hangs a look today and hands back to your calendar afterwards.
 - **What's hanging** takes one decoration down (the garland, the banner, the falling leaves) or
@@ -75,6 +89,23 @@ by itself. Open **Front page**, then the sign, to change it:
   already addressed. Fill in **Your email address** on it (Front page → Write to Grammi); it stays
   hidden until you do. Put your favorite notes on **The Family Wall** page, the fridge: each note
   is a quote (the **"** button in the editor), with who it's from on the last line.
+- **The fridge.** The Family Wall has a real fridge door: a box of plastic letter magnets that
+  everybody shares and drags around to spell things (nobody can add letters, so the E's get shared),
+  with your first four notes hanging at the top. The family can also **Draw Grammi a picture**; it
+  waits for you. Under the fridge, **Grammi's corner** asks for your word, then shows the drawings
+  waiting (**Put it on the fridge** or **Not this one**), the ones up (**Take it down**), and
+  **Tidy the fridge**, which puts every letter back to "WE ♥ GRAMMI". Eight drawings hang at most;
+  putting up another takes down the oldest. It works on the Railway address; elsewhere the page
+  shows your notes as before.
+- **Share a recipe with Grammi.** A recipe card on the front page (Front page → Add a section → Share a
+  recipe with Grammi) opens a form with the same parts as Grammi's own recipes: a line about it, the
+  story, course, servings and times, the ingredients and steps one at a time (a whole list can be
+  pasted in), notes, and up to four photos, the first the cover. They add their name, and a link to
+  their page only if they want one. Photos are redrawn before they're sent, so where and when they were
+  taken isn't. Nothing is on the site until Grammi publishes it (above). The card's other button,
+  **Ask Grammi for one**, asks her for one of her recipes: which one, a few words to help her remember
+  it, and who's asking; it becomes a draft for her to write (above). It works on the Railway address;
+  set `OPENBLOG_RECIPES_FAMILY_CODE` to ask for a family password.
 - **Quizzes.** "How well do you know Grammi's kitchen?" is a draft with three questions to fill
   in. **Add knowledge check** in the editor makes more. Answers stay on the reader's own device.
 - **Greeting cards.** Open **Greeting cards** (under Family) and add the people you send cards to:
@@ -97,6 +128,13 @@ decorations (Christmas its lights and wreath, Thanksgiving its leaves) and chang
 lettering. **Draft a look**, then **See it on your front page**. Say what to change ("a little
 warmer"), give it a name, and **Save this look**. Saving doesn't change your site: **Put it up now**
 hangs it today. The writing is always made dark or light enough to read easily.
+
+**Asking for a different background.** In the same description, say what you'd like behind the
+page: "blue gingham", "little hearts", "something like kitchen tiles", "a plain background". The
+helper picks one of the house's wallpapers (gingham, plaid, ticking stripes, polka dots, kitchen or
+subway tiles, scallops, waves, a garden trellis, and little hearts, stars, snowflakes, leaves, daisies,
+teacups and more) and the editor draws it in the new look's own colours, faintly, for light and for
+dark. Under the look it says what's behind the page. Ask "plainer" or "polka dots instead" to change it.
 
 **Look** lets you make the writing bigger or smaller, or roomier, for the whole
 site. The holiday colors come from the decorations, so that screen leaves them alone on purpose.
@@ -139,7 +177,15 @@ for family stories, airmail stationery for letters, blue-willow china for Sunday
 
 The pictures are drawn in code by `scripts/draw_decorations.py` (Thanksgiving and Christmas) and
 `scripts/draw_themes.py` (every other month, and the collection looks), and
-`scripts/decorate.py` turns them into tokens. Decorating never means editing `house.css`.
+`scripts/decorate.py` turns them into tokens. Decorating never means editing `house.css`. The wallpaper (`pattern`) comes in two: `decorate.py`
+makes `decorPatternDark` from it (its colours lifted toward white, laid on faintly) unless the look
+draws its own `decor/pattern-dark.svg`, and `house.css` hangs that one on a dark page.
+`python3 scripts/wallpaper_sheet.py out.html` shows every look's wallpaper, light and dark, on one page.
+
+**The wallpapers Grammi can describe** are in `themes/grammis/wallpapers.json`, made by
+`scripts/draw_wallpapers.py`: each a tile drawn in one ink, `{ink}`. "Describe a new look" only lets
+the writing helper choose one by its id; the editor fills in the look's accent and lays it on
+(`docker/openblog-wallpapers.patch`), so nothing the helper writes ever becomes a picture.
 Leaves, snow, petals and the rest of the weather (the `weather` token: `snow`, `hearts`, `clover`,
 `petals`, `leaves`, `confetti` or `none`, drawn by `themes/grammis/weather.js`) hold still for anyone whose device asks for less motion,
 and recipe pages stay quiet because people are cooking. Phones get the garland, sign and banner, but not the corner piece.
@@ -289,13 +335,16 @@ The editor Grammi uses runs on Railway (`Dockerfile.admin`). Its variables:
 | `OPENBLOG_BEHIND_PROXY` | Secure sign-in cookies behind Railway's HTTPS; the entrypoint sets it to `1` unless you set it |
 | `OPENBLOG_GREETINGS_ENDPOINT`, `OPENBLOG_GREETINGS_ADMIN_KEY` | Greeting cards: the family service's `…/api/greetings` and its key |
 | `OPENBLOG_GIFTS_ENDPOINT`, `OPENBLOG_GIFTS_ADMIN_KEY` | Gifts: the family service's `…/api/gifts` and its key |
+| `OPENBLOG_RECIPES_ENDPOINT`, `OPENBLOG_RECIPES_ADMIN_KEY` | Recipes from the family: the family service's `…/api/recipes` and its key. `docker/recipe-inbox.mjs` checks every minute and writes new ones into Posts as drafts |
 
 On the first start after this change, an existing configured login is reset once to
 `OPENBLOG_ADMIN_PASSWORD` and asked to choose a new password. Later starts do not reset it.
 If she forgets it, run `openblog user passwd grammi --temporary-password` from a shell in the
 editor's site checkout; the prompt shows what you type, so use a private terminal. Give her
 that temporary password so she can choose another.
-The admin image applies `docker/openblog-password-setup.patch`, `docker/openblog-gift-card.patch`, and `docker/openblog-cover.patch` to its pinned open.blog revision.
+The admin image applies `docker/openblog-password-setup.patch`, `docker/openblog-gift-card.patch`, `docker/openblog-cover.patch`, `docker/openblog-family-recipes.patch`, and `docker/openblog-wallpapers.patch` to its pinned open.blog revision.
+The wallpapers patch adds one closed field, `wallpaper`, to a drafted look (ADR 0410's draft): `theme`, `none`, or an id from the site's `wallpapers.json`.
+The family-recipes patch keeps a draft's `.credits.json`, and any photo under `static/images/family-recipes/` that no published post shows, out of what **Publish** sends to GitHub, so a recipe she hasn't approved (or deleted) never reaches the public repository.
 The site image and the Pages workflow apply the cover patch too, so a removed cover stays off the published page.
 Recheck the patches and password-setup tests when updating that revision.
 
@@ -314,6 +363,16 @@ project: no Netlify, no Supabase. `Dockerfile` builds the site with open.blog an
   the placement form previews that same decorated tree and the gifts together.
 - **Greeting cards**, Studio's side at `/api/greetings/…` (`family/cards.js`); the cards that are due
   go out every hour through Brevo.
+- **The fridge** on The Family Wall. `themes/family-wall/fridge-loader.js` puts
+  `themes/grammis/components/magnet-fridge.zb` on that page only; its `'use server'` functions (`look`,
+  `move`, `draw`, `grammi`) call `family/fridge.js`. Where each magnet and drawing sits is kept in
+  Postgres as percents of the door; a drawing is pen strokes checked by `family/lib/fridge.js`, never
+  a picture file. Grammi's word (`OPENBLOG_FRIDGE_WORD`) is the only key to tidying and to drawings.
+- **Recipes from the family.** The recipe form (`themes/grammis/components/recipe-share.zb`) has two
+  `'use server'` functions, `look` and `share` (photos as files; a form post may be up to 4 MB). They call
+  `family/recipes.js`, which checks a recipe with `family/lib/recipe-check.js`, takes the camera's notes out
+  of each photo, and keeps it in Postgres. Her editor's side is `/api/recipes/admin/pending` and
+  `/api/recipes/admin/<id>/delivered`: once the editor has written the draft, the service deletes its photos.
 - **Notes on recipes**, page views and the moderation inbox at `/api/…` (`family/notes.js`), the
   addresses open.blog's pages and Studio already use.
 - **The database** is set up when the server starts (`family/lib/migrate.js`).

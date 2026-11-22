@@ -1,0 +1,545 @@
+<!--
+  Share a recipe with Grammi: a recipe card on the front page, and a form for sending her one of your
+  own. The form asks for what her own recipes have (Studio's recipe editor): a title, a line about it,
+  the story, servings and times, the ingredients and the steps one at a time, notes, and photos, the
+  first of them the cover. Then who it's from: a name, and a link to their page if they want one.
+
+  heading  the card's heading (default "Share a recipe with Grammi")
+  prompt   the line under it
+
+  The other button, "Ask Grammi for one", is a short form for asking for one of her recipes: which
+  one, a few words to help her remember it, and who's asking. It becomes a draft she writes, saying
+  who asked; more people asking for the same recipe add their names to it.
+
+  Nothing sent is on the site. It waits in the family service (family/ in this repository) until her
+  editor collects it as a draft post with the sender's name on it; she reads it, changes what she
+  likes, and publishes it, or deletes it. It talks to the service through its own server functions,
+  `look` and `share`; on a copy of the site anywhere else it stays hidden.
+
+  Photos are drawn again here before they're sent: at most 1600 pixels across, as a plain JPEG, which
+  leaves behind what the camera wrote into the file (where it was taken, the phone, the time).
+-->
+<script>
+  import { onMount } from '@zubra/runtime'
+  import { lookAtRecipes, shareRecipe } from '../../../family/actions.js'
+
+  // The family service's side (family/recipes.js). These two run on the server; the page only ever has
+  // their addresses. `look` says whether the form is open and gives a form token; `share` is one recipe.
+  export async function look() {
+    'use server'
+    return lookAtRecipes()
+  }
+  export async function share(formData, { request }) {
+    'use server'
+    return shareRecipe(formData, request)
+  }
+
+  const MAX = { ingredients: 60, steps: 40, photos: 4 }
+  const PHOTO_EDGE = 1600
+  const PHOTO_BYTES = 880 * 1024
+
+  // A server function is called the way Zubra's own form script calls one: a post of the form's fields,
+  // asking for JSON.
+  const call = async (fn, data = new FormData()) => {
+    const reply = await fetch(fn, { method: 'POST', headers: { accept: 'application/json' }, body: data })
+    if (!reply.ok) throw new Error(String(reply.status))
+    return reply.json()
+  }
+
+  let state = 'hidden'
+  let open = false
+  // The other way in: asking Grammi for one of her recipes (a short form of its own).
+  let asking = false
+  let asks = false
+  let busy = false
+  let said = ''
+  let problem = ''
+  let token = ''
+  let who = ''
+  // Three empty ingredients and two empty steps to start; each row added after gets the next id.
+  let made = 5
+  const row = () => { made += 1; return { id: made, text: '' } }
+  let ingredients = [{ id: 1, text: '' }, { id: 2, text: '' }, { id: 3, text: '' }]
+  let steps = [{ id: 4, text: '' }, { id: 5, text: '' }]
+  let photos = []
+
+  const byline = () => (who.trim() ? `By ${who.trim()}` : 'By your name')
+
+  const setRow = (list, id, value) => list.map((item) => (item.id === id ? { ...item, text: value } : item))
+  const typeIngredient = (e, id) => { ingredients = setRow(ingredients, id, e.target.value) }
+  const typeStep = (e, id) => { steps = setRow(steps, id, e.target.value) }
+
+  const focusLast = (root, name) => requestAnimationFrame(() => {
+    const fields = root ? root.querySelectorAll(`[name="${name}"]`) : []
+    const last = fields[fields.length - 1]
+    if (last) last.focus()
+  })
+  const addIngredient = (e) => {
+    if (ingredients.length >= MAX.ingredients) return
+    ingredients = [...ingredients, row()]
+    focusLast(e.currentTarget.closest('form'), 'ingredient')
+  }
+  const addStep = (e) => {
+    if (steps.length >= MAX.steps) return
+    steps = [...steps, row()]
+    focusLast(e.currentTarget.closest('form'), 'step')
+  }
+  const dropIngredient = (id) => { ingredients = ingredients.length > 1 ? ingredients.filter((item) => item.id !== id) : [row()] }
+  const dropStep = (id) => { steps = steps.length > 1 ? steps.filter((item) => item.id !== id) : [row()] }
+
+  // A whole list pasted into one line (from a note or another site) becomes one line each.
+  const pasteList = (e, which, id) => {
+    const words = e.clipboardData ? e.clipboardData.getData('text') : ''
+    const lines = words.split(/\r?\n/).map((line) => line.replace(/^\s*(?:[-*+•·]|\d{1,2}[.)])\s+/, '').trim()).filter(Boolean)
+    if (lines.length < 2) return
+    e.preventDefault()
+    const list = which === 'ingredient' ? ingredients : steps
+    const at = list.findIndex((item) => item.id === id)
+    const current = list[at]
+    const extra = lines.slice(1).map((text) => ({ ...row(), text }))
+    const next = [...list.slice(0, at), { ...current, text: current.text ? `${current.text} ${lines[0]}` : lines[0] }, ...extra, ...list.slice(at + 1)]
+      .filter((item, index, all) => item.text || index < all.length - 1 || all.length === 1)
+      .slice(0, which === 'ingredient' ? MAX.ingredients : MAX.steps)
+    if (which === 'ingredient') ingredients = next
+    else steps = next
+  }
+
+  // ---- Photos ----------------------------------------------------------------------------------
+  const loadImage = (url) => new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('image'))
+    img.src = url
+  })
+  const toBlob = (canvas, quality) => new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality))
+  /** A photo drawn again as a JPEG no bigger than it needs to be, or null when it can't be. */
+  const redraw = async (file) => {
+    const url = URL.createObjectURL(file)
+    try {
+      const img = await loadImage(url)
+      let edge = PHOTO_EDGE
+      for (let tries = 0; tries < 6; tries += 1) {
+        const scale = Math.min(1, edge / Math.max(img.naturalWidth, img.naturalHeight))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale))
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale))
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return null
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        for (const quality of [0.82, 0.7, 0.6]) {
+          const blob = await toBlob(canvas, quality)
+          if (blob && blob.size <= PHOTO_BYTES) return blob
+        }
+        edge = Math.round(edge * 0.75)
+      }
+      return null
+    } finally {
+      URL.revokeObjectURL(url)
+    }
+  }
+  const showPhotos = (root) => {
+    const shelf = root && root.querySelector('.photos')
+    if (!shelf) return
+    shelf.replaceChildren()
+    photos.forEach((photo, index) => {
+      const item = document.createElement('li')
+      item.className = 'photo'
+      const img = document.createElement('img')
+      img.src = photo.url
+      img.alt = index === 0 ? 'Your cover photo' : `Your photo ${index + 1}`
+      const label = document.createElement('span')
+      label.className = 'photo-label'
+      label.textContent = index === 0 ? 'Cover photo' : `Photo ${index + 1}`
+      const buttons = document.createElement('span')
+      buttons.className = 'photo-buttons'
+      if (index > 0) {
+        const cover = document.createElement('button')
+        cover.type = 'button'
+        cover.textContent = 'Make it the cover'
+        cover.addEventListener('click', () => { photos = [photo, ...photos.filter((p) => p !== photo)]; showPhotos(root) })
+        buttons.append(cover)
+      }
+      const remove = document.createElement('button')
+      remove.type = 'button'
+      remove.textContent = 'Take it out'
+      remove.setAttribute('aria-label', `Take out ${label.textContent.toLowerCase()}`)
+      remove.addEventListener('click', () => {
+        URL.revokeObjectURL(photo.url)
+        photos = photos.filter((p) => p !== photo)
+        showPhotos(root)
+      })
+      buttons.append(remove)
+      item.append(img, label, buttons)
+      shelf.append(item)
+    })
+  }
+  const addPhotos = async (e) => {
+    const input = e.currentTarget
+    const root = input.closest('recipe-share')
+    const files = Array.from(input.files || [])
+    input.value = ''
+    problem = ''
+    for (const file of files) {
+      if (photos.length >= MAX.photos) { problem = WHY['too-many-photos']; break }
+      if (!/^image\//.test(file.type)) { problem = WHY['bad-photo']; continue }
+      try {
+        const blob = await redraw(file)
+        if (!blob) { problem = WHY['bad-photo']; continue }
+        photos = [...photos, { blob, url: URL.createObjectURL(blob) }]
+      } catch (_) {
+        problem = WHY['bad-photo']
+      }
+    }
+    showPhotos(root)
+  }
+
+  // ---- Sending ---------------------------------------------------------------------------------
+  const WHY = {
+    'family-code': 'That isn’t the family password. Ask Grammi for it.',
+    'slow-down': 'That’s a lot of recipes in one hour. Try again a little later.',
+    full: 'Grammi has a lot of recipes to read today. Try again tomorrow.',
+    token: 'That took a while. Press the button once more.',
+    name: 'Add your name, 60 letters at most.',
+    link: 'That link didn’t look right. Paste the whole address of your page, like instagram.com/yourname, or leave it empty.',
+    title: 'Give the recipe a name, 100 letters at most.',
+    description: 'Keep the line about it to 300 letters.',
+    course: 'Pick a course from the list.',
+    servings: 'Keep "Serves" short, like 4 or "a dozen cookies".',
+    time: 'Write the times short, like 15 min or 1 hour.',
+    story: 'The story can be 4,000 letters at most.',
+    ingredients: 'Add at least one ingredient.',
+    'ingredient-length': 'Each ingredient can be 200 letters at most.',
+    'too-many-ingredients': 'Sixty ingredients is the most.',
+    steps: 'Add at least one step.',
+    'step-length': 'Each step can be 1,000 letters at most.',
+    'too-many-steps': 'Forty steps is the most.',
+    notes: 'The notes can be 2,000 letters at most.',
+    'bad-photo': 'That photo didn’t open. Try a JPG or PNG photo.',
+    'photo-too-big': 'That photo is too big. Try a smaller one.',
+    'too-many-photos': 'Four photos is the most.',
+    off: 'Recipes can’t be sent from here right now. Try again later.',
+    details: 'Keep the few words about it to 600 letters.',
+  }
+
+  const start = async (e) => {
+    open = true
+    asking = false
+    said = ''
+    problem = ''
+    const root = e.currentTarget.closest('recipe-share')
+    // The form has to have been open a few seconds before a recipe is taken: it keeps robots out.
+    try { token = (await call(look)).token || '' } catch (_) { token = '' }
+    const first = root && root.querySelector('input[name="title"]')
+    if (first) first.focus()
+  }
+  const close = () => { open = false; problem = '' }
+  // Typing again clears what was wrong last time.
+  const typing = () => { if (problem) problem = '' }
+
+  // ---- Asking for one of hers ------------------------------------------------------------------
+  const startAsk = async (e) => {
+    asking = true
+    open = false
+    said = ''
+    problem = ''
+    const root = e.currentTarget.closest('recipe-share')
+    try { token = (await call(look)).token || '' } catch (_) { token = '' }
+    const first = root && root.querySelector('#ask-title')
+    if (first) first.focus()
+  }
+  const closeAsk = () => { asking = false; problem = '' }
+  const sendAsk = async (e) => {
+    e.preventDefault()
+    if (busy) return
+    const form = e.currentTarget
+    const data = new FormData(form)
+    problem = !String(data.get('title') || '').trim() ? 'Say which recipe you’d like, like “your pecan pie”.'
+      : !String(data.get('name') || '').trim() ? WHY.name
+      : asks && !String(data.get('code') || '').trim() ? WHY['family-code'] : ''
+    if (problem) return
+    busy = true
+    try {
+      data.set('token', token)
+      data.set('kind', 'request')
+      const answer = await call(share, data)
+      if (answer.error) {
+        problem = WHY[answer.error] || 'That didn’t get to Grammi. Try again in a minute.'
+        if (answer.error === 'token') { try { token = (await call(look)).token || '' } catch (_) {} }
+      } else {
+        said = 'Thank you! Grammi has your request. When she writes it down, it goes up with the rest of her recipes.'
+        form.reset()
+        asking = false
+      }
+    } catch (_) {
+      problem = 'That didn’t get to Grammi. Check your connection and try again.'
+    }
+    busy = false
+  }
+
+  const send = async (e) => {
+    e.preventDefault()
+    if (busy) return
+    const form = e.currentTarget
+    const root = form.closest('recipe-share')
+    const data = new FormData(form)
+    const filled = (name) => data.getAll(name).some((value) => String(value).trim())
+    problem = !String(data.get('name') || '').trim() ? WHY.name
+      : !String(data.get('title') || '').trim() ? WHY.title
+      : !filled('ingredient') ? WHY.ingredients
+      : !filled('step') ? WHY.steps
+      : asks && !String(data.get('code') || '').trim() ? WHY['family-code'] : ''
+    if (problem) return
+    busy = true
+    try {
+      data.set('token', token)
+      data.delete('photo')
+      photos.forEach((photo, index) => data.append('photo', photo.blob, `photo-${index + 1}.jpg`))
+      const answer = await call(share, data)
+      if (answer.error) {
+        problem = WHY[answer.error] || 'That didn’t get to Grammi. Try again in a minute.'
+        if (answer.error === 'token') { try { token = (await call(look)).token || '' } catch (_) {} }
+      } else {
+        said = 'Thank you! Your recipe is with Grammi. She reads every one, and when she puts yours up it has your name on it.'
+        for (const photo of photos) URL.revokeObjectURL(photo.url)
+        photos = []
+        ingredients = [row(), row(), row()]
+        steps = [row(), row()]
+        who = ''
+        form.reset()
+        showPhotos(root)
+        open = false
+      }
+    } catch (_) {
+      problem = 'That didn’t get to Grammi. Check your connection and try again.'
+    }
+    busy = false
+  }
+
+  onMount(async () => {
+    try {
+      const answer = await call(look)
+      if (answer.open !== true) return
+      asks = answer.asks === true
+      state = 'shown'
+    } catch (_) {}
+  })
+</script>
+<style>
+  :host { display: block; }
+  .share { display: none; max-width: 40rem; margin: 1.5rem auto; padding: 0 0.5rem; color: var(--foreground, #1f2633); }
+  .share[data-state="shown"] { display: block; }
+  .card {
+    position: relative;
+    padding: 1.2rem 1.4rem 1.1rem;
+    border-radius: 6px;
+    background:
+      linear-gradient(to bottom, transparent 2.6rem, color-mix(in srgb, #c8343a 55%, transparent) 2.6rem calc(2.6rem + 2px), transparent calc(2.6rem + 2px)),
+      repeating-linear-gradient(to bottom, transparent 0 1.7rem, color-mix(in srgb, #2b4f8a 22%, transparent) 1.7rem calc(1.7rem + 1px)),
+      var(--card, #fffdf8);
+    border: 1px solid var(--border, #d9d6cc);
+    box-shadow: 0 8px 18px -12px rgb(0 0 0 / 0.5);
+    rotate: 0.4deg;
+  }
+  .heading { margin: 0 0 0.7rem; font-family: var(--ob-font-hand, cursive); font-size: 1.7rem; line-height: 1.2; color: var(--primary, #a3172b); }
+  .prompt { margin: 0 0 0.8rem; line-height: 1.7rem; }
+  .said, .problem, .help { margin: 0.3rem 0; }
+  .help { font-size: 0.95rem; color: var(--muted-foreground, #5a6170); }
+  .said { font-weight: 600; }
+  .problem { color: #a11224; font-weight: 600; }
+  .problem:empty, .said:empty { display: none; }
+  .go, .send, .add, .row button, .photo-buttons button, .close {
+    min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
+    border: 2px solid var(--primary, #a11224); background: var(--primary, #a11224); color: var(--primary-foreground, #ffffff); }
+  .add, .row button, .photo-buttons button, .close { background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); padding: 0.4rem 0.8rem; }
+  .add { justify-self: start; }
+  .go.other { background: var(--card, #fffdf8); color: var(--primary, #a11224); }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  form { display: grid; gap: 1.1rem; margin-top: 0.8rem; padding: 1rem; border: 1px solid var(--border, #b9b4a6); border-radius: 10px; background: var(--card, #fffdf8); }
+  [hidden] { display: none !important; }
+  label, legend { font-weight: 600; }
+  legend { font-family: var(--ob-font-heading, Georgia, serif); font-size: 1.15rem; padding: 0; margin-bottom: 0.2rem; }
+  .field { display: grid; gap: 0.3rem; }
+  .three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; align-items: end; }
+  @media (max-width: 34rem) { .three { grid-template-columns: 1fr; } }
+  input[type="text"], input[type="url"], textarea, select { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
+  textarea { min-height: 6rem; resize: vertical; }
+  .row textarea { min-height: 4.5rem; }
+  fieldset { display: grid; gap: 0.6rem; margin: 0; padding: 0; border: 0; min-width: 0; }
+  .rows { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; counter-reset: row; }
+  .row { display: grid; grid-template-columns: 1.8rem 1fr auto; gap: 0.5rem; align-items: start; counter-increment: row; }
+  .row::before { content: "•"; padding-top: 0.6rem; text-align: center; font-weight: 700; color: var(--primary, #a11224); }
+  .steps .row::before { content: counter(row) "."; }
+  .byline { font-style: italic; }
+  .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.7rem; margin: 0; padding: 0; list-style: none; }
+  .photos:empty { display: none; }
+  .photo { display: grid; gap: 0.3rem; }
+  .photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; border: 1px solid var(--border, #b9b4a6); background: #ffffff; }
+  .photo-label { font-weight: 600; font-size: 0.95rem; }
+  .photo-buttons { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .file { display: inline-grid; gap: 0.3rem; font-weight: 600; }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+  .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
+</style>
+<recipe-share heading="Share a recipe with Grammi" prompt="Have a recipe of your own she should try? Send it to her, and if she puts it up it has your name on it. Or ask her for one of hers you'd love written down.">
+  <section class="share" data-state={state} aria-label={heading}>
+    <div class="card">
+      <h2 class="heading">{heading}</h2>
+      <p class="prompt">{prompt}</p>
+      <p class="said" role="status">{said}</p>
+      <div class="actions" hidden={open || asking}>
+        <button class="go" type="button" onclick={start}>Share a recipe</button>
+        <button class="go other" type="button" onclick={startAsk}>Ask Grammi for one</button>
+      </div>
+    </div>
+    <form hidden={!open} action={share} method="post" enctype="multipart/form-data" onsubmit={send} oninput={typing} novalidate>
+      <p class="help">Grammi reads it first. Nothing you send is on the site until she puts it up, and she may change a word or two.</p>
+
+      <fieldset>
+        <legend>The recipe</legend>
+        <div class="field">
+          <label for="recipe-title">What it's called</label>
+          <input id="recipe-title" name="title" type="text" maxlength="100" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="recipe-description">One line about it</label>
+          <input id="recipe-description" name="description" type="text" maxlength="300" autocomplete="off" />
+          <p class="help">Shown in search results and when someone shares the link. You can leave it empty.</p>
+        </div>
+        <div class="field">
+          <label for="recipe-story">The story behind it</label>
+          <textarea id="recipe-story" name="story" maxlength="4000"></textarea>
+          <p class="help">Who made it first, when you make it, who always asks for seconds.</p>
+        </div>
+        <div class="field">
+          <label for="recipe-course">Course</label>
+          <select id="recipe-course" name="course">
+            <option value="">Choose one (or leave it)</option>
+            <option value="Breakfast">Breakfast</option>
+            <option value="Appetizer">Appetizer</option>
+            <option value="Soup">Soup</option>
+            <option value="Salad">Salad</option>
+            <option value="Main dish">Main dish</option>
+            <option value="Side dish">Side dish</option>
+            <option value="Bread">Bread</option>
+            <option value="Dessert">Dessert</option>
+            <option value="Drink">Drink</option>
+            <option value="Snack">Snack</option>
+          </select>
+        </div>
+        <div class="three">
+          <div class="field">
+            <label for="recipe-servings">Serves</label>
+            <input id="recipe-servings" name="servings" type="text" maxlength="40" placeholder="4" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="recipe-prep">Prep time</label>
+            <input id="recipe-prep" name="prep" type="text" maxlength="40" placeholder="15 min" autocomplete="off" />
+          </div>
+          <div class="field">
+            <label for="recipe-cook">Cook time</label>
+            <input id="recipe-cook" name="cook" type="text" maxlength="40" placeholder="1 hour" autocomplete="off" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Ingredients</legend>
+        <p class="help">Start each one with the amount (2 cups flour), so the family can make half or double with one tap. You can paste a whole list into the first box.</p>
+        <ol class="rows">
+          <zb-each items={ingredients} as="item" key={item.id}>
+            <li class="row">
+              <input name="ingredient" type="text" maxlength="200" autocomplete="off" aria-label="Ingredient" value={item.text} oninput={(e) => typeIngredient(e, item.id)} onpaste={(e) => pasteList(e, 'ingredient', item.id)} />
+              <button type="button" aria-label="Take out this ingredient" onclick={() => dropIngredient(item.id)}>Take out</button>
+            </li>
+          </zb-each>
+        </ol>
+        <button class="add" type="button" onclick={addIngredient}>Add an ingredient</button>
+      </fieldset>
+
+      <fieldset class="steps">
+        <legend>Steps</legend>
+        <p class="help">One step at a time. Write times the way you'd say them (bake for 45 minutes) and readers get a timer for each.</p>
+        <ol class="rows">
+          <zb-each items={steps} as="item" key={item.id}>
+            <li class="row">
+              <textarea name="step" maxlength="1000" aria-label="Step" value={item.text} oninput={(e) => typeStep(e, item.id)} onpaste={(e) => pasteList(e, 'step', item.id)}></textarea>
+              <button type="button" aria-label="Take out this step" onclick={() => dropStep(item.id)}>Take out</button>
+            </li>
+          </zb-each>
+        </ol>
+        <button class="add" type="button" onclick={addStep}>Add a step</button>
+      </fieldset>
+
+      <div class="field">
+        <label for="recipe-notes">Your notes</label>
+        <textarea id="recipe-notes" name="notes" maxlength="2000"></textarea>
+        <p class="help">Make-ahead tips, swaps that work, what not to do.</p>
+      </div>
+
+      <fieldset>
+        <legend>Photos</legend>
+        <p class="help">Up to four. The first one is the cover. Only the picture is sent, not where or when it was taken.</p>
+        <ul class="photos"></ul>
+        <label class="file" hidden={photos.length >= 4}>Add photos
+          <input type="file" accept="image/*" multiple onchange={addPhotos} />
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>From you</legend>
+        <div class="field">
+          <label for="recipe-name">Your name</label>
+          <input id="recipe-name" name="name" type="text" maxlength="60" autocomplete="name" oninput={(e) => (who = e.target.value)} />
+        </div>
+        <div class="field">
+          <label for="recipe-link">A link to your page (if you'd like)</label>
+          <input id="recipe-link" name="link" type="url" inputmode="url" maxlength="300" autocomplete="url" placeholder="instagram.com/yourname" />
+          <p class="help">Instagram, Facebook, TikTok, a blog: if you add one, your name on the recipe links to it. Leave it empty and it's just your name.</p>
+        </div>
+        <p class="help">On the recipe: <span class="byline">{byline()}</span></p>
+      </fieldset>
+
+      <div class="field" hidden={!asks}>
+        <label for="recipe-code">The family password</label>
+        <input id="recipe-code" name="code" type="text" autocomplete="off" />
+        <p class="help">Grammi can tell you what it is. Capitals and spaces don't matter.</p>
+      </div>
+      <div class="trap" aria-hidden="true"><label>Leave this empty <input name="website" type="text" tabindex="-1" autocomplete="off" /></label></div>
+      <p class="problem" role="alert">{problem}</p>
+      <div class="actions">
+        <button class="send" type="submit" disabled={busy}>{busy ? 'Sending it to Grammi…' : 'Send it to Grammi'}</button>
+        <button class="close" type="button" onclick={close}>Not now</button>
+      </div>
+    </form>
+
+    <form class="ask" hidden={!asking} action={share} method="post" onsubmit={sendAsk} oninput={typing} novalidate>
+      <p class="help">Tell Grammi which of her recipes you'd love written down. She'll see who asked, and when she writes it, it goes up with the rest.</p>
+      <div class="field">
+        <label for="ask-title">Which recipe?</label>
+        <input id="ask-title" name="title" type="text" maxlength="100" autocomplete="off" placeholder="Your pecan pie" />
+      </div>
+      <div class="field">
+        <label for="ask-details">Anything to help her remember it (if you'd like)</label>
+        <textarea id="ask-details" name="details" maxlength="600" placeholder="The one with the crumble top you made at Easter"></textarea>
+      </div>
+      <div class="field">
+        <label for="ask-name">Your name</label>
+        <input id="ask-name" name="name" type="text" maxlength="60" autocomplete="name" />
+      </div>
+      <div class="field" hidden={!asks}>
+        <label for="ask-code">The family password</label>
+        <input id="ask-code" name="code" type="text" autocomplete="off" />
+        <p class="help">Grammi can tell you what it is. Capitals and spaces don't matter.</p>
+      </div>
+      <div class="trap" aria-hidden="true"><label>Leave this empty <input name="website" type="text" tabindex="-1" autocomplete="off" /></label></div>
+      <p class="problem" role="alert">{problem}</p>
+      <div class="actions">
+        <button class="send" type="submit" disabled={busy}>{busy ? 'Sending it to Grammi…' : 'Ask Grammi'}</button>
+        <button class="close" type="button" onclick={closeAsk}>Not now</button>
+      </div>
+    </form>
+  </section>
+</recipe-share>

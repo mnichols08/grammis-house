@@ -98,7 +98,8 @@
     "decorCornerWidth": "0px",
     "decorCornerHeight": "0px",
     "fontHand": "\"Caveat\", \"Segoe Print\", \"Bradley Hand\", cursive",
-    "weather": "none"
+    "weather": "none",
+    "decorPatternDark": "none"
   },
   "options": {
     "listStyle": "cards",
@@ -113,6 +114,7 @@
     "components/grammis-tree.css",
     "components/gift-maker.css",
     "components/family-mailbox.css",
+    "components/recipe-share.css",
     "components/card-room.css"
   ],
   "scripts": [
@@ -361,6 +363,29 @@
           "label": "The email's subject",
           "default": "A note for Grammi",
           "maxLength": 80
+        }
+      ]
+    },
+    "recipe-share": {
+      "label": "Share a recipe with Grammi",
+      "description": "A recipe card where the family can send you a recipe of their own (photos and all, with their name and, if they like, a link to their page), or ask you for one of yours. Each arrives in Posts as a draft for you to read or write; nothing is on the site until you publish it.",
+      "script": "components/recipe-share.js",
+      "source": "components/recipe-share.zb",
+      "fallback": "The family can send Grammi their own recipes here.",
+      "props": [
+        {
+          "name": "heading",
+          "type": "text",
+          "label": "The card's heading",
+          "default": "Share a recipe with Grammi",
+          "maxLength": 60
+        },
+        {
+          "name": "prompt",
+          "type": "text",
+          "label": "What the card says",
+          "default": "Have a recipe of your own she should try? Send it to her, and if she puts it up it has your name on it. Or ask her for one of hers you'd love written down.",
+          "maxLength": 200
         }
       ]
     },

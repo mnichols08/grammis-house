@@ -5,6 +5,9 @@
 #   Greeting cards: Grammi writes cards (Greeting cards) and each goes out by email on its day,
 #   birthdays every year. The family's addresses stay in the private database, never in this repo.
 #   Gifts: anyone can leave Grammi a wrapped note or card under her tree, opened on Christmas morning.
+#   Recipes from the family: the family sends Grammi recipes of their own, which arrive in her editor's
+#   Posts as drafts with their name on them; nothing is on the site until she publishes one.
+#   The fridge: letter magnets anyone moves on The Family Wall, and drawings Grammi puts up with her word.
 #
 # They live in the family service (family/, on Zubra), which the site's own Railway service runs next
 # to her pages (Dockerfile), with Railway's Postgres. This walks you through the clicks only you can
@@ -47,6 +50,7 @@ key() { openssl rand -hex 32; }
 ADMIN_KEY=$(key)
 GREETINGS_KEY=$(key)
 GIFTS_KEY=$(key)
+RECIPES_KEY=$(key)
 SALT=$(key)
 
 step "2 of 4: the database (Railway, in the project with her site and editor)"
@@ -57,6 +61,7 @@ cat <<EOF
 EOF
 wait_enter
 DOMAIN=$(ask "The site service's domain (like grammis-house-production.up.railway.app)")
+FRIDGE_WORD=$(ask "Grammi's word for tidying the fridge and putting up drawings (6+ letters, easy for her to type)")
 DOMAIN=${DOMAIN#https://}
 DOMAIN=${DOMAIN%%/*}
 SITE="https://$DOMAIN"
@@ -65,7 +70,7 @@ step "3 of 4: switch the family service on"
 cat <<EOF
   In the site service > Variables > Raw editor, paste ALL of this and click Update variables. It
   rebuilds and starts; the first start sets up the database. $SITE/health then answers
-  {"ok":true,"notes":true,"cards":true,"gifts":true}.
+  {"ok":true,"notes":true,"cards":true,"gifts":true,"recipes":true,"fridge":true}.
 
 DATABASE_URL=\${{Postgres.DATABASE_URL}}
 OPENBLOG_SITE_ID=grammis-house
@@ -81,6 +86,10 @@ OPENBLOG_GREETINGS_TIME_ZONE=America/New_York
 BREVO_API_KEY=$BREVO_API_KEY
 OPENBLOG_GIFTS_ENABLED=true
 OPENBLOG_GIFTS_ADMIN_KEY=$GIFTS_KEY
+OPENBLOG_RECIPES_ENABLED=true
+OPENBLOG_RECIPES_ADMIN_KEY=$RECIPES_KEY
+OPENBLOG_FRIDGE_ENABLED=true
+OPENBLOG_FRIDGE_WORD="$FRIDGE_WORD"
 
   Then, in her editor's service > Variables > Raw editor, add these and click Update variables:
 
@@ -88,6 +97,8 @@ OPENBLOG_GREETINGS_ENDPOINT=$SITE/api/greetings
 OPENBLOG_GREETINGS_ADMIN_KEY=$GREETINGS_KEY
 OPENBLOG_GIFTS_ENDPOINT=$SITE/api/gifts
 OPENBLOG_GIFTS_ADMIN_KEY=$GIFTS_KEY
+OPENBLOG_RECIPES_ENDPOINT=$SITE/api/recipes
+OPENBLOG_RECIPES_ADMIN_KEY=$RECIPES_KEY
 EOF
 wait_enter
 
@@ -108,7 +119,8 @@ cat <<EOF
        $ADMIN_KEY
      (Keep a copy in your password manager. It's the key to approving notes.) Then switch on
      Let readers leave comments at the top of that page.
-  3. In Front page, add Christmas tree, then Gifts under the tree right after it.
+  3. In Front page, add Christmas tree, then Gifts under the tree right after it. Share a recipe with
+     Grammi is already on the front page; recipes sent there arrive in Posts as drafts within a minute.
 
   New notes wait in the Moderation inbox until Grammi approves them. Greeting cards shows under
   Family: try "Send me a test" first, it goes to $SENDER_EMAIL, not to anyone in the address book.

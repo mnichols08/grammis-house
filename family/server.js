@@ -1,10 +1,13 @@
-// Grammi's family service, on Zubra: notes on recipes, greeting cards and gifts under the tree, and
-// her built site, from one Node server on Railway with Railway's Postgres.
+// Grammi's family service, on Zubra: notes on recipes, greeting cards, gifts under the tree, recipes
+// the family shares with her, and her built site, from one Node server on Railway with Railway's Postgres.
 //
 //   /_zb/action/...      the theme components' own server functions (@zubra/actions): the gift form's
-//                        `look` and `leave`, compiled from themes/grammis/components/*.zb
+//                        `look` and `leave`, the recipe form's `look` and `share`, compiled from
+//                        themes/grammis/components/*.zb
 //   /api/gifts/admin/... Studio's side of gifts           (family/gifts.js)
 //   /api/greetings/...   Studio's side of greeting cards  (family/cards.js)
+//   /api/recipes/admin/... her editor collecting recipes the family shared (family/recipes.js)
+//   (the fridge on The Family Wall has only its own server functions: family/fridge.js)
 //   /api/...             notes, views and moderation      (family/notes.js)
 //   /health              which parts are on
 //   everything else      the built site (FAMILY_SITE_DIR), at the root
@@ -25,9 +28,14 @@ import { migrate } from "./lib/migrate.js";
 import { readSettings } from "./lib/settings.js";
 import { createSite } from "./lib/site.js";
 import { createNotes } from "./notes.js";
+import { createRecipes } from "./recipes.js";
+import { createFridge } from "./fridge.js";
 
 const HOUR = 60 * 60 * 1000;
 const MAX_JSON = 32 * 1024;
+// The largest form post: a recipe with four photos (each at most 900 KB) and its words. Every form
+// checks what it was sent on top of this, so a gift is still only as big as a gift may be.
+export const MAX_FORM = 4 * 1024 * 1024;
 export const COMPONENTS = fileURLToPath(new URL("../themes/grammis/components", import.meta.url));
 
 const send = (res, answer) => res.writeHead(answer.status, answer.headers).end(answer.body);
@@ -58,13 +66,15 @@ export function repeat(job, { every = HOUR, first = 15000, log = () => {}, label
  * slow never takes her site down.
  */
 export function createFamily({ settings, db = null, actions, site = null, now = () => Date.now(), transport = null, log = () => {} }) {
-  const family = { gifts: null, cards: null, notes: null };
-  connect({ gifts: null, trustRealIp: settings.trustRealIp });
+  const family = { gifts: null, cards: null, notes: null, recipes: null, fridge: null };
+  connect({ gifts: null, recipes: null, fridge: null, trustRealIp: settings.trustRealIp });
   family.attach = (database) => {
     family.gifts = settings.gifts.enabled ? createGifts({ db: database, settings, now }) : null;
     family.cards = settings.cards.enabled ? createCards({ db: database, settings, now, transport }) : null;
     family.notes = settings.notes.enabled ? createNotes({ db: database, settings, now: () => new Date(now()) }) : null;
-    connect({ gifts: family.gifts, trustRealIp: settings.trustRealIp });
+    family.recipes = settings.recipes.enabled ? createRecipes({ db: database, settings, now }) : null;
+    family.fridge = settings.fridge.enabled ? createFridge({ db: database, settings, now }) : null;
+    connect({ gifts: family.gifts, recipes: family.recipes, fridge: family.fridge, trustRealIp: settings.trustRealIp });
   };
   if (db) family.attach(db);
 
@@ -84,8 +94,8 @@ export function createFamily({ settings, db = null, actions, site = null, now = 
       req.url = `${path}${url.search}`;
     }
     try {
-      const { gifts, cards, notes } = family;
-      if (path === "/health") return send(res, reply(200, { ok: true, notes: Boolean(notes), cards: Boolean(cards), gifts: Boolean(gifts) }));
+      const { gifts, cards, notes, recipes } = family;
+      if (path === "/health") return send(res, reply(200, { ok: true, notes: Boolean(notes), cards: Boolean(cards), gifts: Boolean(gifts), recipes: Boolean(recipes), fridge: Boolean(family.fridge) }));
 
       // A component's server function. Only pages from this same address may post to one (Zubra
       // refuses a browser's cross-site post), so the gift form works on the site this service serves.
@@ -103,6 +113,11 @@ export function createFamily({ settings, db = null, actions, site = null, now = 
           if (!gifts) return send(res, reply(404, { error: "not-enabled" }));
           if (parts[1] === "admin") return send(res, await gifts.owner({ method, parts: parts.slice(2), headers: req.headers, body }));
           if (method === "GET" && parts[1] === "tree" && parts.length === 2) return send(res, reply(200, await gifts.tree(), { "cache-control": "public, max-age=60" }));
+          return send(res, reply(404, { error: "not-found" }));
+        }
+        if (parts[0] === "recipes") {
+          if (!recipes) return send(res, reply(404, { error: "not-enabled" }));
+          if (parts[1] === "admin") return send(res, await recipes.owner({ method, parts: parts.slice(2), headers: req.headers, body }));
           return send(res, reply(404, { error: "not-found" }));
         }
         if (parts[0] === "greetings") {
@@ -130,13 +145,13 @@ export function createFamily({ settings, db = null, actions, site = null, now = 
 async function main() {
   const log = (line) => console.log(`[family] ${line}`);
   const settings = readSettings(process.env);
-  for (const part of ["notes", "cards", "gifts"]) {
+  for (const part of ["notes", "cards", "gifts", "recipes", "fridge"]) {
     if (settings[part].problems.length) log(`${part} are off: check ${settings[part].problems.join(", ")}`);
   }
   const actions = await createActions({
     components: COMPONENTS,
     secure: settings.production ? true : undefined,
-    maxBytes: 64 * 1024,
+    maxBytes: MAX_FORM,
     onError: (error) => log(`a server function failed: ${error?.message || error}`),
   });
   const site = settings.siteDir ? await createSite({ root: settings.siteDir, basePath: settings.site.basePath || "/", adminUrl: settings.adminUrl }) : null;
@@ -147,7 +162,7 @@ async function main() {
   // sections stay hidden) and the log says what to set. A database that doesn't answer yet is tried
   // again every 15 seconds, so the parts come on by themselves once it does.
   if (!settings.databaseUrl) {
-    log("no DATABASE_URL: notes, cards and gifts are off. Add the Postgres reference to this service's variables.");
+    log("no DATABASE_URL: notes, cards, gifts and recipes are off. Add the Postgres reference to this service's variables.");
     return;
   }
   const db = createDatabase(settings.databaseUrl);
@@ -162,7 +177,7 @@ async function main() {
     }
   }
   family.attach(db);
-  const on = ["notes", "cards", "gifts"].filter((part) => family[part]);
+  const on = ["notes", "cards", "gifts", "recipes", "fridge"].filter((part) => family[part]);
   log(`database ready: ${on.length ? on.join(", ") : "nothing switched on"}`);
   if (family.cards) repeat(family.cards.sendCards, { log, label: "sending cards" });
 }

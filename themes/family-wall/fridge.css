@@ -1,6 +1,30 @@
-/* The family wall: the page is the fridge door, and each note the family sends is a quote
-   held up with a magnet. Grammi writes a note as a quote (> in the editor) with a line under
-   it naming who sent it. */
+/* The family wall: each note the family sends is a quote held up with a magnet. Grammi writes a
+   note as a quote (> in the editor) with a line under it naming who sent it. Where the magnet fridge
+   loads (fridge-loader.js), her first four notes hang on its door instead, and are hidden here. */
+
+/* The plastic letters' lettering (Baloo 2, from the April theme; OFL, see fonts/LICENSE). */
+@font-face {
+  font-family: "Baloo 2";
+  src: url("fonts/baloo-2-latin-800-normal.woff2") format("woff2");
+  font-weight: 800;
+  font-display: swap;
+}
+.ob-page .ob-prose blockquote[data-on-fridge] { display: none; }
+
+/* The fridge at night: brushed steel, paper a little dimmed, magnets as bright as ever. Set here so
+   it follows the site's own switch (the reader's device, or the light/dark button). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) magnet-fridge .fridge {
+    --door-hi: #4a5058; --door: #383d44; --door-lo: #2a2e34; --door-edge: #1c1f23; --brushed: rgb(255 255 255 / 0.018); --sheen: rgb(255 255 255 / 0.07);
+    --handle-hi: #c9ced4; --handle-lo: #4a5057; --paper: #ebe5d3; --paper-2: #e6d9a8; --paper-3: #c9d9e6; --ink: #24211c;
+    --shade: 0 0 0; --depth: 0.45; --tray: #2a2e34; --warn: #ff9c94;
+  }
+}
+:root[data-theme="dark"] magnet-fridge .fridge {
+  --door-hi: #4a5058; --door: #383d44; --door-lo: #2a2e34; --door-edge: #1c1f23; --brushed: rgb(255 255 255 / 0.018); --sheen: rgb(255 255 255 / 0.07);
+  --handle-hi: #c9ced4; --handle-lo: #4a5057; --paper: #ebe5d3; --paper-2: #e6d9a8; --paper-3: #c9d9e6; --ink: #24211c;
+  --shade: 0 0 0; --depth: 0.45; --tray: #2a2e34; --warn: #ff9c94;
+}
 .ob-page .ob-prose blockquote {
   position: relative;
   margin: 2.2rem auto;

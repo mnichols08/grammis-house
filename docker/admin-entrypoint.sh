@@ -45,4 +45,8 @@ if [ -n "${OPENBLOG_ADMIN_USER:-}" ] || [ -n "${OPENBLOG_ADMIN_PASSWORD:-}" ]; t
 fi
 unset OPENBLOG_ADMIN_PASSWORD
 
+# Recipes the family shares come into Posts as drafts (docker/recipe-inbox.mjs). Off, and says so in
+# the log, until OPENBLOG_RECIPES_ENDPOINT and OPENBLOG_RECIPES_ADMIN_KEY are set.
+SITE="$SITE" node /opt/grammis/docker/recipe-inbox.mjs &
+
 exec openblog serve --admin --host 0.0.0.0 --port "${PORT:-8080}"

@@ -8,8 +8,9 @@ import { readFile } from "node:fs/promises";
 const SQL = new URL("../vendor/openblog/sql/", import.meta.url);
 const LOCAL = new URL("../sql/", import.meta.url);
 export const FILES = ["openblog", "moderation", "greetings", "gifts"];
-// Ours, applied after open.blog's: a wider card, so a drawing and a small photo fit.
-export const LOCAL_FILES = ["gift-scene"];
+// Ours, applied after open.blog's: a wider card, so a drawing and a small photo fit; recipes the
+// family shares, waiting for her editor to collect them; the fridge's magnets and drawings.
+export const LOCAL_FILES = ["gift-scene", "recipes", "fridge"];
 const LOCK = 7_040_514_312; // any constant: the family service's migrations
 
 async function applyFile(client, dir, name, log) {

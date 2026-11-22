@@ -5,6 +5,8 @@ FROM rust:1-bookworm AS build
 COPY docker/openblog-password-setup.patch /tmp/openblog-password-setup.patch
 COPY docker/openblog-gift-card.patch /tmp/openblog-gift-card.patch
 COPY docker/openblog-cover.patch /tmp/openblog-cover.patch
+COPY docker/openblog-family-recipes.patch /tmp/openblog-family-recipes.patch
+COPY docker/openblog-wallpapers.patch /tmp/openblog-wallpapers.patch
 RUN git init /tmp/openblog \
     && cd /tmp/openblog \
     && git fetch --depth 1 https://github.com/journey-to-code-org/open.blog 718c91393a72a2e282c2585a3ba7cfa763f7c410 \
@@ -12,6 +14,8 @@ RUN git init /tmp/openblog \
     && git apply /tmp/openblog-password-setup.patch \
     && git apply /tmp/openblog-gift-card.patch \
     && git apply /tmp/openblog-cover.patch \
+    && git apply /tmp/openblog-family-recipes.patch \
+    && git apply /tmp/openblog-wallpapers.patch \
     && cargo install --path crates/openblog-cli
 
 FROM debian:bookworm-slim
@@ -21,6 +25,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends git ca-certific
 COPY --from=build /usr/local/cargo/bin/openblog /usr/local/bin/openblog
 COPY docker/admin-entrypoint.sh /usr/local/bin/admin-entrypoint.sh
 RUN chmod +x /usr/local/bin/admin-entrypoint.sh
+# Collects recipes the family shares into Posts as drafts; it reads the same rules the family service checks with.
+COPY docker/recipe-inbox.mjs /opt/grammis/docker/recipe-inbox.mjs
+COPY family/lib/recipe-check.js /opt/grammis/family/lib/recipe-check.js
+COPY docker/recipe-inbox.package.json /opt/grammis/package.json
 # The site checkout and Studio's private files (logins, drafts) live in /data. On Railway, attach a
 # volume there (the service's Settings > Volumes, mount path /data); a Dockerfile can't declare one.
 ENTRYPOINT ["/usr/local/bin/admin-entrypoint.sh"]

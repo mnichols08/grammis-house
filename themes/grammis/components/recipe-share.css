@@ -1,0 +1,61 @@
+/* recipe-share */
+@layer theme, base, components, utilities;
+@layer components {
+@scope (recipe-share) to ([data-zb-slotted="recipe-share"]) {
+  :scope { display: block; }
+  .share { display: none; max-width: 40rem; margin: 1.5rem auto; padding: 0 0.5rem; color: var(--foreground, #1f2633); }
+  .share[data-state="shown"] { display: block; }
+  .card {
+    position: relative;
+    padding: 1.2rem 1.4rem 1.1rem;
+    border-radius: 6px;
+    background:
+      linear-gradient(to bottom, transparent 2.6rem, color-mix(in srgb, #c8343a 55%, transparent) 2.6rem calc(2.6rem + 2px), transparent calc(2.6rem + 2px)),
+      repeating-linear-gradient(to bottom, transparent 0 1.7rem, color-mix(in srgb, #2b4f8a 22%, transparent) 1.7rem calc(1.7rem + 1px)),
+      var(--card, #fffdf8);
+    border: 1px solid var(--border, #d9d6cc);
+    box-shadow: 0 8px 18px -12px rgb(0 0 0 / 0.5);
+    rotate: 0.4deg;
+  }
+  .heading { margin: 0 0 0.7rem; font-family: var(--ob-font-hand, cursive); font-size: 1.7rem; line-height: 1.2; color: var(--primary, #a3172b); }
+  .prompt { margin: 0 0 0.8rem; line-height: 1.7rem; }
+  .said, .problem, .help { margin: 0.3rem 0; }
+  .help { font-size: 0.95rem; color: var(--muted-foreground, #5a6170); }
+  .said { font-weight: 600; }
+  .problem { color: #a11224; font-weight: 600; }
+  .problem:empty, .said:empty { display: none; }
+  .go, .send, .add, .row button, .photo-buttons button, .close {
+    min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
+    border: 2px solid var(--primary, #a11224); background: var(--primary, #a11224); color: var(--primary-foreground, #ffffff); }
+  .add, .row button, .photo-buttons button, .close { background: var(--card, #fffdf8); color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); padding: 0.4rem 0.8rem; }
+  .add { justify-self: start; }
+  .go.other { background: var(--card, #fffdf8); color: var(--primary, #a11224); }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  form { display: grid; gap: 1.1rem; margin-top: 0.8rem; padding: 1rem; border: 1px solid var(--border, #b9b4a6); border-radius: 10px; background: var(--card, #fffdf8); }
+  [hidden] { display: none !important; }
+  label, legend { font-weight: 600; }
+  legend { font-family: var(--ob-font-heading, Georgia, serif); font-size: 1.15rem; padding: 0; margin-bottom: 0.2rem; }
+  .field { display: grid; gap: 0.3rem; }
+  .three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; align-items: end; }
+  @media (max-width: 34rem) { .three { grid-template-columns: 1fr; } }
+  input[type="text"], input[type="url"], textarea, select { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
+  textarea { min-height: 6rem; resize: vertical; }
+  .row textarea { min-height: 4.5rem; }
+  fieldset { display: grid; gap: 0.6rem; margin: 0; padding: 0; border: 0; min-width: 0; }
+  .rows { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; counter-reset: row; }
+  .row { display: grid; grid-template-columns: 1.8rem 1fr auto; gap: 0.5rem; align-items: start; counter-increment: row; }
+  .row::before { content: "•"; padding-top: 0.6rem; text-align: center; font-weight: 700; color: var(--primary, #a11224); }
+  .steps .row::before { content: counter(row) "."; }
+  .byline { font-style: italic; }
+  .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.7rem; margin: 0; padding: 0; list-style: none; }
+  .photos:empty { display: none; }
+  .photo { display: grid; gap: 0.3rem; }
+  .photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; border: 1px solid var(--border, #b9b4a6); background: #ffffff; }
+  .photo-label { font-weight: 600; font-size: 0.95rem; }
+  .photo-buttons { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .file { display: inline-grid; gap: 0.3rem; font-weight: 600; }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+  .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
+}
+}
