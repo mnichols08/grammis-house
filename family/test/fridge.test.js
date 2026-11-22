@@ -46,10 +46,12 @@ test("a drawing is pen strokes in the crayons' colors, and nothing else", () => 
   assert.throws(() => checkBy("x".repeat(41)), FridgeError);
 });
 
-test("the fridge is on only with Grammi's word", () => {
+test("the fridge is on only with Studio's key for it", () => {
   const base = { OPENBLOG_SITE_ID: "grammis-house", OPENBLOG_SITE_ORIGIN: "https://grammi.example", OPENBLOG_ANALYTICS_SALT: "s".repeat(16) };
   assert.equal(readSettings(base).fridge.enabled, false);
-  assert.deepEqual(readSettings({ ...base, OPENBLOG_FRIDGE_ENABLED: "true" }).fridge.problems, ["OPENBLOG_FRIDGE_WORD"]);
-  assert.deepEqual(readSettings({ ...base, OPENBLOG_FRIDGE_ENABLED: "true", OPENBLOG_FRIDGE_WORD: "pie" }).fridge.problems, ["OPENBLOG_FRIDGE_WORD"]);
-  assert.equal(readSettings({ ...base, OPENBLOG_FRIDGE_ENABLED: "true", OPENBLOG_FRIDGE_WORD: "Pumpkin Pie" }).fridge.enabled, true);
+  assert.deepEqual(readSettings({ ...base, OPENBLOG_FRIDGE_ENABLED: "true" }).fridge.problems, ["OPENBLOG_FRIDGE_ADMIN_KEY"]);
+  assert.deepEqual(readSettings({ ...base, OPENBLOG_FRIDGE_ENABLED: "true", OPENBLOG_FRIDGE_ADMIN_KEY: "short" }).fridge.problems, ["OPENBLOG_FRIDGE_ADMIN_KEY"]);
+  const on = readSettings({ ...base, OPENBLOG_FRIDGE_ENABLED: "true", OPENBLOG_FRIDGE_ADMIN_KEY: "f".repeat(32) });
+  assert.equal(on.fridge.enabled, true);
+  assert.equal(on.fridge.adminKey, "f".repeat(32));
 });

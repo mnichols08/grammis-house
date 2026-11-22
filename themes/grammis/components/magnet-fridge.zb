@@ -8,9 +8,8 @@
   moves like the letters. Drawings are pen strokes, never picture files, so nothing but lines in a
   few crayon colors can ever show.
 
-  "Grammi's corner", under the fridge, asks for her word (OPENBLOG_FRIDGE_WORD in the family
-  service): with it she sees the drawings waiting, puts them up or takes them down, and tidies the
-  letters back to "WE ♥ GRAMMI".
+  Grammi sees the drawings waiting, puts them up or takes them down, and tidies the letters back to
+  "WE ♥ GRAMMI" in Studio's Fridge screen. Nothing on this page can do any of that.
 
   The Family Wall theme puts this on the page (themes/family-wall/fridge-loader.js). It talks to the
   family service through its own server functions; on a copy of the site anywhere else it stays
@@ -18,7 +17,7 @@
 -->
 <script>
   import { onMount } from '@zubra/runtime'
-  import { lookAtFridge, moveOnFridge, drawForFridge, grammisCorner } from '../../../family/actions.js'
+  import { lookAtFridge, moveOnFridge, drawForFridge } from '../../../family/actions.js'
 
   // The family service's side (family/fridge.js). These run on the server; the page only has their addresses.
   export async function look() {
@@ -32,10 +31,6 @@
   export async function draw(formData, { request }) {
     'use server'
     return drawForFridge(formData, request)
-  }
-  export async function grammi(formData, { request }) {
-    'use server'
-    return grammisCorner(formData, request)
   }
 
   // The same crayons and pens family/lib/fridge.js takes; the paper is 300 by 300.
@@ -55,7 +50,6 @@
     'drawing-full': 'That drawing is too full. Undo a few lines.',
     drawing: 'That drawing didn’t come through. Try again.',
     by: 'Keep your name to 40 letters.',
-    word: 'That isn’t Grammi’s word.',
     gone: 'That one isn’t there any more.',
   }
 
@@ -97,20 +91,14 @@
   let token = ''
   let drawing = false
   let busy = false
-  let corner = 'closed'
-  let cornerSaid = ''
   let ink = '#1f2633'
   let pen = 7
   // What's drawn so far, kept out of the page's state (like the gift card's gesture): only the pad shows it.
   const sketch = { strokes: [], line: null }
-  let confirmTidy = false
 
   let door = null
   let items = new Map()
   let dragging = 0
-  let word = ''
-  let waiting = []
-  let upNow = []
   let raised = 10
 
   // ---- the door ----
@@ -323,73 +311,6 @@
     busy = false
   }
 
-  // ---- Grammi's corner ----
-  const showCorner = () => {
-    const shelf = document.querySelector('magnet-fridge .waiting')
-    const hanging = document.querySelector('magnet-fridge .hanging')
-    if (!shelf || !hanging) return
-    const card = (d, buttons) => {
-      const li = document.createElement('li')
-      li.className = 'pick'
-      const label = d.by ? `A drawing by ${d.by}` : 'A drawing'
-      li.append(drawingSvg(d.drawing, label))
-      const by = document.createElement('span')
-      by.textContent = d.by || 'No name'
-      li.append(by)
-      for (const [text, action] of buttons) {
-        const button = document.createElement('button')
-        button.type = 'button'
-        button.textContent = text
-        button.addEventListener('click', () => decide(action, d.id))
-        li.append(button)
-      }
-      return li
-    }
-    shelf.replaceChildren(...waiting.map((d) => card(d, [['Put it on the fridge', 'up'], ['Not this one', 'down']])))
-    hanging.replaceChildren(...upNow.map((d) => card(d, [['Take it down', 'down']])))
-  }
-  const ask = async (fields) => {
-    busy = true
-    try {
-      const answer = await call(grammi, form({ word, ...fields }))
-      if (answer.error) {
-        cornerSaid = WHY[answer.error] || 'That didn’t work. Try again in a minute.'
-        if (answer.error === 'word') { corner = 'asking'; word = '' }
-      } else {
-        corner = 'open'
-        waiting = answer.waiting || []
-        upNow = answer.up || []
-        requestAnimationFrame(showCorner)
-        return true
-      }
-    } catch (_) {
-      cornerSaid = 'That didn’t work. Check the connection and try again.'
-    }
-    busy = false
-    return false
-  }
-  const openCorner = () => { corner = corner === 'closed' ? 'asking' : 'closed'; cornerSaid = ''; confirmTidy = false }
-  const enter = async (e) => {
-    e.preventDefault()
-    word = String(new FormData(e.currentTarget).get('word') || '')
-    cornerSaid = ''
-    await ask({ action: 'look' })
-    busy = false
-  }
-  const decide = async (action, id) => {
-    const done = await ask({ action, id })
-    busy = false
-    if (done) { cornerSaid = action === 'up' ? 'It’s on the fridge.' : 'Taken down.'; refresh() }
-  }
-  const tidy = async () => {
-    if (!confirmTidy) { confirmTidy = true; return }
-    confirmTidy = false
-    const done = await ask({ action: 'tidy' })
-    busy = false
-    if (done) { cornerSaid = 'The letters are back where you started them.'; refresh() }
-  }
-  const leaveCorner = () => { corner = 'closed'; word = ''; waiting = []; upNow = []; cornerSaid = '' }
-
   onMount(async () => {
     try {
       const answer = await call(look)
@@ -465,11 +386,10 @@
   .said:empty, .problem:empty { display: none; }
   .problem { color: var(--warn, #b3262f); }
   .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-top: 1rem; }
-  .go, .send, .tool, .quiet, .pick button {
+  .go, .send, .tool {
     min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
     border: 2px solid var(--primary, #b3262f); background: var(--primary, #b3262f); color: var(--primary-foreground, #ffffff); }
-  .tool, .quiet, .pick button { background: var(--card, #fbfcfa); color: var(--foreground, #1f2522); border-color: var(--border, #cfd5d0); }
-  .quiet { min-height: 36px; padding: 0.3rem 0.8rem; font-size: 0.9rem; }
+  .tool { background: var(--card, #fbfcfa); color: var(--foreground, #1f2522); border-color: var(--border, #cfd5d0); }
   .tool[aria-pressed="true"] { border-color: var(--foreground, #1f2522); box-shadow: inset 0 0 0 2px var(--foreground, #1f2522); }
   button:focus-visible, input:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
   button:disabled { opacity: 0.6; cursor: default; }
@@ -481,13 +401,7 @@
   .crayon[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--foreground, #1f2522); }
   .field { display: grid; gap: 0.3rem; }
   label { font-weight: 600; }
-  input[type="text"], input[type="password"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
-  .corner { max-width: 34rem; margin: 1.2rem auto 0; padding: 1rem; border-radius: 14px; border: 1px dashed var(--border, #cfd5d0); }
-  .corner h3 { margin: 0.2rem 0 0.6rem; font-size: 1.1rem; }
-  .picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.8rem; margin: 0 0 1rem; padding: 0; list-style: none; }
-  .picks:empty::after { content: "Nothing here right now."; color: var(--muted-foreground, #4a524d); }
-  .pick { display: grid; gap: 0.35rem; }
-  .pick svg { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--border, #cfd5d0); }
+  input[type="text"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
   .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
   @media (prefers-reduced-motion: reduce) { .mag { transition: none; } }
 </style>
@@ -528,32 +442,5 @@
         <button class="tool" type="button" onclick={stopDrawing}>Not now</button>
       </div>
     </form>
-    <div class="actions">
-      <button class="quiet" type="button" aria-expanded={corner === 'closed' ? 'false' : 'true'} onclick={openCorner}>Grammi's corner</button>
-    </div>
-    <div class="corner" hidden={corner === 'closed'}>
-      <form hidden={corner !== 'asking'} onsubmit={enter}>
-        <div class="field">
-          <label for="fridge-word">Grammi's word</label>
-          <input id="fridge-word" name="word" type="password" autocomplete="current-password" />
-        </div>
-        <div class="row" style="margin-top: 0.6rem">
-          <button class="send" type="submit" disabled={busy}>Open</button>
-        </div>
-      </form>
-      <div hidden={corner !== 'open'}>
-        <h3>Drawings waiting for you</h3>
-        <ul class="picks waiting"></ul>
-        <h3>On the fridge now</h3>
-        <ul class="picks hanging"></ul>
-        <h3>The letters</h3>
-        <div class="row">
-          <button class="tool" type="button" disabled={busy} onclick={tidy}>{confirmTidy ? 'Yes, put every letter back' : 'Tidy the fridge'}</button>
-          <button class="quiet" type="button" onclick={leaveCorner}>Close Grammi's corner</button>
-        </div>
-        <p class="help" hidden={!confirmTidy}>Every letter goes back to "WE ♥ GRAMMI" and the pile at the bottom.</p>
-      </div>
-      <p class="said" role="status">{cornerSaid}</p>
-    </div>
   </section>
 </magnet-fridge>

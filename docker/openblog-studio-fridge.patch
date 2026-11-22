@@ -1,0 +1,648 @@
+diff --git a/crates/openblog-cli/src/admin.rs b/crates/openblog-cli/src/admin.rs
+index 81461e1..4b0472d 100644
+--- a/crates/openblog-cli/src/admin.rs
++++ b/crates/openblog-cli/src/admin.rs
+@@ -92,6 +92,7 @@ mod capture_assistant;
+ mod comparisons;
+ mod decorations;
+ mod diagrams;
++mod fridge;
+ mod gifts;
+ mod greetings;
+ mod job_sharing;
+@@ -637,6 +638,9 @@ pub fn preflight(state: &AppState, req: &Request) -> Result<usize, Response> {
+         if name.starts_with("gifts/") {
+             return Ok(gifts::MAX_GIFTS_REQUEST_BYTES);
+         }
++        if name.starts_with("fridge/") {
++            return Ok(fridge::MAX_FRIDGE_REQUEST_BYTES);
++        }
+         if name.starts_with("push/") {
+             return Ok(push::MAX_PUSH_REQUEST_BYTES);
+         }
+@@ -1047,6 +1051,9 @@ fn authenticated_api_routes(
+     if let Some(rest) = name.strip_prefix("gifts/") {
+         return gifts::route(req, rest);
+     }
++    if let Some(rest) = name.strip_prefix("fridge/") {
++        return fridge::route(req, rest);
++    }
+     if let Some(rest) = name.strip_prefix("push/") {
+         return push::route(req, &session.user, rest);
+     }
+@@ -4856,6 +4863,7 @@ fn meta(state: &AppState) -> Response {
+             "quote": quote::is_configured(),
+             "greetings": greetings::is_configured(),
+             "gifts": gifts::is_configured(),
++            "fridge": fridge::is_configured(),
+             "push": push::is_configured(),
+             // Comments are moderated in Studio once they are on and the hosted key is in place.
+             "engagement": engagement_ready,
+diff --git a/crates/openblog-cli/src/admin/fridge.rs b/crates/openblog-cli/src/admin/fridge.rs
+new file mode 100644
+index 0000000..449e19d
+--- /dev/null
++++ b/crates/openblog-cli/src/admin/fridge.rs
+@@ -0,0 +1,365 @@
++//! Admin routes for the fridge: the drawings the family makes for the fridge on her site wait here
++//! until she puts them up, and she tidies the letter magnets from here.
++//!
++//! Like gifts, the fridge is optional and off by default. It lives in the site's family service,
++//! which Admin reaches only from this server, with the endpoint and key from the environment of the
++//! process running Admin (`OPENBLOG_FRIDGE_ENDPOINT`, `OPENBLOG_FRIDGE_ADMIN_KEY`), never from
++//! `openblog.json`, the repository or a response. Unset or invalid, and every route but `status` is
++//! a 404 and nothing is sent anywhere.
++//!
++//! Every route sits behind the session and, for a write, the CSRF check. A drawing is rebuilt from
++//! known fields before Studio sees it: strokes in the fridge's eight crayons and three pen sizes, every
++//! point a whole number on its 300 by 300 paper. Anything else, and the drawing is left out.
++
++use std::time::Duration;
++
++use super::social::{is_uuid, text, valid_endpoint};
++use super::*;
++
++pub(super) const MAX_FRIDGE_REQUEST_BYTES: usize = 256;
++const MAX_REPLY_BYTES: u64 = 8 * 1024 * 1024;
++const MIN_KEY_CHARS: usize = 32;
++/// The crayons and pens the fridge's drawing pad offers (family/lib/fridge.js).
++const INKS: [&str; 8] = [
++    "#1f2633", "#d7263d", "#1b6fd1", "#1f9d55", "#f2b600", "#f47b20", "#8e44c9", "#8b5a2b",
++];
++const PENS: [u64; 3] = [3, 7, 14];
++const PAPER: u64 = 300;
++const MAX_STROKES: usize = 150;
++const MAX_STROKE_POINTS: usize = 500;
++const MAX_POINTS: usize = 9000;
++const MAX_LISTED: usize = 60;
++
++struct FridgeConfig {
++    endpoint: String,
++    key: String,
++}
++
++enum Configured {
++    Off,
++    Invalid(Vec<&'static str>),
++    On(FridgeConfig),
++}
++
++fn configuration(env: &dyn Fn(&str) -> Option<String>) -> Configured {
++    let endpoint = env("OPENBLOG_FRIDGE_ENDPOINT").unwrap_or_default();
++    let key = env("OPENBLOG_FRIDGE_ADMIN_KEY").unwrap_or_default();
++    if endpoint.trim().is_empty() && key.is_empty() {
++        return Configured::Off;
++    }
++    let mut problems = Vec::new();
++    let endpoint = valid_endpoint(&endpoint);
++    if endpoint.is_none() {
++        problems.push("OPENBLOG_FRIDGE_ENDPOINT");
++    }
++    if key.chars().count() < MIN_KEY_CHARS || key.chars().any(char::is_whitespace) {
++        problems.push("OPENBLOG_FRIDGE_ADMIN_KEY");
++    }
++    match (endpoint, problems.is_empty()) {
++        (Some(endpoint), true) => Configured::On(FridgeConfig { endpoint, key }),
++        _ => Configured::Invalid(problems),
++    }
++}
++
++fn process_env(name: &str) -> Option<String> {
++    std::env::var(name).ok()
++}
++
++/// Whether the fridge is set up and valid here. Only then does Studio show Fridge.
++pub(super) fn is_configured() -> bool {
++    matches!(configuration(&process_env), Configured::On(_))
++}
++
++fn bad_reply() -> Response {
++    Response::error(502, "The fridge service sent a reply Admin could not use")
++}
++
++fn refusal(status: u16, body: &Json) -> Response {
++    let code = body
++        .get("error")
++        .and_then(Json::as_str)
++        .filter(|c| c.len() <= 40 && c.bytes().all(|b| b.is_ascii_lowercase() || b == b'-'));
++    let (out, message) = match (status, code) {
++        (401, _) => (
++            502,
++            "The fridge service did not accept Admin's key; check OPENBLOG_FRIDGE_ADMIN_KEY",
++        ),
++        (404, Some("not-enabled")) => (
++            502,
++            "The fridge is not switched on where the family service runs",
++        ),
++        (404, _) => (404, "That drawing is no longer there; reload"),
++        _ => (502, "The fridge service failed; try again"),
++    };
++    Response::json(out, &json!({ "error": message, "code": code }))
++}
++
++fn hosted(config: &FridgeConfig, method: &str, path: &str) -> Result<Json, Response> {
++    let agent: ureq::Agent = ureq::Agent::config_builder()
++        .timeout_global(Some(Duration::from_secs(30)))
++        .max_redirects(0)
++        .http_status_as_error(false)
++        .user_agent(concat!("open.blog-admin/", env!("CARGO_PKG_VERSION")))
++        .build()
++        .into();
++    let url = format!("{}/admin/{}", config.endpoint, path);
++    let authorization = format!("Bearer {}", config.key);
++    let result = if method == "GET" {
++        agent
++            .get(&url)
++            .header("Authorization", &authorization)
++            .call()
++    } else {
++        agent
++            .post(&url)
++            .header("Authorization", &authorization)
++            .header("Content-Type", "application/json")
++            .send("{}".as_bytes())
++    };
++    let mut response = match result {
++        Ok(response) => response,
++        Err(ureq::Error::Timeout(_)) => {
++            return Err(Response::error(504, "The fridge service timed out"))
++        }
++        Err(_) => {
++            return Err(Response::error(
++                502,
++                "The fridge service could not be reached",
++            ))
++        }
++    };
++    let status = response.status().as_u16();
++    let bytes = response
++        .body_mut()
++        .with_config()
++        .limit(MAX_REPLY_BYTES)
++        .read_to_vec()
++        .map_err(|_| bad_reply())?;
++    let value: Json = serde_json::from_slice(&bytes).map_err(|_| bad_reply())?;
++    if status >= 300 {
++        return Err(refusal(status, &value));
++    }
++    Ok(value)
++}
++
++fn instant(value: &Json) -> Option<Json> {
++    let s = value.as_str()?;
++    let ok = (20..=40).contains(&s.len())
++        && s.as_bytes()[4] == b'-'
++        && s.as_bytes()[10] == b'T'
++        && s.bytes()
++            .all(|b| b.is_ascii_digit() || b"-:T.Z+".contains(&b));
++    ok.then(|| Json::String(s.to_string()))
++}
++
++/// A drawing rebuilt from its strokes, or None when anything in it is not a stroke the pad makes.
++fn project_strokes(value: &Json) -> Option<Json> {
++    let strokes = value.get("strokes")?.as_array()?;
++    if strokes.is_empty() || strokes.len() > MAX_STROKES {
++        return None;
++    }
++    let mut total = 0;
++    let mut out = Vec::with_capacity(strokes.len());
++    for stroke in strokes {
++        let ink = stroke.get("c")?.as_str().filter(|c| INKS.contains(c))?;
++        let pen = stroke.get("s")?.as_u64().filter(|s| PENS.contains(s))?;
++        let points = stroke.get("p")?.as_array()?;
++        if points.len() < 2 || points.len() % 2 != 0 || points.len() / 2 > MAX_STROKE_POINTS {
++            return None;
++        }
++        let points: Option<Vec<u64>> = points
++            .iter()
++            .map(|n| n.as_u64().filter(|n| *n <= PAPER))
++            .collect();
++        let points = points?;
++        total += points.len() / 2;
++        out.push(json!({ "c": ink, "s": pen, "p": points }));
++    }
++    (total <= MAX_POINTS).then(|| json!({ "strokes": out }))
++}
++
++fn project_drawing(value: &Json) -> Option<Json> {
++    let id = value.get("id")?.as_str().filter(|id| is_uuid(id))?;
++    let mut drawing = json!({
++        "id": id,
++        "by": value.get("by").and_then(|b| text(b, 40)).unwrap_or_default(),
++        "drawing": project_strokes(value.get("drawing")?)?,
++    });
++    if let Some(at) = value.get("createdAt").and_then(instant) {
++        drawing["createdAt"] = at;
++    }
++    Some(drawing)
++}
++
++/// The two shelves Studio shows, each drawing rebuilt; one that can't be is left out, never passed on.
++fn shelves(reply: &Json) -> Result<Json, Response> {
++    let list = |name: &str| -> Result<Vec<Json>, Response> {
++        Ok(reply
++            .get(name)
++            .and_then(Json::as_array)
++            .ok_or_else(bad_reply)?
++            .iter()
++            .take(MAX_LISTED)
++            .filter_map(project_drawing)
++            .collect())
++    };
++    Ok(json!({
++        "waiting": list("waiting")?,
++        "up": list("up")?,
++        "most": reply.get("most").and_then(Json::as_u64).filter(|n| (1..=60).contains(n)).unwrap_or(8),
++    }))
++}
++
++fn empty_body(req: &Request) -> Result<(), Response> {
++    let body: Json = if req.body.is_empty() {
++        json!({})
++    } else {
++        serde_json::from_slice(&req.body)
++            .map_err(|_| Response::error(400, "The request is not valid JSON"))?
++    };
++    match body.as_object() {
++        Some(object) if object.is_empty() => Ok(()),
++        _ => Err(Response::error(
++            400,
++            "The request has a field this route does not take",
++        )),
++    }
++}
++
++pub(super) fn route(req: &Request, name: &str) -> Response {
++    route_with(&process_env, req, name)
++}
++
++pub(super) fn route_with(
++    env: &dyn Fn(&str) -> Option<String>,
++    req: &Request,
++    name: &str,
++) -> Response {
++    let config = match configuration(env) {
++        Configured::On(config) => config,
++        Configured::Off if name == "status" && req.method == "GET" => {
++            return Response::json(200, &json!({ "enabled": false, "state": "off" }))
++        }
++        Configured::Invalid(problems) if name == "status" && req.method == "GET" => {
++            return Response::json(
++                200,
++                &json!({ "enabled": false, "state": "invalid", "problems": problems }),
++            )
++        }
++        _ => return Response::error(404, "The fridge is not set up"),
++    };
++    if req.method != "GET" {
++        if let Err(response) = require_json(req) {
++            return response;
++        }
++    }
++    let parts: Vec<&str> = name.split('/').collect();
++    let result = match (req.method.as_str(), parts.as_slice()) {
++        ("GET", ["status"]) => Ok(json!({ "enabled": true, "state": "on" })),
++        ("GET", ["list"]) => hosted(&config, "GET", "list").and_then(|reply| shelves(&reply)),
++        ("POST", ["tidy"]) => empty_body(req)
++            .and_then(|_| hosted(&config, "POST", "tidy"))
++            .map(|_| json!({ "ok": true })),
++        ("POST", [id, action @ ("up" | "down")]) if is_uuid(id) => empty_body(req)
++            .and_then(|_| hosted(&config, "POST", &format!("{id}/{action}")))
++            .and_then(|reply| shelves(&reply)),
++        _ => return Response::error(404, "Unknown API route"),
++    };
++    match result {
++        Ok(value) => Response::json(200, &value),
++        Err(response) => response,
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn env(pairs: &'static [(&'static str, &'static str)]) -> impl Fn(&str) -> Option<String> {
++        move |name| {
++            pairs
++                .iter()
++                .find(|(k, _)| *k == name)
++                .map(|(_, v)| v.to_string())
++        }
++    }
++
++    #[test]
++    fn the_fridge_is_off_until_both_variables_are_right() {
++        assert!(matches!(configuration(&env(&[])), Configured::Off));
++        let Configured::Invalid(problems) = configuration(&env(&[
++            (
++                "OPENBLOG_FRIDGE_ENDPOINT",
++                "https://family.example/api/fridge",
++            ),
++            ("OPENBLOG_FRIDGE_ADMIN_KEY", "short"),
++        ])) else {
++            panic!("a short key is not a key");
++        };
++        assert_eq!(problems, ["OPENBLOG_FRIDGE_ADMIN_KEY"]);
++        assert!(matches!(
++            configuration(&env(&[
++                (
++                    "OPENBLOG_FRIDGE_ENDPOINT",
++                    "https://family.example/api/fridge"
++                ),
++                (
++                    "OPENBLOG_FRIDGE_ADMIN_KEY",
++                    "ffffffffffffffffffffffffffffffffffffffff"
++                )
++            ])),
++            Configured::On(_)
++        ));
++    }
++
++    #[test]
++    fn a_drawing_reaches_studio_only_as_strokes_from_the_pad() {
++        let good = json!({ "id": "0b6f6c55-3c33-4a4b-9a77-6f7cbbd3e0a1", "by": "Jimmy", "createdAt": "2026-12-01T15:00:00.000000+00:00",
++            "drawing": { "strokes": [{ "c": "#d7263d", "s": 7, "p": [10, 10, 200, 200] }] }, "extra": "<script>" });
++        let shown = project_drawing(&good).unwrap();
++        assert_eq!(
++            shown,
++            json!({ "id": "0b6f6c55-3c33-4a4b-9a77-6f7cbbd3e0a1", "by": "Jimmy", "createdAt": "2026-12-01T15:00:00.000000+00:00",
++            "drawing": { "strokes": [{ "c": "#d7263d", "s": 7, "p": [10, 10, 200, 200] }] } })
++        );
++        for bad in [
++            json!({ "strokes": [{ "c": "url(javascript:x)", "s": 7, "p": [1, 1] }] }),
++            json!({ "strokes": [{ "c": "#d7263d", "s": 8, "p": [1, 1] }] }),
++            json!({ "strokes": [{ "c": "#d7263d", "s": 7, "p": [1, 301] }] }),
++            json!({ "strokes": [{ "c": "#d7263d", "s": 7, "p": [1, 2, 3] }] }),
++            json!({ "strokes": [{ "c": "#d7263d", "s": 7, "p": [1.5, 2] }] }),
++            json!({ "strokes": [] }),
++        ] {
++            let mut drawing = good.clone();
++            drawing["drawing"] = bad.clone();
++            assert!(project_drawing(&drawing).is_none(), "{bad}");
++        }
++        let reply = json!({ "waiting": [good, { "id": "not-a-uuid", "drawing": {} }], "up": [], "most": 8 });
++        let shelves = shelves(&reply).unwrap();
++        assert_eq!(
++            shelves["waiting"].as_array().unwrap().len(),
++            1,
++            "one it can't rebuild is left out"
++        );
++    }
++
++    #[test]
++    fn nothing_is_sent_anywhere_when_the_fridge_is_not_set_up() {
++        let req = Request {
++            method: "GET".into(),
++            path: "/admin/api/fridge/list".into(),
++            ..Default::default()
++        };
++        assert_eq!(route_with(&env(&[]), &req, "list").status, 404);
++        let status = route_with(
++            &env(&[]),
++            &Request {
++                method: "GET".into(),
++                path: "/admin/api/fridge/status".into(),
++                ..Default::default()
++            },
++            "status",
++        );
++        assert_eq!(status.status, 200);
++    }
++}
+diff --git a/crates/openblog-cli/src/admin/together_owner_routes.in b/crates/openblog-cli/src/admin/together_owner_routes.in
+index 405692d..26ab1ff 100644
+--- a/crates/openblog-cli/src/admin/together_owner_routes.in
++++ b/crates/openblog-cli/src/admin/together_owner_routes.in
+@@ -4,6 +4,7 @@
+ &[
+     ("*", "quote/*"),
+     ("*", "gifts/*"),
++    ("*", "fridge/*"),
+     ("*", "push/*"),
+     ("*", "greetings/*"),
+     ("*", "social/*"),
+diff --git a/crates/openblog-cli/src/studio_files.rs b/crates/openblog-cli/src/studio_files.rs
+index 167db82..1d83a8b 100644
+--- a/crates/openblog-cli/src/studio_files.rs
++++ b/crates/openblog-cli/src/studio_files.rs
+@@ -314,6 +314,7 @@ pub const STUDIO_FILES: &[(&str, &[u8])] = &[
+     ("screens/decorations.js", include_bytes!("../../../web/studio/screens/decorations.js")),
+     ("screens/design.js", include_bytes!("../../../web/studio/screens/design.js")),
+     ("screens/documents.js", include_bytes!("../../../web/studio/screens/documents.js")),
++    ("screens/fridge.js", include_bytes!("../../../web/studio/screens/fridge.js")),
+     ("screens/gifts.js", include_bytes!("../../../web/studio/screens/gifts.js")),
+     ("screens/helper.js", include_bytes!("../../../web/studio/screens/helper.js")),
+     ("screens/home.js", include_bytes!("../../../web/studio/screens/home.js")),
+diff --git a/web/studio/parts/area-rules.js b/web/studio/parts/area-rules.js
+index 3996e74..2901523 100644
+--- a/web/studio/parts/area-rules.js
++++ b/web/studio/parts/area-rules.js
+@@ -65,7 +65,7 @@ export const SCREEN_AREAS = Object.freeze({
+   pages: "pages", page: "pages",
+   collections: "collections", collection: "collections",
+   "new-job": "trade", services: "trade", service: "trade", reviews: "trade", review: "trade", business: "trade", quotes: "trade", reminders: "trade",
+-  decorations: "seasonal", cards: "seasonal", gifts: "seasonal",
++  decorations: "seasonal", cards: "seasonal", gifts: "seasonal", fridge: "seasonal",
+   sharing: "sharing",
+   readers: "readers",
+   research: "research",
+diff --git a/web/studio/screens/fridge.js b/web/studio/screens/fridge.js
+new file mode 100644
+index 0000000..26286b4
+--- /dev/null
++++ b/web/studio/screens/fridge.js
+@@ -0,0 +1,158 @@
++// Fridge: the drawings the family makes for the fridge on her site's fridge page wait here
++// until she puts them up, and she can take one down again (it's kept, never deleted). She tidies the
++// letter magnets back to how she started them from here too. Nothing on her site can do any of this.
++// A drawing is drawn from its strokes with createElementNS: lines in the pad's crayons, nothing else.
++import { fill, h, toast } from "../parts/dom.js";
++import { use } from "../zubra.js";
++import { ask } from "../parts/dialogs.js";
++import { say } from "../parts/words.js";
++
++const NS = "http://www.w3.org/2000/svg";
++const PAPER = 300;
++
++/** A drawing as an SVG, described for screen readers by `label`. Exported for tests. */
++export function drawPicture(drawing, label = "A drawing") {
++  const el = (name, attributes = {}) => {
++    const node = document.createElementNS(NS, name);
++    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
++    return node;
++  };
++  const svg = el("svg", { viewBox: `0 0 ${PAPER} ${PAPER}`, role: "img", class: "studio-fridge-picture" });
++  const title = el("title");
++  title.textContent = label;
++  svg.append(title, el("rect", { width: PAPER, height: PAPER, fill: "#fffdf8" }));
++  for (const stroke of drawing?.strokes || []) {
++    const p = Array.isArray(stroke.p) ? stroke.p.map(Number) : [];
++    if (p.length === 2) {
++      svg.append(el("circle", { cx: p[0], cy: p[1], r: Number(stroke.s) / 2, fill: stroke.c }));
++      continue;
++    }
++    const points = [];
++    for (let i = 0; i + 1 < p.length; i += 2) points.push(`${p[i]},${p[i + 1]}`);
++    svg.append(el("polyline", { points: points.join(" "), fill: "none", stroke: stroke.c, "stroke-width": Number(stroke.s), "stroke-linecap": "round", "stroke-linejoin": "round" }));
++  }
++  return svg;
++}
++
++/** The top line, in her words. Exported for tests. */
++export function fridgeHeadline(waiting = [], up = []) {
++  if (waiting.length === 1) return "1 drawing is waiting for you";
++  if (waiting.length) return `${waiting.length} drawings are waiting for you`;
++  return up.length ? "No new drawings. Here's what's on your fridge" : "No drawings yet";
++}
++
++export async function createFridge({ api }) {
++  await use("action-button", "alert-banner", "empty-state", "skeleton-block");
++  let state = null;
++  const busy = new Set();
++  const heading = h("h2", { id: "studio-fridge-h", class: "studio-question", tabindex: "-1" });
++  const banner = h("div", { class: "studio-banner", "aria-live": "polite" });
++  const waitingList = h("ul", { class: "studio-gift-list", "aria-labelledby": "studio-fridge-waiting-h", "aria-busy": "true" }, h("li", {}, h("skeleton-block", { lines: 3 })));
++  const upList = h("ul", { class: "studio-gift-list", "aria-labelledby": "studio-fridge-up-h" });
++  const upNote = h("p", { class: "studio-help" });
++  const tidyButton = h("action-button", { variant: "secondary", onClick: () => tidy() }, "Tidy the fridge");
++  const element = h("section", { class: "studio-page studio-gifts", "aria-labelledby": "studio-fridge-h" },
++    h("div", { class: "studio-today" }, heading,
++      h("p", { class: "studio-lede", text: "The family draws these for the fridge on your site. Nobody sees one until you put it up." })),
++    banner,
++    h("section", { class: "studio-section", "aria-labelledby": "studio-fridge-waiting-h" },
++      h("h3", { id: "studio-fridge-waiting-h", text: "Waiting for you" }), waitingList),
++    h("section", { class: "studio-section", "aria-labelledby": "studio-fridge-up-h" },
++      h("h3", { id: "studio-fridge-up-h", text: "On your fridge now" }), upNote, upList),
++    h("section", { class: "studio-section", "aria-labelledby": "studio-fridge-letters-h" },
++      h("h3", { id: "studio-fridge-letters-h", text: "The letters" }),
++      h("p", { class: "studio-help", text: "Anyone can move the letter magnets. If someone spells something you'd rather not see, tidy the fridge: every letter goes back where it started." }),
++      tidyButton));
++
++  const trouble = (title, error) => banner.replaceChildren(h("alert-banner", { variant: "danger", heading: title },
++    error.status === 0 || !error.status ? "Check your connection and try again. Nothing is lost." : "Your fridge couldn't be reached just now. Nothing is lost; try again in a minute.",
++    error.status ? h("details", { class: "studio-help" }, h("summary", { text: say("common.forHelper") }), h("p", { class: "studio-mono", text: `${error.status}: ${error.message}` })) : null));
++
++  const label = (d) => (d.by ? `A drawing by ${d.by}` : "A drawing with no name on it");
++
++  function row(drawing, actions) {
++    const body = h("div", { class: "studio-gift-body" },
++      h("h4", { class: "studio-gift-from", tabindex: "-1", text: drawing.by || "No name on it" }),
++      drawing.createdAt ? h("p", { class: "studio-help", text: `Sent ${new Date(drawing.createdAt).toLocaleDateString(undefined, { month: "long", day: "numeric" })}` }) : null,
++      ...actions.map(([text, run, variant]) => h("action-button", { variant, size: "sm", onClick: () => run(drawing) }, text)));
++    return h("li", { class: "studio-gift studio-fridge-drawing", "data-id": drawing.id }, drawPicture(drawing.drawing, label(drawing)), body);
++  }
++
++  function draw() {
++    heading.textContent = fridgeHeadline(state.waiting, state.up);
++    waitingList.removeAttribute("aria-busy");
++    if (state.waiting.length) fill(waitingList, ...state.waiting.map((d) => row(d, [["Put it on the fridge", putUp, "primary"], ["Not this one", setAside, "ghost"]])));
++    else fill(waitingList, h("li", {}, h("empty-state", { heading: "Nothing waiting" }, "When someone draws you a picture for your fridge, it shows up here first.")));
++    upNote.textContent = `Up to ${state.most} hang at once. Putting up another takes down the one that's been up longest.`;
++    if (state.up.length) fill(upList, ...state.up.map((d) => row(d, [["Take it down", takeDown, "secondary"]])));
++    else fill(upList, h("li", { class: "studio-help", text: "None yet." }));
++  }
++
++  async function act(drawing, action, words) {
++    if (busy.has(drawing.id)) return;
++    busy.add(drawing.id);
++    try {
++      const reply = await api.post(`fridge/${drawing.id}/${action}`, {});
++      state = { ...state, ...reply };
++      banner.replaceChildren();
++      draw();
++      toast(words);
++    } catch (error) {
++      trouble("That didn't work", error);
++    } finally {
++      busy.delete(drawing.id);
++    }
++  }
++  const putUp = (d) => act(d, "up", `${d.by ? `${d.by}'s drawing` : "The drawing"} is on your fridge.`);
++  const takeDown = (d) => act(d, "down", "Taken down. It's kept, never deleted.");
++  async function setAside(d) {
++    const choice = await ask({
++      heading: "Leave this one off the fridge?",
++      text: "Nobody will see it. It's kept, and you can still find it later.",
++      choices: [{ label: "Leave it off", value: "off" }, { label: "Keep it waiting", value: "keep", variant: "secondary" }],
++    });
++    if (choice === "off") act(d, "down", "Left off the fridge.");
++  }
++
++  async function tidy() {
++    const choice = await ask({
++      heading: "Tidy the fridge?",
++      text: "Every letter goes back where it started. The drawings stay where they are.",
++      choices: [{ label: "Tidy it", value: "tidy" }, { label: "Leave it", value: "keep", variant: "secondary" }],
++    });
++    if (choice !== "tidy") return;
++    try {
++      await api.post("fridge/tidy", {});
++      toast("The letters are back where you started them.");
++    } catch (error) {
++      trouble("The fridge didn't tidy", error);
++    }
++  }
++
++  async function load() {
++    try {
++      state = await api.get("fridge/list");
++      banner.replaceChildren();
++      draw();
++    } catch (error) {
++      waitingList.removeAttribute("aria-busy");
++      fill(waitingList);
++      trouble("Your fridge didn't load", error);
++      banner.firstChild?.append(h("action-button", { variant: "secondary", onClick: load }, "Try again"));
++    }
++  }
++
++  return {
++    title: "Fridge",
++    element,
++    load,
++    reload: load,
++    focus: () => heading.focus(),
++    get palette() {
++      return [{ id: "tidy", label: "Tidy the fridge", group: "Fridge" }];
++    },
++    command(id) {
++      if (id === "tidy") tidy();
++    },
++  };
++}
+diff --git a/web/studio/screens/index.js b/web/studio/screens/index.js
+index e860258..d862b22 100644
+--- a/web/studio/screens/index.js
++++ b/web/studio/screens/index.js
+@@ -7,6 +7,7 @@ import { createWrite } from "./write.js";
+ import { createPictures } from "./pictures.js";
+ import { createDecorations } from "./decorations.js";
+ import { createGifts } from "./gifts.js";
++import { createFridge } from "./fridge.js";
+ import { createDocuments } from "./documents.js";
+ import { createPageEdit } from "./page-edit.js";
+ import { createLanding } from "./landing.js";
+@@ -151,6 +152,8 @@ export const SCREENS = [
+   { name: "decorations", nav: "Decorations", area: "decorations", create: (context) => createDecorations(context) },
+   // Only when gifts are set up where Admin runs (OPENBLOG_GIFTS_*).
+   { name: "gifts", nav: "Gifts", area: "gifts", when: (meta) => meta.gifts === true, create: (context) => createGifts(context) },
++  // Only when the fridge is set up where Admin runs (OPENBLOG_FRIDGE_*): drawings for her Family Wall.
++  { name: "fridge", nav: "Fridge", area: "fridge", when: (meta) => meta.fridge === true, create: (context) => createFridge(context) },
+   // #/write asks "a recipe or a story?" (when the site has recipes); #/write/new/recipe|story starts
+   // one; #/write/<path> opens a post.
+   // #/write asks what she's writing (recipes on, or a trade site with jobs: R4); #/write/new/job
+diff --git a/web/studio/studio.css b/web/studio/studio.css
+index a49b9a7..4184345 100644
+--- a/web/studio/studio.css
++++ b/web/studio/studio.css
+@@ -364,6 +364,10 @@ side-sheet.studio-add-sheet dialog, side-sheet.studio-add-sheet .sheet { width:
+ .studio-gift-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+ .studio-gift { display: grid; grid-template-columns: 3.5rem 1fr; gap: var(--space-3); align-items: start; padding: var(--space-4); border: 1px solid var(--studio-linen); border-radius: var(--radius); background: var(--studio-flour-lift); }
+ .studio-gift-body { display: grid; gap: var(--space-2); justify-items: start; min-width: 0; }
++/* Fridge: a drawing the family made, beside who drew it. */
++.studio-fridge-drawing { grid-template-columns: minmax(7rem, 11rem) 1fr; }
++.studio-fridge-picture { display: block; width: 100%; height: auto; border-radius: var(--radius); box-shadow: 0 0 0 1px var(--studio-linen); }
++@media (max-width: 30rem) { .studio-fridge-drawing { grid-template-columns: 1fr; } }
+ .studio-gift-from { margin: 0; font-size: var(--text-lg); }
+ .studio-gift-box { width: 3.5rem; aspect-ratio: 1; border-radius: 6px; background: var(--studio-gift-paper, #c8243c); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15); position: relative; }
+ .studio-gift-box::before, .studio-gift-box::after { content: ""; position: absolute; background: #f2c14e; }

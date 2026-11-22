@@ -7,20 +7,21 @@
 //   look     the magnets and the drawings that are up, and a form token for drawing
 //   move     one magnet or drawing set down somewhere else
 //   draw     one drawing, waiting for Grammi
-//   grammi   with Grammi's word: what's waiting, put one up or take one down, tidy the letters
-// Grammi's word (OPENBLOG_FRIDGE_WORD) is the only key: the page asks for it in "Grammi's corner".
+// Grammi puts drawings up, takes them down and tidies the letters in Studio's Fridge screen, which
+// reaches the owner's side below with the fridge key (OPENBLOG_FRIDGE_ADMIN_KEY), as Gifts does.
+// Nothing on the page can do any of that.
 //
 // The rules for what moves and what a drawing may hold are in lib/fridge.js.
 
 import { createHash } from "node:crypto";
-import { checkFormToken, makeFormToken, sameCode } from "./vendor/openblog/lib/gift-card.mjs";
+import { checkFormToken, makeFormToken } from "./vendor/openblog/lib/gift-card.mjs";
 import { isUuid } from "./vendor/openblog/lib/greeting-card.mjs";
 import { FridgeError, LIMITS, MAGNETS, checkBy, checkDrawing, checkMagnet, checkSpot, starterLayout } from "./lib/fridge.js";
 import { withinLimit } from "./lib/db.js";
-import { hourOf } from "./lib/http.js";
+import { bearer, hourOf, reply, sameSecret } from "./lib/http.js";
 
 const HOUR = 60 * 60 * 1000;
-export const FRIDGE_RATES = Object.freeze({ movesPerHour: 400, movesPerSiteHour: 20000, drawingsPerHour: 4, drawingsPerDay: 60, wordTriesPerHour: 10 });
+export const FRIDGE_RATES = Object.freeze({ movesPerHour: 400, movesPerSiteHour: 20000, drawingsPerHour: 4, drawingsPerDay: 60 });
 
 function createStore(db, settings) {
   const site = settings.site.siteId;
@@ -86,7 +87,7 @@ const drawingOut = (row) => ({ id: row.id, by: row.by_name || "", drawing: row.d
 /** The fridge part of the service. `now` is a clock (ms). */
 export function createFridge({ db, settings, now = () => Date.now() }) {
   const store = createStore(db, settings);
-  const { word } = settings.fridge;
+  const { adminKey } = settings.fridge;
   const salt = settings.site.salt;
   const secret = createHash("sha256").update(`${salt}\0fridge-form`).digest("hex");
   const site = settings.site.siteId;
@@ -148,36 +149,40 @@ export function createFridge({ db, settings, now = () => Date.now() }) {
     }
   }
 
+  /** What Studio's Fridge screen shows: the drawings waiting for her, and the ones up. */
+  const shelves = async () => ({
+    waiting: (await store.waiting()).map((row) => ({ id: row.id, by: row.by_name || "", drawing: row.drawing, createdAt: row.created_at })),
+    up: (await store.up()).map((row) => ({ id: row.id, by: row.by_name || "", drawing: row.drawing })),
+    most: LIMITS.drawingsUp,
+  });
+
   /**
-   * Grammi's corner, with her word. `action`: "look" (what's waiting and what's up), "up" or "down"
-   * (a drawing, by `id`), "tidy" (the letters back as she starts them). Answers what's waiting and up.
+   * Studio's side, with the fridge key: `parts` are the path after /api/fridge/admin/.
+   *   GET  list            the drawings waiting and the ones up
+   *   POST <id>/up | down  put a drawing on the fridge, or take it off (kept, never deleted)
+   *   POST tidy            every letter back to "WE ♥ GRAMMI" and the pile
    */
-  async function grammi(fields, { address = "" } = {}) {
+  async function owner({ method, parts, headers }) {
+    if (!sameSecret(bearer(headers), adminKey)) return reply(401, { error: "unauthorized" });
     try {
-      // Every try counts before the word is compared, so guessing it stops quickly.
-      if (!(await limit("fridge-word", address, FRIDGE_RATES.wordTriesPerHour, 200))) return { error: "slow-down", status: 429 };
-      if (!sameCode(String(fields.get("word") || ""), word)) throw new FridgeError("word", "word", 403);
-      const action = String(fields.get("action") || "look");
-      const id = String(fields.get("id") || "");
-      const at = new Date(now()).toISOString();
-      if (action === "tidy") await store.lay(starterLayout());
-      else if (action === "up" || action === "down") {
-        if (!isUuid(id)) throw new FridgeError("gone", "id", 404);
+      const [first, second] = parts;
+      if (method === "GET" && first === "list" && parts.length === 1) return reply(200, await shelves());
+      if (method === "POST" && first === "tidy" && parts.length === 1) {
+        await store.lay(starterLayout());
+        return reply(200, { ok: true });
+      }
+      if (method === "POST" && parts.length === 2 && isUuid(first) && (second === "up" || second === "down")) {
         // A drawing she puts up goes just under her notes, somewhere across the middle; anyone can move it.
-        const spot = action === "up" ? { x: 25 + Math.round(Math.random() * 50), y: 33 + Math.round(Math.random() * 6), r: Math.round((Math.random() - 0.5) * 8) } : null;
-        if (!(await store.decide(id, action, spot, at))) throw new FridgeError("gone", "id", 404);
-        if (action === "up") await store.makeRoom(LIMITS.drawingsUp);
-      } else if (action !== "look") throw new FridgeError("what", "action");
-      return {
-        ok: true,
-        waiting: (await store.waiting()).map((row) => ({ id: row.id, by: row.by_name || "", drawing: row.drawing, createdAt: row.created_at })),
-        up: (await store.up()).map(drawingOut),
-      };
-    } catch (error) {
-      if (error instanceof FridgeError) return { error: error.code, field: error.field, status: error.status };
-      return { error: "failed", status: 503 };
+        const spot = second === "up" ? { x: 25 + Math.round(Math.random() * 50), y: 33 + Math.round(Math.random() * 6), r: Math.round((Math.random() - 0.5) * 8) } : null;
+        if (!(await store.decide(first, second, spot, new Date(now()).toISOString()))) return reply(404, { error: "not-found" });
+        if (second === "up") await store.makeRoom(LIMITS.drawingsUp);
+        return reply(200, await shelves());
+      }
+      return reply(404, { error: "not-found" });
+    } catch {
+      return reply(503, { error: "storage-unavailable" });
     }
   }
 
-  return { look, move, draw, grammi, store };
+  return { look, move, draw, owner, store };
 }

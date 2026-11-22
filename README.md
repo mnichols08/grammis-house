@@ -85,17 +85,18 @@ by itself. Open **Front page**, then the sign, to change it:
   password unless you switch on **Let anyone leave you a gift**. Nothing shows, and nobody can leave a gift, until you turn on **My tree is ready for gifts** in
   **Gifts**: decorate first, then open up. Gifts work on the site's Railway address, where the family
   service (below) serves the pages; on any other copy of the site the section stays hidden.
-- **Write to Grammi.** A postcard on the front page opens the family's email with a note to you
-  already addressed. Fill in **Your email address** on it (Front page → Write to Grammi); it stays
-  hidden until you do. Put your favorite notes on **The Family Wall** page, the fridge: each note
-  is a quote (the **"** button in the editor), with who it's from on the last line.
+- **Write to Grammi.** A postcard on **The Family Wall** page, under the fridge, opens the family's
+  email with a note to you already addressed. To have it, write your email address in the page's own
+  words, between < and > (`<your@address>`), where the TODO line says; the postcard takes that line's
+  place. It stays hidden until there's a real address there. Put your favorite notes on the same
+  page: each note is a quote (the **"** button in the editor), with who it's from on the last line.
+  (The postcard can still go on the front page too: Front page → Add a section → Write to Grammi.)
 - **The fridge.** The Family Wall has a real fridge door: a box of plastic letter magnets that
   everybody shares and drags around to spell things (nobody can add letters, so the E's get shared),
   with your first four notes hanging at the top. The family can also **Draw Grammi a picture**; it
-  waits for you. Under the fridge, **Grammi's corner** asks for your word, then shows the drawings
-  waiting (**Put it on the fridge** or **Not this one**), the ones up (**Take it down**), and
-  **Tidy the fridge**, which puts every letter back to "WE ♥ GRAMMI". Eight drawings hang at most;
-  putting up another takes down the oldest. It works on the Railway address; elsewhere the page
+  waits for you in **Fridge** (under Family, beside Gifts): **Put it on the fridge** or **Not this
+  one**, **Take it down** for one that's up, and **Tidy the fridge**, which puts every letter back to
+  "WE ♥ GRAMMI". Eight drawings hang at most; putting up another takes down the oldest. It works on the Railway address; elsewhere the page
   shows your notes as before.
 - **Share a recipe with Grammi.** A recipe card on the front page (Front page → Add a section → Share a
   recipe with Grammi) opens a form with the same parts as Grammi's own recipes: a line about it, the
@@ -335,6 +336,7 @@ The editor Grammi uses runs on Railway (`Dockerfile.admin`). Its variables:
 | `OPENBLOG_BEHIND_PROXY` | Secure sign-in cookies behind Railway's HTTPS; the entrypoint sets it to `1` unless you set it |
 | `OPENBLOG_GREETINGS_ENDPOINT`, `OPENBLOG_GREETINGS_ADMIN_KEY` | Greeting cards: the family service's `…/api/greetings` and its key |
 | `OPENBLOG_GIFTS_ENDPOINT`, `OPENBLOG_GIFTS_ADMIN_KEY` | Gifts: the family service's `…/api/gifts` and its key |
+| `OPENBLOG_FRIDGE_ENDPOINT`, `OPENBLOG_FRIDGE_ADMIN_KEY` | The fridge: the family service's `…/api/fridge` and its key. Studio shows **Fridge** once both are right |
 | `OPENBLOG_RECIPES_ENDPOINT`, `OPENBLOG_RECIPES_ADMIN_KEY` | Recipes from the family: the family service's `…/api/recipes` and its key. `docker/recipe-inbox.mjs` checks every minute and writes new ones into Posts as drafts |
 
 On the first start after this change, an existing configured login is reset once to
@@ -342,7 +344,8 @@ On the first start after this change, an existing configured login is reset once
 If she forgets it, run `openblog user passwd grammi --temporary-password` from a shell in the
 editor's site checkout; the prompt shows what you type, so use a private terminal. Give her
 that temporary password so she can choose another.
-The admin image applies `docker/openblog-password-setup.patch`, `docker/openblog-gift-card.patch`, `docker/openblog-cover.patch`, `docker/openblog-family-recipes.patch`, and `docker/openblog-wallpapers.patch` to its pinned open.blog revision.
+The admin image applies `docker/openblog-password-setup.patch`, `docker/openblog-gift-card.patch`, `docker/openblog-cover.patch`, `docker/openblog-family-recipes.patch`, `docker/openblog-wallpapers.patch`, and `docker/openblog-studio-fridge.patch` to its pinned open.blog revision.
+The studio-fridge patch adds Studio's **Fridge** screen and its `fridge/…` routes, which reach the family service with `OPENBLOG_FRIDGE_ADMIN_KEY` and rebuild every drawing from checked strokes before Studio draws it.
 The wallpapers patch adds one closed field, `wallpaper`, to a drafted look (ADR 0410's draft): `theme`, `none`, or an id from the site's `wallpapers.json`.
 The family-recipes patch keeps a draft's `.credits.json`, and any photo under `static/images/family-recipes/` that no published post shows, out of what **Publish** sends to GitHub, so a recipe she hasn't approved (or deleted) never reaches the public repository.
 The site image and the Pages workflow apply the cover patch too, so a removed cover stays off the published page.
@@ -365,9 +368,10 @@ project: no Netlify, no Supabase. `Dockerfile` builds the site with open.blog an
   go out every hour through Brevo.
 - **The fridge** on The Family Wall. `themes/family-wall/fridge-loader.js` puts
   `themes/grammis/components/magnet-fridge.zb` on that page only; its `'use server'` functions (`look`,
-  `move`, `draw`, `grammi`) call `family/fridge.js`. Where each magnet and drawing sits is kept in
+  `move`, `draw`) call `family/fridge.js`. Where each magnet and drawing sits is kept in
   Postgres as percents of the door; a drawing is pen strokes checked by `family/lib/fridge.js`, never
-  a picture file. Grammi's word (`OPENBLOG_FRIDGE_WORD`) is the only key to tidying and to drawings.
+  a picture file. Putting drawings up or down and tidying happen only in Studio's **Fridge** screen
+  (`docker/openblog-studio-fridge.patch`), through `/api/fridge/admin/…` with the fridge key, as Gifts does.
 - **Recipes from the family.** The recipe form (`themes/grammis/components/recipe-share.zb`) has two
   `'use server'` functions, `look` and `share` (photos as files; a form post may be up to 4 MB). They call
   `family/recipes.js`, which checks a recipe with `family/lib/recipe-check.js`, takes the camera's notes out

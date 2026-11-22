@@ -10,6 +10,11 @@
   font-display: swap;
 }
 .ob-page .ob-prose blockquote[data-on-fridge] { display: none; }
+/* The line with her email address, once the "Write to Grammi" postcard stands in for it. */
+.ob-page .ob-prose p[data-on-postcard] { display: none; }
+/* The postcard sits inside the page's article, whose link colour would paint its button's words the
+   button's own colour: the words take the colour made for writing on the accent. */
+.ob-page family-mailbox a.send { color: var(--ob-color-accent-contrast); text-decoration: none; }
 
 /* The fridge at night: brushed steel, paper a little dimmed, magnets as bright as ever. Set here so
    it follows the site's own switch (the reader's device, or the light/dark button). */

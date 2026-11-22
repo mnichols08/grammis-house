@@ -16,7 +16,7 @@ import { collect } from "../../docker/recipe-inbox.mjs";
 import { JPEG } from "./recipes.test.js";
 
 const admin = process.env.FAMILY_TEST_DATABASE_URL;
-const KEYS = { notes: "n".repeat(40), cards: "c".repeat(40), gifts: "g".repeat(40), recipes: "r".repeat(40) };
+const KEYS = { notes: "n".repeat(40), cards: "c".repeat(40), gifts: "g".repeat(40), recipes: "r".repeat(40), fridge: "f".repeat(40) };
 
 test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABASE_URL to run" }, async (t) => {
   const name = `family_test_${process.pid}`;
@@ -35,7 +35,7 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
     OPENBLOG_GREETINGS_ENABLED: "true", OPENBLOG_GREETINGS_ADMIN_KEY: KEYS.cards, BREVO_API_KEY: "test", OPENBLOG_GREETINGS_FROM: "Grammi <g@example.com>",
     OPENBLOG_GIFTS_ENABLED: "true", OPENBLOG_GIFTS_ADMIN_KEY: KEYS.gifts,
     OPENBLOG_RECIPES_ENABLED: "true", OPENBLOG_RECIPES_ADMIN_KEY: KEYS.recipes, OPENBLOG_RECIPES_FAMILY_CODE: "Sunday Dinner",
-    OPENBLOG_FRIDGE_ENABLED: "true", OPENBLOG_FRIDGE_WORD: "Pumpkin Pie",
+    OPENBLOG_FRIDGE_ENABLED: "true", OPENBLOG_FRIDGE_ADMIN_KEY: KEYS.fridge,
   });
   await migrate(db);
   await migrate(db); // a second start changes nothing
@@ -153,7 +153,7 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
       }
     });
 
-    await t.test("the fridge: letters anyone moves, drawings Grammi puts up, tidying with her word", async () => {
+    await t.test("the fridge: letters anyone moves, drawings Grammi puts up and tidying from Studio, with its key", async () => {
       const fridge = (fn, fields = {}) => call(fn, fields, "magnet-fridge");
       const first = await fridge("look");
       assert.equal(first.magnets.length, 57, "the box is set out the first time anyone looks");
@@ -172,21 +172,23 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
       assert.deepEqual(await fridge("draw", { token: first.token, drawing: strokes, by: "Jimmy" }), { ok: true });
       assert.deepEqual((await fridge("look")).drawings, [], "nothing is up until Grammi says so");
 
-      assert.deepEqual(await fridge("grammi", { word: "apple pie", action: "look" }), { error: "word", field: "word" });
-      const corner = await fridge("grammi", { word: "pumpkin-PIE", action: "look" });
+      // The page has no way in: only Studio, with the fridge key.
+      assert.equal((await fetch(`${base}/_zb/action/magnet-fridge/grammi`, { method: "POST", body: new FormData(), headers: { accept: "application/json", "sec-fetch-site": "same-origin" } })).status, 404);
+      assert.equal((await owner("/api/fridge/admin/list", KEYS.gifts)).status, 401, "another part's key opens nothing here");
+      const corner = (await owner("/api/fridge/admin/list", KEYS.fridge)).body;
       assert.equal(corner.waiting.length, 1);
       assert.equal(corner.waiting[0].by, "Jimmy");
-      const put = await fridge("grammi", { word: "Pumpkin Pie", action: "up", id: corner.waiting[0].id });
+      const put = (await owner(`/api/fridge/admin/${corner.waiting[0].id}/up`, KEYS.fridge, { method: "POST", body: "{}" })).body;
       assert.deepEqual([put.waiting.length, put.up.length], [0, 1]);
       const up = (await fridge("look")).drawings;
       assert.deepEqual(up.map((d) => [d.by, d.drawing]), [["Jimmy", JSON.parse(strokes)]]);
       assert.deepEqual(await fridge("move", { kind: "drawing", id: up[0].id, x: "70", y: "30", r: "-3" }), { ok: true }, "a drawing that's up moves like a magnet");
 
-      const tidied = await fridge("grammi", { word: "Pumpkin Pie", action: "tidy" });
+      const tidied = (await owner("/api/fridge/admin/tidy", KEYS.fridge, { method: "POST", body: "{}" })).body;
       assert.equal(tidied.ok, true);
       const back = (await fridge("look")).magnets.find((m) => m.id === w.id);
       assert.ok(back.y > 40 && back.y < 50, "the W is back in WE ♥ GRAMMI");
-      const down = await fridge("grammi", { word: "Pumpkin Pie", action: "down", id: up[0].id });
+      const down = (await owner(`/api/fridge/admin/${up[0].id}/down`, KEYS.fridge, { method: "POST", body: "{}" })).body;
       assert.equal(down.up.length, 0);
       assert.deepEqual(await fridge("move", { kind: "drawing", id: up[0].id, x: "70", y: "30" }), { error: "gone", field: "id" }, "one taken down can't be moved");
     });

@@ -7,7 +7,7 @@
 //   /api/gifts/admin/... Studio's side of gifts           (family/gifts.js)
 //   /api/greetings/...   Studio's side of greeting cards  (family/cards.js)
 //   /api/recipes/admin/... her editor collecting recipes the family shared (family/recipes.js)
-//   (the fridge on The Family Wall has only its own server functions: family/fridge.js)
+//   /api/fridge/admin/...  Studio's side of the fridge: drawings up or down, tidying (family/fridge.js)
 //   /api/...             notes, views and moderation      (family/notes.js)
 //   /health              which parts are on
 //   everything else      the built site (FAMILY_SITE_DIR), at the root
@@ -113,6 +113,11 @@ export function createFamily({ settings, db = null, actions, site = null, now = 
           if (!gifts) return send(res, reply(404, { error: "not-enabled" }));
           if (parts[1] === "admin") return send(res, await gifts.owner({ method, parts: parts.slice(2), headers: req.headers, body }));
           if (method === "GET" && parts[1] === "tree" && parts.length === 2) return send(res, reply(200, await gifts.tree(), { "cache-control": "public, max-age=60" }));
+          return send(res, reply(404, { error: "not-found" }));
+        }
+        if (parts[0] === "fridge") {
+          if (!family.fridge) return send(res, reply(404, { error: "not-enabled" }));
+          if (parts[1] === "admin") return send(res, await family.fridge.owner({ method, parts: parts.slice(2), headers: req.headers, body }));
           return send(res, reply(404, { error: "not-found" }));
         }
         if (parts[0] === "recipes") {

@@ -71,10 +71,10 @@ const css = `@layer theme, base, components, utilities;
   .said:empty, .problem:empty { display: none; }
   .problem { color: var(--warn, #b3262f); }
   .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin-top: 1rem; }
-  .go, .send, .tool, .quiet, .pick button {
+  .go, .send, .tool {
     min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
     border: 2px solid var(--primary, #b3262f); background: var(--primary, #b3262f); color: var(--primary-foreground, #ffffff); }
-  .tool, .quiet, .pick button { background: var(--card, #fbfcfa); color: var(--foreground, #1f2522); border-color: var(--border, #cfd5d0); }
+  .tool { background: var(--card, #fbfcfa); color: var(--foreground, #1f2522); border-color: var(--border, #cfd5d0); }
   .quiet { min-height: 36px; padding: 0.3rem 0.8rem; font-size: 0.9rem; }
   .tool[aria-pressed="true"] { border-color: var(--foreground, #1f2522); box-shadow: inset 0 0 0 2px var(--foreground, #1f2522); }
   button:focus-visible, input:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
@@ -88,12 +88,6 @@ const css = `@layer theme, base, components, utilities;
   .field { display: grid; gap: 0.3rem; }
   label { font-weight: 600; }
   input[type="text"], input[type="password"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
-  .corner { max-width: 34rem; margin: 1.2rem auto 0; padding: 1rem; border-radius: 14px; border: 1px dashed var(--border, #cfd5d0); }
-  .corner h3 { margin: 0.2rem 0 0.6rem; font-size: 1.1rem; }
-  .picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.8rem; margin: 0 0 1rem; padding: 0; list-style: none; }
-  .picks:empty::after { content: "Nothing here right now."; color: var(--muted-foreground, #4a524d); }
-  .pick { display: grid; gap: 0.35rem; }
-  .pick svg { width: 100%; height: auto; border-radius: 6px; box-shadow: 0 0 0 1px var(--border, #cfd5d0); }
   .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
   @media (prefers-reduced-motion: reduce) { .mag { transition: none; } }
 }
@@ -194,8 +188,6 @@ export class MagnetFridge extends HTMLElement {
 
     const draw = "/_zb/action/magnet-fridge/draw";                                                   
 
-    const grammi = "/_zb/action/magnet-fridge/grammi";                                                     
-
     // The same crayons and pens family/lib/fridge.js takes; the paper is 300 by 300.
     const INKS = [['#1f2633', 'Black'], ['#d7263d', 'Red'], ['#1b6fd1', 'Blue'], ['#1f9d55', 'Green'], ['#f2b600', 'Yellow'], ['#f47b20', 'Orange'], ['#8e44c9', 'Purple'], ['#8b5a2b', 'Brown']]
     const PENS = [[3, 'Thin'], [7, 'Medium'], [14, 'Thick']]
@@ -213,7 +205,6 @@ export class MagnetFridge extends HTMLElement {
       'drawing-full': 'That drawing is too full. Undo a few lines.',
       drawing: 'That drawing didn’t come through. Try again.',
       by: 'Keep your name to 40 letters.',
-      word: 'That isn’t Grammi’s word.',
       gone: 'That one isn’t there any more.',
     }
 
@@ -255,20 +246,14 @@ export class MagnetFridge extends HTMLElement {
     const token = state2('')
     const drawing = state2(false)
     const busy = state2(false)
-    const corner = state2('closed')
-    const cornerSaid = state2('')
     const ink = state2('#1f2633')
     const pen = state2(7)
     // What's drawn so far, kept out of the page's state (like the gift card's gesture): only the pad shows it.
     const sketch = { strokes: [], line: null }
-    const confirmTidy = state2(false)
 
     const door = state2(null)
     const items = state2(new Map())
     const dragging = state2(0)
-    const word = state2('')
-    const waiting = state2([])
-    const upNow = state2([])
     const raised = state2(10)
 
     // ---- the door ----
@@ -481,73 +466,6 @@ export class MagnetFridge extends HTMLElement {
       busy.value = false
     }
 
-    // ---- Grammi's corner ----
-    const showCorner = () => {
-      const shelf = document.querySelector('magnet-fridge .waiting')
-      const hanging = document.querySelector('magnet-fridge .hanging')
-      if (!shelf || !hanging) return
-      const card = (d, buttons) => {
-        const li = document.createElement('li')
-        li.className = 'pick'
-        const label = d.by ? `A drawing by ${d.by}` : 'A drawing'
-        li.append(drawingSvg(d.drawing, label))
-        const by = document.createElement('span')
-        by.textContent = d.by || 'No name'
-        li.append(by)
-        for (const [text, action] of buttons) {
-          const button = document.createElement('button')
-          button.type = 'button'
-          button.textContent = text
-          button.addEventListener('click', () => decide(action, d.id))
-          li.append(button)
-        }
-        return li
-      }
-      shelf.replaceChildren(...waiting.value.map((d) => card(d, [['Put it on the fridge', 'up'], ['Not this one', 'down']])))
-      hanging.replaceChildren(...upNow.value.map((d) => card(d, [['Take it down', 'down']])))
-    }
-    const ask = async (fields) => {
-      busy.value = true
-      try {
-        const answer = await call(grammi, form({ word: word.value, ...fields }))
-        if (answer.error) {
-          cornerSaid.value = WHY[answer.error] || 'That didn’t work. Try again in a minute.'
-          if (answer.error === 'word') { corner.value = 'asking'; word.value = '' }
-        } else {
-          corner.value = 'open'
-          waiting.value = answer.waiting || []
-          upNow.value = answer.up || []
-          requestAnimationFrame(showCorner)
-          return true
-        }
-      } catch (_) {
-        cornerSaid.value = 'That didn’t work. Check the connection and try again.'
-      }
-      busy.value = false
-      return false
-    }
-    const openCorner = () => { corner.value = corner.value === 'closed' ? 'asking' : 'closed'; cornerSaid.value = ''; confirmTidy.value = false }
-    const enter = async (e) => {
-      e.preventDefault()
-      word.value = String(new FormData(e.currentTarget).get('word') || '')
-      cornerSaid.value = ''
-      await ask({ action: 'look' })
-      busy.value = false
-    }
-    const decide = async (action, id) => {
-      const done = await ask({ action, id })
-      busy.value = false
-      if (done) { cornerSaid.value = action === 'up' ? 'It’s on the fridge.' : 'Taken down.'; refresh() }
-    }
-    const tidy = async () => {
-      if (!confirmTidy.value) { confirmTidy.value = true; return }
-      confirmTidy.value = false
-      const done = await ask({ action: 'tidy' })
-      busy.value = false
-      if (done) { cornerSaid.value = 'The letters are back where you started them.'; refresh() }
-    }
-    const leaveCorner = () => { corner.value = 'closed'; word.value = ''; waiting.value = []; upNow.value = []; cornerSaid.value = '' }
-
     onMount(async () => {
       try {
         const answer = await call(look)
@@ -599,33 +517,6 @@ export class MagnetFridge extends HTMLElement {
         <button class="tool" type="button">Not now</button>
       </div>
     </form>
-    <div class="actions">
-      <button class="quiet" type="button">Grammi's corner</button>
-    </div>
-    <div class="corner">
-      <form>
-        <div class="field">
-          <label for="fridge-word">Grammi's word</label>
-          <input id="fridge-word" name="word" type="password" autocomplete="current-password">
-        </div>
-        <div class="row" style="margin-top: 0.6rem">
-          <button class="send" type="submit">Open</button>
-        </div>
-      </form>
-      <div>
-        <h3>Drawings waiting for you</h3>
-        <ul class="picks waiting"></ul>
-        <h3>On the fridge now</h3>
-        <ul class="picks hanging"></ul>
-        <h3>The letters</h3>
-        <div class="row">
-          <button class="tool" type="button"></button>
-          <button class="quiet" type="button">Close Grammi's corner</button>
-        </div>
-        <p class="help">Every letter goes back to "WE ♥ GRAMMI" and the pile at the bottom.</p>
-      </div>
-      <p class="said" role="status"></p>
-    </div>
   </section>
 `);
     const fridge = content.children[0];
@@ -675,31 +566,6 @@ export class MagnetFridge extends HTMLElement {
       const handler = stopDrawing;
       if (typeof handler === "function") handler.call(tool4, event);
     });
-    const quiet = fridge.children[5].children[0];
-    quiet.addEventListener("click", (event) => {
-      const handler = openCorner;
-      if (typeof handler === "function") handler.call(quiet, event);
-    });
-    const corner2 = fridge.children[6];
-    const form2 = corner2.children[0];
-    form2.addEventListener("submit", (event) => {
-      const handler = enter;
-      if (typeof handler === "function") handler.call(form2, event);
-    });
-    const send2 = form2.children[1].children[0];
-    const div = corner2.children[1];
-    const tool5 = div.children[5].children[0];
-    tool5.addEventListener("click", (event) => {
-      const handler = tidy;
-      if (typeof handler === "function") handler.call(tool5, event);
-    });
-    const quiet2 = div.children[5].children[1];
-    quiet2.addEventListener("click", (event) => {
-      const handler = leaveCorner;
-      if (typeof handler === "function") handler.call(quiet2, event);
-    });
-    const help = div.children[6];
-    const said3 = corner2.children[2];
     this.#updates = [
       bind(() => state.value, (value) => attribute(fridge, "data-state", value)),
       bind(() => said.value ?? "", (value) => (said2.textContent = value)),
@@ -735,15 +601,6 @@ export class MagnetFridge extends HTMLElement {
       bind(() => problem.value ?? "", (value) => (problem2.textContent = value)),
       bind(() => busy.value, (value) => send.toggleAttribute("disabled", Boolean(value))),
       bind(() => (busy.value ? "Sending…" : "Send it to Grammi") ?? "", (value) => (send.textContent = value)),
-      bind(() => (corner.value === "closed") ? "false" : "true", (value) => attribute(quiet, "aria-expanded", value)),
-      bind(() => corner.value === "closed", (value) => corner2.toggleAttribute("hidden", Boolean(value))),
-      bind(() => corner.value !== "asking", (value) => form2.toggleAttribute("hidden", Boolean(value))),
-      bind(() => busy.value, (value) => send2.toggleAttribute("disabled", Boolean(value))),
-      bind(() => corner.value !== "open", (value) => div.toggleAttribute("hidden", Boolean(value))),
-      bind(() => busy.value, (value) => tool5.toggleAttribute("disabled", Boolean(value))),
-      bind(() => (confirmTidy.value ? "Yes, put every letter back" : "Tidy the fridge") ?? "", (value) => (tool5.textContent = value)),
-      bind(() => !(confirmTidy.value), (value) => help.toggleAttribute("hidden", Boolean(value))),
-      bind(() => cornerSaid.value ?? "", (value) => (said3.textContent = value)),
     ];
     return content;
   }
