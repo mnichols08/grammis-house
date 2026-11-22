@@ -65,7 +65,7 @@ export function brevoTransport({ apiKey, fetchImpl = globalThis.fetch, timeoutMs
           subject: mail.subject,
           htmlContent: mail.html,
           textContent: mail.text,
-          tags: ["greeting-card"],
+          tags: Array.isArray(mail.tags) && mail.tags.length ? mail.tags.slice(0, 3) : ["greeting-card"],
         }),
         signal: AbortSignal.timeout(timeoutMs),
       });

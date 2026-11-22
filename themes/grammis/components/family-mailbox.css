@@ -3,6 +3,8 @@
 @layer components {
 @scope (family-mailbox) to ([data-zb-slotted="family-mailbox"]) {
   :scope { display: block; }
+  .mailbox { display: none; }
+  .mailbox[data-state="shown"] { display: block; }
   .postcard {
     position: relative;
     display: grid;
@@ -46,18 +48,33 @@
     rotate: 4deg;
   }
   .stamp svg { width: 100%; height: 100%; display: block; }
-  .send {
+  .go, .send, .close {
     justify-self: start;
-    display: inline-block;
-    padding: 0.45rem 1rem;
+    min-height: 44px;
+    padding: 0.45rem 1.1rem;
     border-radius: 999px;
+    border: 2px solid var(--primary, #a3172b);
     background: var(--primary, #a3172b);
     color: var(--primary-foreground, #fff);
+    font: inherit;
     font-weight: 600;
-    text-decoration: none;
+    cursor: pointer;
   }
-  .send:focus-visible { outline: 3px solid var(--ring, #f2c14e); outline-offset: 2px; }
-  .send[hidden], .postcard[hidden] { display: none; }
+  .close { background: transparent; color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); }
+  .go:focus-visible, .send:focus-visible, .close:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--ring, #f2c14e); outline-offset: 2px; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .said { grid-column: 1 / -1; margin: 0; font-weight: 600; color: var(--foreground, #1f2633); }
+  .said:empty, .problem:empty { display: none; }
+  form { grid-column: 1 / -1; display: grid; gap: 0.7rem; margin-top: 0.4rem; }
+  .field { display: grid; gap: 0.25rem; }
+  label { font-weight: 600; color: var(--foreground, #1f2633); }
+  textarea, input[type="text"], input[type="email"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
+  textarea { min-height: 7rem; resize: vertical; }
+  .help { margin: 0; font-size: 0.92rem; color: var(--muted-foreground, #5a6170); }
+  .problem { margin: 0; color: #b3262f; font-weight: 600; }
+  .row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
+  [hidden] { display: none !important; }
   @media (max-width: 30rem) { .postcard { grid-template-columns: 1fr; } .stamp { display: none; } }
 }
 }

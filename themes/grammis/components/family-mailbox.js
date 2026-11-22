@@ -15,6 +15,8 @@ const css = `@layer theme, base, components, utilities;
 @layer components {
 @scope (family-mailbox) to ([data-zb-slotted="family-mailbox"]) {
   :scope { display: block; }
+  .mailbox { display: none; }
+  .mailbox[data-state="shown"] { display: block; }
   .postcard {
     position: relative;
     display: grid;
@@ -58,18 +60,33 @@ const css = `@layer theme, base, components, utilities;
     rotate: 4deg;
   }
   .stamp svg { width: 100%; height: 100%; display: block; }
-  .send {
+  .go, .send, .close {
     justify-self: start;
-    display: inline-block;
-    padding: 0.45rem 1rem;
+    min-height: 44px;
+    padding: 0.45rem 1.1rem;
     border-radius: 999px;
+    border: 2px solid var(--primary, #a3172b);
     background: var(--primary, #a3172b);
     color: var(--primary-foreground, #fff);
+    font: inherit;
     font-weight: 600;
-    text-decoration: none;
+    cursor: pointer;
   }
-  .send:focus-visible { outline: 3px solid var(--ring, #f2c14e); outline-offset: 2px; }
-  .send[hidden], .postcard[hidden] { display: none; }
+  .close { background: transparent; color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); }
+  .go:focus-visible, .send:focus-visible, .close:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--ring, #f2c14e); outline-offset: 2px; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .said { grid-column: 1 / -1; margin: 0; font-weight: 600; color: var(--foreground, #1f2633); }
+  .said:empty, .problem:empty { display: none; }
+  form { grid-column: 1 / -1; display: grid; gap: 0.7rem; margin-top: 0.4rem; }
+  .field { display: grid; gap: 0.25rem; }
+  label { font-weight: 600; color: var(--foreground, #1f2633); }
+  textarea, input[type="text"], input[type="email"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
+  textarea { min-height: 7rem; resize: vertical; }
+  .help { margin: 0; font-size: 0.92rem; color: var(--muted-foreground, #5a6170); }
+  .problem { margin: 0; color: #b3262f; font-weight: 600; }
+  .row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
+  [hidden] { display: none !important; }
   @media (max-width: 30rem) { .postcard { grid-template-columns: 1fr; } .stamp { display: none; } }
 }
 }
@@ -77,15 +94,13 @@ const css = `@layer theme, base, components, utilities;
 
 export class FamilyMailbox extends HTMLElement {
   /** The attributes this element watches: attributeChangedCallback runs when one changes. */
-  static observedAttributes = ["email", "prompt", "button", "subject"];
+  static observedAttributes = ["prompt", "button"];
   /** What framework adapters (@zubra/runtime/react, /vue) read to wrap this element. */
   static zubra = {
     tag,
     props: {
-      email: { attribute: "email", default: "", required: false },
-      prompt: { attribute: "prompt", default: "Made one of my recipes? Tell me how it turned out, and send a picture!", required: false },
+      prompt: { attribute: "prompt", default: "Made one of my recipes? Tell me how it turned out!", required: false },
       button: { attribute: "button", default: "Write to Grammi", required: false },
-      subject: { attribute: "subject", default: "A note for Grammi", required: false },
     },
     events: [],
     slots: [],
@@ -97,18 +112,20 @@ export class FamilyMailbox extends HTMLElement {
   // ElementInternals: the element's form value and validity, and :state() for CSS.
   #internals = this.attachInternals();
   // The props, each starting at its default; #given has the ones set from outside.
-  #props = { email: "", prompt: "Made one of my recipes? Tell me how it turned out, and send a picture!", button: "Write to Grammi", subject: "A note for Grammi" };
+  #props = { prompt: "Made one of my recipes? Tell me how it turned out!", button: "Write to Grammi" };
   #given = new Set();
   // What brings the DOM up to date: one function for each spot that changes.
   #updates = [];
   #pending = null;
   #started = false;
+  #mounted = [];
+  #cleanups = [];
 
   constructor() {
     super();
     // A property set before this class was defined sits on the element itself, hiding the
     // accessor below: take it over.
-    for (const prop of ["email", "prompt", "button", "subject"]) {
+    for (const prop of ["prompt", "button"]) {
       if (Object.hasOwn(this, prop)) {
         const value = this[prop];
         delete this[prop];
@@ -119,19 +136,7 @@ export class FamilyMailbox extends HTMLElement {
 
   // ---- props: properties, and attributes that set them
 
-  get email() {
-    reads?.push(() => this.#props.email); // what reads it (a computed, an effect) depends on it
-    return this.#props.email;
-  }
-  set email(value) {
-    this.#given.add("email");
-    if (Object.is(value, this.#props.email)) return;
-    this.#props.email = value;
-    this.#requestUpdate();
-  }
-
   get prompt() {
-    reads?.push(() => this.#props.prompt); // what reads it (a computed, an effect) depends on it
     return this.#props.prompt;
   }
   set prompt(value) {
@@ -142,7 +147,6 @@ export class FamilyMailbox extends HTMLElement {
   }
 
   get button() {
-    reads?.push(() => this.#props.button); // what reads it (a computed, an effect) depends on it
     return this.#props.button;
   }
   set button(value) {
@@ -152,31 +156,14 @@ export class FamilyMailbox extends HTMLElement {
     this.#requestUpdate();
   }
 
-  get subject() {
-    reads?.push(() => this.#props.subject); // what reads it (a computed, an effect) depends on it
-    return this.#props.subject;
-  }
-  set subject(value) {
-    this.#given.add("subject");
-    if (Object.is(value, this.#props.subject)) return;
-    this.#props.subject = value;
-    this.#requestUpdate();
-  }
-
   attributeChangedCallback(name, previous, raw) {
     // raw is the attribute's text, or null once it's removed.
     switch (name) {
-      case "email":
-        this.email = raw ?? "";
-        break;
       case "prompt":
-        this.prompt = raw ?? "Made one of my recipes? Tell me how it turned out, and send a picture!";
+        this.prompt = raw ?? "Made one of my recipes? Tell me how it turned out!";
         break;
       case "button":
         this.button = raw ?? "Write to Grammi";
-        break;
-      case "subject":
-        this.subject = raw ?? "A note for Grammi";
         break;
     }
   }
@@ -195,6 +182,19 @@ export class FamilyMailbox extends HTMLElement {
     }
     if (!this.#started) this.#start();
     this.#update();
+    this.#runMounted();
+  }
+
+  disconnectedCallback() {
+    // What onMount() returned: undone each time the element leaves the page.
+    for (const cleanup of this.#cleanups.splice(0)) cleanup();
+  }
+
+  #runMounted() {
+    for (const run of this.#mounted) {
+      const cleanup = run();
+      if (typeof cleanup === "function") this.#cleanups.push(cleanup);
+    }
   }
 
   #start() {
@@ -218,38 +218,162 @@ export class FamilyMailbox extends HTMLElement {
   #setup() {
     const element = this;
     // The hooks the script uses (from @zubra/runtime in the source), made for this element.
-    const computed = createComputed;
+    const onMount = (run) => {
+      this.#mounted.push(run);
+    };
+    const state2 = (initial) => createState(initial, () => this.#requestUpdate());
 
     // ---- <script>
-    const to = computed(() => ((element.email || '').trim()))
-    const link = computed(() => (to.value ? `mailto:${to.value}?subject=${encodeURIComponent(element.subject || 'A note for Grammi')}` : ''))
+    // The family service's side. These run on the server; the page only has their addresses.
+    const look = "/_zb/action/family-mailbox/look";                              
+
+    const write = "/_zb/action/family-mailbox/write";                                                    
+
+    const call = async (fn, data = new FormData()) => {
+      const reply = await fetch(fn, { method: 'POST', headers: { accept: 'application/json' }, body: data })
+      if (!reply.ok) throw new Error(String(reply.status))
+      return reply.json()
+    }
+
+    const WHY = {
+      name: 'Add your name, 60 letters at most.',
+      note: 'Write your note, 2,000 letters at most.',
+      email: 'That email address didn’t look right. Check it, or leave it empty.',
+      'slow-down': 'That’s a lot of notes in one hour. Try again a little later.',
+      full: 'Grammi has a lot of notes today. Try again tomorrow.',
+      token: 'That took a while. Press the button once more.',
+      off: 'Notes can’t be sent from here right now. Try again later.',
+    }
+
+    const state = state2('hidden')
+    const open = state2(false)
+    const busy = state2(false)
+    const said = state2('')
+    const problem = state2('')
+    const token = state2('')
+
+    const start = async (e) => {
+      open.value = true
+      said.value = ''
+      problem.value = ''
+      const root = e.currentTarget.closest('family-mailbox')
+      // The form has to have been open a few seconds before a note is taken: it keeps robots out.
+      try { token.value = (await call(look)).token || '' } catch (_) { token.value = '' }
+      const first = root && root.querySelector('textarea[name="note"]')
+      if (first) first.focus()
+    }
+    const close = () => { open.value = false; problem.value = '' }
+    const typing = () => { if (problem.value) problem.value = '' }
+
+    const send = async (e) => {
+      e.preventDefault()
+      if (busy.value) return
+      const form = e.currentTarget
+      const data = new FormData(form)
+      problem.value = !String(data.get('note') || '').trim() ? WHY.note : !String(data.get('name') || '').trim() ? WHY.name : ''
+      if (problem.value) return
+      busy.value = true
+      try {
+        data.set('token', token.value)
+        const answer = await call(write, data)
+        if (answer.error) {
+          problem.value = WHY[answer.error] || 'That didn’t get to Grammi. Try again in a minute.'
+          if (answer.error === 'token') { try { token.value = (await call(look)).token || '' } catch (_) {} }
+        } else {
+          said.value = String(data.get('email') || '').trim()
+            ? 'Thank you! Your note is on its way to Grammi, and she can write back to you.'
+            : 'Thank you! Your note is on its way to Grammi.'
+          form.reset()
+          open.value = false
+        }
+      } catch (_) {
+        problem.value = 'That didn’t get to Grammi. Check your connection and try again.'
+      }
+      busy.value = false
+    }
+
+    onMount(async () => {
+      try {
+        if ((await call(look)).open === true) state.value = 'shown'
+      } catch (_) {}
+    })
 
     // ---- the template: its nodes, and how each changing spot is kept up to date
     const content = clone(`
-  <div class="postcard">
-    <p class="prompt"></p>
-    <div class="stamp" aria-hidden="true">
-      <svg viewBox="0 0 40 50">
-        <rect width="40" height="50" fill="#f7efe0"></rect>
-        <path d="M6 40 20 12 34 40Z" fill="#2f6b3f"></path>
-        <path d="M11 40 20 22 29 40Z" fill="#3f8a52"></path>
-        <rect x="18" y="40" width="4" height="5" fill="#7a4a26"></rect>
-        <circle cx="20" cy="11" r="2.5" fill="#f2c14e"></circle>
-        <circle cx="31" cy="9" r="4" fill="#ffffff" stroke="#e0cdb0"></circle>
-      </svg>
+  <section class="mailbox">
+    <div class="postcard">
+      <p class="prompt"></p>
+      <div class="stamp" aria-hidden="true">
+        <svg viewBox="0 0 40 50">
+          <rect width="40" height="50" fill="#f7efe0"></rect>
+          <path d="M6 40 20 12 34 40Z" fill="#2f6b3f"></path>
+          <path d="M11 40 20 22 29 40Z" fill="#3f8a52"></path>
+          <rect x="18" y="40" width="4" height="5" fill="#7a4a26"></rect>
+          <circle cx="20" cy="11" r="2.5" fill="#f2c14e"></circle>
+          <circle cx="31" cy="9" r="4" fill="#ffffff" stroke="#e0cdb0"></circle>
+        </svg>
+      </div>
+      <p class="said" role="status"></p>
+      <button class="go" type="button"></button>
+      <form action="/_zb/action/family-mailbox/write" method="post" novalidate>
+        <div class="field">
+          <label for="letter-note">Your note</label>
+          <textarea id="letter-note" name="note" maxlength="2000"></textarea>
+        </div>
+        <div class="field">
+          <label for="letter-name">Your name</label>
+          <input id="letter-name" name="name" type="text" maxlength="60" autocomplete="name">
+        </div>
+        <div class="field">
+          <label for="letter-email">Your email address (if you'd like her to write back)</label>
+          <input id="letter-email" name="email" type="email" maxlength="200" autocomplete="email">
+          <p class="help">Only Grammi sees it. Leave it empty if you'd rather.</p>
+        </div>
+        <div class="trap" aria-hidden="true"><label>Leave this empty <input name="website" type="text" tabindex="-1" autocomplete="off"></label></div>
+        <p class="problem" role="alert"></p>
+        <div class="row">
+          <button class="send" type="submit"></button>
+          <button class="close" type="button">Not now</button>
+        </div>
+      </form>
     </div>
-    <a class="send"></a>
-  </div>
+  </section>
 `);
-    const postcard = content.children[0];
-    const prompt2 = postcard.children[0];
-    const send = postcard.children[2];
+    const mailbox = content.children[0];
+    const prompt2 = mailbox.children[0].children[0];
+    const said2 = mailbox.children[0].children[2];
+    const go = mailbox.children[0].children[3];
+    go.addEventListener("click", (event) => {
+      const handler = start;
+      if (typeof handler === "function") handler.call(go, event);
+    });
+    const form2 = mailbox.children[0].children[4];
+    form2.addEventListener("submit", (event) => {
+      const handler = send;
+      if (typeof handler === "function") handler.call(form2, event);
+    });
+    form2.addEventListener("input", (event) => {
+      const handler = typing;
+      if (typeof handler === "function") handler.call(form2, event);
+    });
+    const problem2 = form2.children[4];
+    const send2 = form2.children[5].children[0];
+    const close2 = form2.children[5].children[1];
+    close2.addEventListener("click", (event) => {
+      const handler = close;
+      if (typeof handler === "function") handler.call(close2, event);
+    });
     this.#updates = [
-      bind(() => !(link.value), (value) => postcard.toggleAttribute("hidden", Boolean(value))),
+      bind(() => state.value, (value) => attribute(mailbox, "data-state", value)),
+      bind(() => element.button, (value) => attribute(mailbox, "aria-label", value)),
       bind(() => element.prompt ?? "", (value) => (prompt2.textContent = value)),
-      bind(() => link.value || "#", (value) => urlAttribute(send, "href", value, isSafeUrl)),
-      bind(() => !(link.value), (value) => send.toggleAttribute("hidden", Boolean(value))),
-      bind(() => element.button ?? "", (value) => (send.textContent = value)),
+      bind(() => said.value ?? "", (value) => (said2.textContent = value)),
+      bind(() => open.value, (value) => go.toggleAttribute("hidden", Boolean(value))),
+      bind(() => element.button ?? "", (value) => (go.textContent = value)),
+      bind(() => !(open.value), (value) => form2.toggleAttribute("hidden", Boolean(value))),
+      bind(() => problem.value ?? "", (value) => (problem2.textContent = value)),
+      bind(() => busy.value, (value) => send2.toggleAttribute("disabled", Boolean(value))),
+      bind(() => (busy.value ? "Sending…" : "Send it to Grammi") ?? "", (value) => (send2.textContent = value)),
     ];
     return content;
   }
@@ -303,28 +427,6 @@ function attribute(node, name, value) {
   }
 }
 
-/** The rule the compiler checks at build time: http(s), mailto and tel URLs, and relative ones. */
-function isSafeUrl(value) {
-  const url = String(value).trim();
-  if (!url || /[\u0000-\u001f\u007f-\u009f]/.test(url) || url.startsWith("//")) return false;
-  const beforePath = url.split(/[/?#]/)[0];
-  const colon = beforePath.indexOf(":");
-  return colon < 0 || ["http", "https", "mailto", "tel"].includes(beforePath.slice(0, colon).toLowerCase());
-}
-
-/** A URL attribute (href, src…), written only when `safe` says the URL is safe. */
-function urlAttribute(node, name, value, safe) {
-  if (value != null && value !== false && typeof value !== "object") {
-    const text = String(value);
-    if (text.trim() === "") return node.removeAttribute(name);
-    if (!safe(text)) {
-      console.error(`zubra: blocked an unsafe URL in "${name}":`, text);
-      return node.removeAttribute(name);
-    }
-  }
-  attribute(node, name, value);
-}
-
 /** Markup, parsed once into a <template>; each call returns a fresh copy of its nodes. */
 const templates = new Map();
 function clone(markup) {
@@ -341,27 +443,57 @@ function clone(markup) {
 // it can tell later whether anything it depends on has changed.
 let reads = null;
 
-/** A value derived from props and state, cached until something it read changes. */
-function createComputed(compute) {
-  let seen = null; // [read again, the value it gave]
-  let value;
+/**
+ * State: a value that updates the element when it's set, or (an array or plain object) changed
+ * in place: push, splice and nested writes count. `.value` reads and sets it; so do `.get()` and
+ * `.set()`.
+ */
+function createState(initial, changed) {
+  let version = 0;
+  const proxies = new WeakMap(); // this state's own, so the same object in two states tells each
+  const bump = () => {
+    version++;
+    changed();
+  };
+  const deep = (value) => {
+    if (!value || typeof value !== "object" || !(Array.isArray(value) || Object.getPrototypeOf(value) === Object.prototype)) return value;
+    let proxy = proxies.get(value);
+    if (!proxy) {
+      proxy = new Proxy(value, {
+        get: (target, key, receiver) => deep(Reflect.get(target, key, receiver)),
+        set: (target, key, next, receiver) => {
+          const same = Object.is(target[key], next);
+          const done = Reflect.set(target, key, next, receiver);
+          if (!same) bump();
+          return done;
+        },
+        deleteProperty: (target, key) => {
+          const done = Reflect.deleteProperty(target, key);
+          bump();
+          return done;
+        },
+      });
+      proxies.set(value, proxy);
+    }
+    return proxy;
+  };
+  let value = deep(initial);
+  const read = () => version;
   return {
     get value() {
-      if (!seen || !seen.every(([read, last]) => Object.is(read(), last))) {
-        const outer = reads;
-        const collected = (reads = []);
-        try {
-          value = compute();
-        } finally {
-          reads = outer;
-          seen = collected.map((read) => [read, read()]);
-        }
-      }
-      if (reads) for (const [read] of seen) reads.push(read); // what reads this depends on what it read
+      reads?.push(read);
       return value;
+    },
+    set value(next) {
+      if (Object.is(next, value)) return;
+      value = deep(next);
+      bump();
     },
     get() {
       return this.value;
+    },
+    set(next) {
+      this.value = next;
     },
   };
 }

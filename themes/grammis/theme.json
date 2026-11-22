@@ -331,23 +331,16 @@
     },
     "family-mailbox": {
       "label": "Write to Grammi",
-      "description": "A postcard asking the family to write in. Its button opens their email with a note to you already addressed.",
+      "description": "A postcard asking the family to write in. Its button opens a short note form; the note is emailed to you by the family service (your address is never on the site), and they can leave theirs if they'd like you to write back.",
       "script": "components/family-mailbox.js",
       "source": "components/family-mailbox.zb",
-      "fallback": "Send Grammi a note by email.",
+      "fallback": "The family can write to Grammi here.",
       "props": [
-        {
-          "name": "email",
-          "type": "text",
-          "label": "Your email address",
-          "maxLength": 120,
-          "help": "Where the family's notes go. The card stays hidden until this is filled in."
-        },
         {
           "name": "prompt",
           "type": "text",
           "label": "What the card says",
-          "default": "Made one of my recipes? Tell me how it turned out, and send a picture!",
+          "default": "Made one of my recipes? Tell me how it turned out!",
           "maxLength": 140
         },
         {
@@ -356,13 +349,6 @@
           "label": "The button",
           "default": "Write to Grammi",
           "maxLength": 30
-        },
-        {
-          "name": "subject",
-          "type": "text",
-          "label": "The email's subject",
-          "default": "A note for Grammi",
-          "maxLength": 80
         }
       ]
     },

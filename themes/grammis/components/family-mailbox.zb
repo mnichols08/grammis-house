@@ -1,19 +1,103 @@
 <!--
-  A postcard on the home page that asks the family to write in. Its button opens the reader's
-  email with a note to Grammi already addressed; she puts her favorites on the Family wall.
-  Nothing is sent through the site, so there's nothing to host and no account to make.
+  "Write to Grammi": a postcard asking the family to write in. Its button opens a short form (your
+  name, your note, and your email address if you'd like her to write back), and the note goes to the
+  family service (family/letters.js), which emails it to Grammi. Her address is never on the page,
+  and nobody needs their own email open to write. She puts her favorites on the fridge.
 
-  email    where the notes go
   prompt   what the card asks ("Made one of my recipes? Tell me how it went!")
   button   the button's words
-  subject  the email's subject line
+
+  The Family Wall theme puts this under the fridge (themes/family-wall/fridge-loader.js); it can go on
+  the front page too (Add a section). It talks to the service through its own server functions,
+  `look` and `write`; anywhere the service isn't, it stays hidden.
 -->
 <script>
-  const to = (email || '').trim()
-  const link = to ? `mailto:${to}?subject=${encodeURIComponent(subject || 'A note for Grammi')}` : ''
+  import { onMount } from '@zubra/runtime'
+  import { lookAtMailbox, writeToGrammi } from '../../../family/actions.js'
+
+  // The family service's side. These run on the server; the page only has their addresses.
+  export async function look() {
+    'use server'
+    return lookAtMailbox()
+  }
+  export async function write(formData, { request }) {
+    'use server'
+    return writeToGrammi(formData, request)
+  }
+
+  const call = async (fn, data = new FormData()) => {
+    const reply = await fetch(fn, { method: 'POST', headers: { accept: 'application/json' }, body: data })
+    if (!reply.ok) throw new Error(String(reply.status))
+    return reply.json()
+  }
+
+  const WHY = {
+    name: 'Add your name, 60 letters at most.',
+    note: 'Write your note, 2,000 letters at most.',
+    email: 'That email address didn’t look right. Check it, or leave it empty.',
+    'slow-down': 'That’s a lot of notes in one hour. Try again a little later.',
+    full: 'Grammi has a lot of notes today. Try again tomorrow.',
+    token: 'That took a while. Press the button once more.',
+    off: 'Notes can’t be sent from here right now. Try again later.',
+  }
+
+  let state = 'hidden'
+  let open = false
+  let busy = false
+  let said = ''
+  let problem = ''
+  let token = ''
+
+  const start = async (e) => {
+    open = true
+    said = ''
+    problem = ''
+    const root = e.currentTarget.closest('family-mailbox')
+    // The form has to have been open a few seconds before a note is taken: it keeps robots out.
+    try { token = (await call(look)).token || '' } catch (_) { token = '' }
+    const first = root && root.querySelector('textarea[name="note"]')
+    if (first) first.focus()
+  }
+  const close = () => { open = false; problem = '' }
+  const typing = () => { if (problem) problem = '' }
+
+  const send = async (e) => {
+    e.preventDefault()
+    if (busy) return
+    const form = e.currentTarget
+    const data = new FormData(form)
+    problem = !String(data.get('note') || '').trim() ? WHY.note : !String(data.get('name') || '').trim() ? WHY.name : ''
+    if (problem) return
+    busy = true
+    try {
+      data.set('token', token)
+      const answer = await call(write, data)
+      if (answer.error) {
+        problem = WHY[answer.error] || 'That didn’t get to Grammi. Try again in a minute.'
+        if (answer.error === 'token') { try { token = (await call(look)).token || '' } catch (_) {} }
+      } else {
+        said = String(data.get('email') || '').trim()
+          ? 'Thank you! Your note is on its way to Grammi, and she can write back to you.'
+          : 'Thank you! Your note is on its way to Grammi.'
+        form.reset()
+        open = false
+      }
+    } catch (_) {
+      problem = 'That didn’t get to Grammi. Check your connection and try again.'
+    }
+    busy = false
+  }
+
+  onMount(async () => {
+    try {
+      if ((await call(look)).open === true) state = 'shown'
+    } catch (_) {}
+  })
 </script>
 <style>
   :host { display: block; }
+  .mailbox { display: none; }
+  .mailbox[data-state="shown"] { display: block; }
   .postcard {
     position: relative;
     display: grid;
@@ -57,33 +141,72 @@
     rotate: 4deg;
   }
   .stamp svg { width: 100%; height: 100%; display: block; }
-  .send {
+  .go, .send, .close {
     justify-self: start;
-    display: inline-block;
-    padding: 0.45rem 1rem;
+    min-height: 44px;
+    padding: 0.45rem 1.1rem;
     border-radius: 999px;
+    border: 2px solid var(--primary, #a3172b);
     background: var(--primary, #a3172b);
     color: var(--primary-foreground, #fff);
+    font: inherit;
     font-weight: 600;
-    text-decoration: none;
+    cursor: pointer;
   }
-  .send:focus-visible { outline: 3px solid var(--ring, #f2c14e); outline-offset: 2px; }
-  .send[hidden], .postcard[hidden] { display: none; }
+  .close { background: transparent; color: var(--foreground, #1f2633); border-color: var(--border, #b9b4a6); }
+  .go:focus-visible, .send:focus-visible, .close:focus-visible, textarea:focus-visible, input:focus-visible { outline: 3px solid var(--ring, #f2c14e); outline-offset: 2px; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .said { grid-column: 1 / -1; margin: 0; font-weight: 600; color: var(--foreground, #1f2633); }
+  .said:empty, .problem:empty { display: none; }
+  form { grid-column: 1 / -1; display: grid; gap: 0.7rem; margin-top: 0.4rem; }
+  .field { display: grid; gap: 0.25rem; }
+  label { font-weight: 600; color: var(--foreground, #1f2633); }
+  textarea, input[type="text"], input[type="email"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
+  textarea { min-height: 7rem; resize: vertical; }
+  .help { margin: 0; font-size: 0.92rem; color: var(--muted-foreground, #5a6170); }
+  .problem { margin: 0; color: #b3262f; font-weight: 600; }
+  .row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
+  [hidden] { display: none !important; }
   @media (max-width: 30rem) { .postcard { grid-template-columns: 1fr; } .stamp { display: none; } }
 </style>
-<family-mailbox email="" prompt="Made one of my recipes? Tell me how it turned out, and send a picture!" button="Write to Grammi" subject="A note for Grammi">
-  <div class="postcard" hidden={!link}>
-    <p class="prompt">{prompt}</p>
-    <div class="stamp" aria-hidden="true">
-      <svg viewBox="0 0 40 50">
-        <rect width="40" height="50" fill="#f7efe0" />
-        <path d="M6 40 20 12 34 40Z" fill="#2f6b3f" />
-        <path d="M11 40 20 22 29 40Z" fill="#3f8a52" />
-        <rect x="18" y="40" width="4" height="5" fill="#7a4a26" />
-        <circle cx="20" cy="11" r="2.5" fill="#f2c14e" />
-        <circle cx="31" cy="9" r="4" fill="#ffffff" stroke="#e0cdb0" />
-      </svg>
+<family-mailbox prompt="Made one of my recipes? Tell me how it turned out!" button="Write to Grammi">
+  <section class="mailbox" data-state={state} aria-label={button}>
+    <div class="postcard">
+      <p class="prompt">{prompt}</p>
+      <div class="stamp" aria-hidden="true">
+        <svg viewBox="0 0 40 50">
+          <rect width="40" height="50" fill="#f7efe0" />
+          <path d="M6 40 20 12 34 40Z" fill="#2f6b3f" />
+          <path d="M11 40 20 22 29 40Z" fill="#3f8a52" />
+          <rect x="18" y="40" width="4" height="5" fill="#7a4a26" />
+          <circle cx="20" cy="11" r="2.5" fill="#f2c14e" />
+          <circle cx="31" cy="9" r="4" fill="#ffffff" stroke="#e0cdb0" />
+        </svg>
+      </div>
+      <p class="said" role="status">{said}</p>
+      <button class="go" type="button" hidden={open} onclick={start}>{button}</button>
+      <form hidden={!open} action={write} method="post" onsubmit={send} oninput={typing} novalidate>
+        <div class="field">
+          <label for="letter-note">Your note</label>
+          <textarea id="letter-note" name="note" maxlength="2000"></textarea>
+        </div>
+        <div class="field">
+          <label for="letter-name">Your name</label>
+          <input id="letter-name" name="name" type="text" maxlength="60" autocomplete="name" />
+        </div>
+        <div class="field">
+          <label for="letter-email">Your email address (if you'd like her to write back)</label>
+          <input id="letter-email" name="email" type="email" maxlength="200" autocomplete="email" />
+          <p class="help">Only Grammi sees it. Leave it empty if you'd rather.</p>
+        </div>
+        <div class="trap" aria-hidden="true"><label>Leave this empty <input name="website" type="text" tabindex="-1" autocomplete="off" /></label></div>
+        <p class="problem" role="alert">{problem}</p>
+        <div class="row">
+          <button class="send" type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send it to Grammi'}</button>
+          <button class="close" type="button" onclick={close}>Not now</button>
+        </div>
+      </form>
     </div>
-    <a class="send" href={link || '#'} hidden={!link}>{button}</a>
-  </div>
+  </section>
 </family-mailbox>

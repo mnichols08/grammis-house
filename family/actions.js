@@ -67,6 +67,26 @@ export async function lookAtFridge() {
     return { error: "off" };
   }
 }
+/** "Write to Grammi": whether it's open (and a form token), or { open: false } to stay hidden. */
+export async function lookAtMailbox() {
+  try {
+    return parts?.letters ? parts.letters.look() : { open: false };
+  } catch {
+    return { open: false };
+  }
+}
+/** One note to Grammi. Answers { ok } or { error, field }. */
+export async function writeToGrammi(formData, request) {
+  try {
+    if (!parts?.letters) return { error: "off" };
+    const answer = await parts.letters.write(formData, { address: visitorAddress(request.headers, parts.trustRealIp) });
+    if (answer.error) return { error: answer.error, field: answer.field ?? null };
+    return { ok: true };
+  } catch {
+    return { error: "off" };
+  }
+}
+
 export const moveOnFridge = (formData, request) => atFridge("move", formData, request);
 export const drawForFridge = (formData, request) => atFridge("draw", formData, request);
 
