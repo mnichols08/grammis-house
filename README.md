@@ -129,6 +129,13 @@ lettering. **Draft a look**, then **See it on your front page**. Say what to cha
 warmer"), give it a name, and **Save this look**. Saving doesn't change your site: **Put it up now**
 hangs it today. The writing is always made dark or light enough to read easily.
 
+**Asking for a different background.** In the same description, say what you'd like behind the
+page: "blue gingham", "little hearts", "something like kitchen tiles", "a plain background". The
+helper picks one of the house's wallpapers (gingham, plaid, ticking stripes, polka dots, kitchen or
+subway tiles, scallops, waves, a garden trellis, and little hearts, stars, snowflakes, leaves, daisies,
+teacups and more) and the editor draws it in the new look's own colours, faintly, for light and for
+dark. Under the look it says what's behind the page. Ask "plainer" or "polka dots instead" to change it.
+
 **Look** lets you make the writing bigger or smaller, or roomier, for the whole
 site. The holiday colors come from the decorations, so that screen leaves them alone on purpose.
 
@@ -174,6 +181,14 @@ The pictures are drawn in code by `scripts/draw_decorations.py` (Thanksgiving an
 makes `decorPatternDark` from it (its colours lifted toward white, laid on faintly) unless the look
 draws its own `decor/pattern-dark.svg`, and `house.css` hangs that one on a dark page.
 `python3 scripts/wallpaper_sheet.py out.html` shows every look's wallpaper, light and dark, on one page.
+
+**The wallpapers Grammi can describe** are in `themes/grammis/wallpapers.json`, made by
+`scripts/draw_wallpapers.py`: each a tile drawn in one ink, `{ink}`. "Describe a new look" only lets
+the writing helper choose one by its id; the editor fills in the look's accent and lays it on
+(`docker/openblog-wallpapers.patch`), so nothing the helper writes ever becomes a picture.
+Leaves, snow, petals and the rest of the weather (the `weather` token: `snow`, `hearts`, `clover`,
+`petals`, `leaves`, `confetti` or `none`, drawn by `themes/grammis/weather.js`) hold still for anyone whose device asks for less motion,
+and recipe pages stay quiet because people are cooking. Phones get the garland, sign and banner, but not the corner piece.
 
 **The house decorates itself.** This is open.blog's `seasons` setting in `openblog.json`
 (added in [open.blog#649](https://github.com/journey-to-code-org/open.blog/pull/649)), edited on
@@ -327,7 +342,8 @@ On the first start after this change, an existing configured login is reset once
 If she forgets it, run `openblog user passwd grammi --temporary-password` from a shell in the
 editor's site checkout; the prompt shows what you type, so use a private terminal. Give her
 that temporary password so she can choose another.
-The admin image applies `docker/openblog-password-setup.patch`, `docker/openblog-gift-card.patch`, `docker/openblog-cover.patch`, and `docker/openblog-family-recipes.patch` to its pinned open.blog revision.
+The admin image applies `docker/openblog-password-setup.patch`, `docker/openblog-gift-card.patch`, `docker/openblog-cover.patch`, `docker/openblog-family-recipes.patch`, and `docker/openblog-wallpapers.patch` to its pinned open.blog revision.
+The wallpapers patch adds one closed field, `wallpaper`, to a drafted look (ADR 0410's draft): `theme`, `none`, or an id from the site's `wallpapers.json`.
 The family-recipes patch keeps a draft's `.credits.json`, and any photo under `static/images/family-recipes/` that no published post shows, out of what **Publish** sends to GitHub, so a recipe she hasn't approved (or deleted) never reaches the public repository.
 The site image and the Pages workflow apply the cover patch too, so a removed cover stays off the published page.
 Recheck the patches and password-setup tests when updating that revision.
