@@ -250,8 +250,10 @@ Studio sends out only `content`, `static`, `openblog.json`, `themes` and
 ## Sharing links
 
 Pages use `static/images/grammis-house-social.png` as their default Open Graph and Twitter
-preview image. A post's cover, or its first image when no cover is set, takes its place.
-Post covers are hidden on the post itself; images in the post and listing thumbnails remain.
+preview image. A post's cover, or its first image when no cover is set, takes its place
+and is shown at the top of the post. In Studio, **Remove the cover photo** writes `cover: false`,
+so that post has no cover and a picture in the post stays in the post. An empty cover still uses
+the first picture.
 
 ## The writing helper (for Describe a new look)
 
@@ -293,8 +295,9 @@ On the first start after this change, an existing configured login is reset once
 If she forgets it, run `openblog user passwd grammi --temporary-password` from a shell in the
 editor's site checkout; the prompt shows what you type, so use a private terminal. Give her
 that temporary password so she can choose another.
-The admin image applies `docker/openblog-password-setup.patch` to its pinned open.blog revision;
-recheck the patch and password-setup tests when updating that revision.
+The admin image applies `docker/openblog-password-setup.patch` and `docker/openblog-cover.patch` to its pinned open.blog revision.
+The site image and the Pages workflow apply the cover patch too, so a removed cover stays off the published page.
+Recheck the patches and password-setup tests when updating that revision.
 
 ### The site and the family service (`Dockerfile`, `family/`)
 
