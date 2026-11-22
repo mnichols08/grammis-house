@@ -67,14 +67,6 @@
       "type": "component"
     },
     {
-      "id": "write-to-grammi",
-      "props": {
-        "email": ""
-      },
-      "tag": "family-mailbox",
-      "type": "component"
-    },
-    {
       "id": "share-a-recipe",
       "props": {
         "heading": "Share a recipe with Grammi",

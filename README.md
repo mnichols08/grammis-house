@@ -85,10 +85,12 @@ by itself. Open **Front page**, then the sign, to change it:
   password unless you switch on **Let anyone leave you a gift**. Nothing shows, and nobody can leave a gift, until you turn on **My tree is ready for gifts** in
   **Gifts**: decorate first, then open up. Gifts work on the site's Railway address, where the family
   service (below) serves the pages; on any other copy of the site the section stays hidden.
-- **Write to Grammi.** A postcard on the front page opens the family's email with a note to you
-  already addressed. Fill in **Your email address** on it (Front page → Write to Grammi); it stays
-  hidden until you do. Put your favorite notes on **The Family Wall** page, the fridge: each note
-  is a quote (the **"** button in the editor), with who it's from on the last line.
+- **Write to Grammi.** A postcard on **The Family Wall** page, under the fridge, opens the family's
+  email with a note to you already addressed. To have it, write your email address in the page's own
+  words, between < and > (`<your@address>`), where the TODO line says; the postcard takes that line's
+  place. It stays hidden until there's a real address there. Put your favorite notes on the same
+  page: each note is a quote (the **"** button in the editor), with who it's from on the last line.
+  (The postcard can still go on the front page too: Front page → Add a section → Write to Grammi.)
 - **The fridge.** The Family Wall has a real fridge door: a box of plastic letter magnets that
   everybody shares and drags around to spell things (nobody can add letters, so the E's get shared),
   with your first four notes hanging at the top. The family can also **Draw Grammi a picture**; it
