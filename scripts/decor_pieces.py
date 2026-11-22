@@ -22,7 +22,7 @@ PIECES = {
     "banner": ("Banner", ["decorBanner", "decorBannerSize", "decorBannerHeight", "decorBannerRepeat"]),
     "corner": ("Corner piece", ["decorCorner", "decorCornerWidth", "decorCornerHeight", "decorCornerInset"]),
     "mantel": ("Mantel", ["decorMantel", "decorMantelSize", "decorMantelHeight"]),
-    "pattern": ("Wallpaper", ["decorPattern", "decorPatternSize"]),
+    "pattern": ("Wallpaper", ["decorPattern", "decorPatternDark", "decorPatternSize"]),
 }
 
 # The Christmas looks, and what to call each one's version of a piece when another look offers it.
@@ -90,7 +90,7 @@ def main():
         if not pieces:
             continue
         theme["decorations"] = pieces
-        (THEMES / name / "theme.json").write_text(json.dumps(theme, indent=2) + "\n")
+        (THEMES / name / "theme.json").write_text(json.dumps(theme, indent=2) + "\n", encoding="utf-8", newline="\n")
         print(f"{name}: {', '.join(pieces)}")
 
 

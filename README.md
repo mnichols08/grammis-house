@@ -170,7 +170,10 @@ for family stories, airmail stationery for letters, blue-willow china for Sunday
 
 The pictures are drawn in code by `scripts/draw_decorations.py` (Thanksgiving and Christmas) and
 `scripts/draw_themes.py` (every other month, and the collection looks), and
-`scripts/decorate.py` turns them into tokens. Decorating never means editing `house.css`.
+`scripts/decorate.py` turns them into tokens. Decorating never means editing `house.css`. The wallpaper (`pattern`) comes in two: `decorate.py`
+makes `decorPatternDark` from it (its colours lifted toward white, laid on faintly) unless the look
+draws its own `decor/pattern-dark.svg`, and `house.css` hangs that one on a dark page.
+`python3 scripts/wallpaper_sheet.py out.html` shows every look's wallpaper, light and dark, on one page.
 
 **The house decorates itself.** This is open.blog's `seasons` setting in `openblog.json`
 (added in [open.blog#649](https://github.com/journey-to-code-org/open.blog/pull/649)), edited on

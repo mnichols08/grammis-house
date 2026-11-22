@@ -98,7 +98,8 @@
     "decorCornerWidth": "0px",
     "decorCornerHeight": "0px",
     "fontHand": "\"Caveat\", \"Segoe Print\", \"Bradley Hand\", cursive",
-    "weather": "none"
+    "weather": "none",
+    "decorPatternDark": "none"
   },
   "options": {
     "listStyle": "cards",
