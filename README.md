@@ -85,12 +85,12 @@ by itself. Open **Front page**, then the sign, to change it:
   password unless you switch on **Let anyone leave you a gift**. Nothing shows, and nobody can leave a gift, until you turn on **My tree is ready for gifts** in
   **Gifts**: decorate first, then open up. Gifts work on the site's Railway address, where the family
   service (below) serves the pages; on any other copy of the site the section stays hidden.
-- **Write to Grammi.** A postcard on **The Family Wall** page, under the fridge, opens the family's
-  email with a note to you already addressed. To have it, write your email address in the page's own
-  words, between < and > (`<your@address>`), where the TODO line says; the postcard takes that line's
-  place. It stays hidden until there's a real address there. Put your favorite notes on the same
+- **Write to Grammi.** A postcard on **The Family Wall** page, under the fridge. Its button opens a
+  short form: their note, their name, and their email address if they'd like you to write back. The
+  note comes to your email; to answer, just reply. Your own address is never on the site: it's kept
+  in the family service's settings (`OPENBLOG_NOTIFY_EMAIL`). Put your favorite notes on the same
   page: each note is a quote (the **"** button in the editor), with who it's from on the last line.
-  (The postcard can still go on the front page too: Front page → Add a section → Write to Grammi.)
+  (The postcard can go on the front page too: Front page → Add a section → Write to Grammi.)
 - **The fridge.** The Family Wall has a real fridge door: a box of plastic letter magnets that
   everybody shares and drags around to spell things (nobody can add letters, so the E's get shared),
   with your first four notes hanging at the top. The family can also **Draw Grammi a picture**; it
@@ -366,6 +366,10 @@ project: no Netlify, no Supabase. `Dockerfile` builds the site with open.blog an
   the placement form previews that same decorated tree and the gifts together.
 - **Greeting cards**, Studio's side at `/api/greetings/…` (`family/cards.js`); the cards that are due
   go out every hour through Brevo.
+- **Notes to Grammi and her emails.** The postcard (`themes/grammis/components/family-mailbox.zb`) has two
+  `'use server'` functions, `look` and `write`; they call `family/letters.js`, which keeps each note and
+  emails it to `OPENBLOG_NOTIFY_EMAIL` through Brevo (reply-to the sender, when they gave an address).
+  It uses the greeting cards' `BREVO_API_KEY` and `OPENBLOG_GREETINGS_FROM`.
 - **The fridge** on The Family Wall. `themes/family-wall/fridge-loader.js` puts
   `themes/grammis/components/magnet-fridge.zb` on that page only; its `'use server'` functions (`look`,
   `move`, `draw`) call `family/fridge.js`. Where each magnet and drawing sits is kept in

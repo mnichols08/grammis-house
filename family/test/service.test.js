@@ -36,6 +36,7 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
     OPENBLOG_GIFTS_ENABLED: "true", OPENBLOG_GIFTS_ADMIN_KEY: KEYS.gifts,
     OPENBLOG_RECIPES_ENABLED: "true", OPENBLOG_RECIPES_ADMIN_KEY: KEYS.recipes, OPENBLOG_RECIPES_FAMILY_CODE: "Sunday Dinner",
     OPENBLOG_FRIDGE_ENABLED: "true", OPENBLOG_FRIDGE_ADMIN_KEY: KEYS.fridge,
+    OPENBLOG_NOTIFY_EMAIL: "grammi@example.org", OPENBLOG_ADMIN_URL: "https://editor.example/admin/",
   });
   await migrate(db);
   await migrate(db); // a second start changes nothing
@@ -208,6 +209,22 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
       assert.equal(after.status, "scheduled");
       assert.match(after.nextSendAt, /^2028-04-11T12:00:00/);
       assert.equal((await family.cards.sendCards()).sent, 0, "never twice");
+    });
+
+    await t.test("letters: a note goes to her by email, kept, with reply-to the writer", async () => {
+      const mailbox = (fn, fields = {}) => call(fn, fields, "family-mailbox");
+      const before = sent.length;
+      const { open, token } = await mailbox("look");
+      assert.equal(open, true);
+      clock += 5000;
+      assert.deepEqual(await mailbox("write", { token, name: "Ricky", note: "Made your stuffing <3", email: "ricky@example.org" }), { ok: true });
+      assert.deepEqual(await mailbox("write", { token, name: "", note: "Hi" }), { error: "name", field: "name" });
+      const letter = sent[before];
+      assert.deepEqual([letter.to, letter.replyTo, letter.subject], [{ email: "grammi@example.org" }, { email: "ricky@example.org", name: "Ricky" }, "A note from Ricky"]);
+      assert.match(letter.text, /Made your stuffing <3/);
+      assert.match(letter.html, /Made your stuffing &lt;3/);
+      assert.equal((await db.one("select count(*)::int as n from public.grammis_letters where mailed_at is not null")).n, 1, "kept, and marked sent");
+
     });
 
     await t.test("notes: left on a page, approved in the inbox, then shown", async () => {

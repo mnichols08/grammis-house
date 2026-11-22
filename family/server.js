@@ -30,6 +30,7 @@ import { createSite } from "./lib/site.js";
 import { createNotes } from "./notes.js";
 import { createRecipes } from "./recipes.js";
 import { createFridge } from "./fridge.js";
+import { createLetters } from "./letters.js";
 
 const HOUR = 60 * 60 * 1000;
 const MAX_JSON = 32 * 1024;
@@ -66,15 +67,16 @@ export function repeat(job, { every = HOUR, first = 15000, log = () => {}, label
  * slow never takes her site down.
  */
 export function createFamily({ settings, db = null, actions, site = null, now = () => Date.now(), transport = null, log = () => {} }) {
-  const family = { gifts: null, cards: null, notes: null, recipes: null, fridge: null };
-  connect({ gifts: null, recipes: null, fridge: null, trustRealIp: settings.trustRealIp });
+  const family = { gifts: null, cards: null, notes: null, recipes: null, fridge: null, letters: null };
+  connect({ gifts: null, recipes: null, fridge: null, letters: null, trustRealIp: settings.trustRealIp });
   family.attach = (database) => {
     family.gifts = settings.gifts.enabled ? createGifts({ db: database, settings, now }) : null;
     family.cards = settings.cards.enabled ? createCards({ db: database, settings, now, transport }) : null;
     family.notes = settings.notes.enabled ? createNotes({ db: database, settings, now: () => new Date(now()) }) : null;
     family.recipes = settings.recipes.enabled ? createRecipes({ db: database, settings, now }) : null;
     family.fridge = settings.fridge.enabled ? createFridge({ db: database, settings, now }) : null;
-    connect({ gifts: family.gifts, recipes: family.recipes, fridge: family.fridge, trustRealIp: settings.trustRealIp });
+    family.letters = settings.letters.enabled ? createLetters({ db: database, settings, now, transport }) : null;
+    connect({ gifts: family.gifts, recipes: family.recipes, fridge: family.fridge, letters: family.letters, trustRealIp: settings.trustRealIp });
   };
   if (db) family.attach(db);
 
@@ -95,7 +97,7 @@ export function createFamily({ settings, db = null, actions, site = null, now = 
     }
     try {
       const { gifts, cards, notes, recipes } = family;
-      if (path === "/health") return send(res, reply(200, { ok: true, notes: Boolean(notes), cards: Boolean(cards), gifts: Boolean(gifts), recipes: Boolean(recipes), fridge: Boolean(family.fridge) }));
+      if (path === "/health") return send(res, reply(200, { ok: true, notes: Boolean(notes), cards: Boolean(cards), gifts: Boolean(gifts), recipes: Boolean(recipes), fridge: Boolean(family.fridge), letters: Boolean(family.letters) }));
 
       // A component's server function. Only pages from this same address may post to one (Zubra
       // refuses a browser's cross-site post), so the gift form works on the site this service serves.
@@ -150,7 +152,7 @@ export function createFamily({ settings, db = null, actions, site = null, now = 
 async function main() {
   const log = (line) => console.log(`[family] ${line}`);
   const settings = readSettings(process.env);
-  for (const part of ["notes", "cards", "gifts", "recipes", "fridge"]) {
+  for (const part of ["notes", "cards", "gifts", "recipes", "fridge", "letters"]) {
     if (settings[part].problems.length) log(`${part} are off: check ${settings[part].problems.join(", ")}`);
   }
   const actions = await createActions({
@@ -182,7 +184,7 @@ async function main() {
     }
   }
   family.attach(db);
-  const on = ["notes", "cards", "gifts", "recipes", "fridge"].filter((part) => family[part]);
+  const on = ["notes", "cards", "gifts", "recipes", "fridge", "letters"].filter((part) => family[part]);
   log(`database ready: ${on.length ? on.join(", ") : "nothing switched on"}`);
   if (family.cards) repeat(family.cards.sendCards, { log, label: "sending cards" });
 }

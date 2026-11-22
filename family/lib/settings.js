@@ -81,6 +81,25 @@ export function readSettings(env = process.env) {
     fridge = problems.length ? { enabled: false, problems } : { enabled: true, problems: [], adminKey: text(env.OPENBLOG_FRIDGE_ADMIN_KEY) };
   }
 
+  // Notes to Grammi ("Write to Grammi"): on once her address is
+  // set. They go out through Brevo from the greeting cards' sender, so those two are needed too.
+  let letters = { enabled: false, problems: [] };
+  const notifyTo = text(env.OPENBLOG_NOTIFY_EMAIL).trim();
+  if (notifyTo) {
+    const problems = [...shared];
+    const sender = SENDER.exec(text(env.OPENBLOG_GREETINGS_FROM).trim());
+    if (!/^[^\s@<>",;]{1,64}@[^\s@<>",;]{1,200}\.[A-Za-z]{2,24}$/.test(notifyTo)) problems.push("OPENBLOG_NOTIFY_EMAIL");
+    if (!text(env.BREVO_API_KEY).trim() || /\s/.test(text(env.BREVO_API_KEY).trim())) problems.push("BREVO_API_KEY");
+    if (!sender) problems.push("OPENBLOG_GREETINGS_FROM");
+    letters = problems.length ? { enabled: false, problems } : {
+      enabled: true,
+      problems: [],
+      to: notifyTo,
+      apiKey: text(env.BREVO_API_KEY).trim(),
+      from: sender[3] ? { email: sender[3] } : { name: sender[1].trim(), email: sender[2] },
+    };
+  }
+
   return {
     site,
     notes,
@@ -88,6 +107,7 @@ export function readSettings(env = process.env) {
     gifts,
     recipes,
     fridge,
+    letters,
     databaseUrl: text(env.DATABASE_URL).trim(),
     port: Number(env.PORT || 8080),
     // Behind Railway's proxy the visitor's address is X-Real-IP; anywhere else, say false.

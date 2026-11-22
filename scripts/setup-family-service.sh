@@ -45,6 +45,7 @@ BREVO_API_KEY=$(secret_ask "Brevo API key")
 SENDER_EMAIL=$(ask "The verified sender address")
 SENDER_NAME=$(ask "The name cards come from [Grammi]")
 SENDER_NAME=${SENDER_NAME:-Grammi}
+NOTIFY_EMAIL=$(ask "Grammi's own email address, for notes from the family and emails when something comes in (kept only in Railway)")
 
 key() { openssl rand -hex 32; }
 ADMIN_KEY=$(key)
@@ -70,7 +71,7 @@ step "3 of 4: switch the family service on"
 cat <<EOF
   In the site service > Variables > Raw editor, paste ALL of this and click Update variables. It
   rebuilds and starts; the first start sets up the database. $SITE/health then answers
-  {"ok":true,"notes":true,"cards":true,"gifts":true,"recipes":true,"fridge":true}.
+  {"ok":true,"notes":true,"cards":true,"gifts":true,"recipes":true,"fridge":true,"letters":true}.
 
 DATABASE_URL=\${{Postgres.DATABASE_URL}}
 OPENBLOG_SITE_ID=grammis-house
@@ -90,6 +91,7 @@ OPENBLOG_RECIPES_ENABLED=true
 OPENBLOG_RECIPES_ADMIN_KEY=$RECIPES_KEY
 OPENBLOG_FRIDGE_ENABLED=true
 OPENBLOG_FRIDGE_ADMIN_KEY=$FRIDGE_KEY
+OPENBLOG_NOTIFY_EMAIL=$NOTIFY_EMAIL
 
   Then, in her editor's service > Variables > Raw editor, add these and click Update variables:
 

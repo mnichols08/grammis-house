@@ -1,0 +1,21 @@
+-- Notes to Grammi ("Write to Grammi" on the Family Wall), kept after they are emailed to her.
+-- Private the way open.blog's own tables are: row level security
+-- on with no policies, nothing granted to anon or authenticated. Running it twice changes nothing.
+
+create table if not exists public.grammis_letters (
+  id uuid primary key default gen_random_uuid(),
+  site_id text not null,
+  created_at timestamptz not null default now(),
+  from_name text not null check (char_length(from_name) between 1 and 60),
+  reply_to text check (reply_to is null or char_length(reply_to) between 3 and 200),
+  note text not null check (char_length(note) between 1 and 2000),
+  sender_digest text not null,
+  -- Set once the email to her went out.
+  mailed_at timestamptz
+);
+
+create index if not exists grammis_letters_unmailed on public.grammis_letters (site_id, created_at) where mailed_at is null;
+create index if not exists grammis_letters_sender on public.grammis_letters (site_id, sender_digest, created_at);
+
+alter table public.grammis_letters enable row level security;
+revoke all on public.grammis_letters from public, anon, authenticated;
