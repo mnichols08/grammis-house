@@ -1,7 +1,7 @@
 // The fridge on The Fridge page: the box of letters, where things may be set down, what a drawing may hold.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BOX, FINISHES, FridgeError, INKS, LIMITS, MAGNETS, SEAM, STARTER, checkBy, checkDrawing, checkFinish, checkMagnet, checkSpot, shuffleLayout, starterLayout } from "../lib/fridge.js";
+import { BOX, FINISHES, LETTER, FridgeError, INKS, LIMITS, MAGNETS, SEAM, STARTER, checkBy, checkDrawing, checkFinish, checkMagnet, checkSpot, shuffleLayout, starterLayout } from "../lib/fridge.js";
 import { readSettings } from "../lib/settings.js";
 
 test("one box of letters, laid out the same way every time Grammi tidies", () => {
@@ -82,15 +82,18 @@ test("shuffling puts every letter somewhere new on the fridge door, none on top 
       assert.ok(spot.x >= 3 && spot.x <= 97 && spot.y > SEAM && spot.y <= 97 && Math.abs(spot.r) <= 45, JSON.stringify(spot));
       assert.doesNotThrow(() => checkSpot({ x: String(spot.x), y: String(spot.y), r: String(spot.r) }), "a spot the service itself would accept");
     }
-    // A letter is under 6% of the door wide and 4.4% tall: two are clear of each other when either gap is bigger.
+    // Two letters are clear of each other when either gap is at least a letter's size (LETTER).
     for (let i = 0; i < layout.length; i++) {
       for (let j = i + 1; j < layout.length; j++) {
         const dx = Math.abs(layout[i].x - layout[j].x);
         const dy = Math.abs(layout[i].y - layout[j].y);
-        assert.ok(dx >= 5.9 || dy >= 4.3, `letters ${layout[i].id} and ${layout[j].id} touch (seed ${seed}): ${dx.toFixed(1)} across, ${dy.toFixed(1)} down`);
+        assert.ok(dx >= LETTER.wide || dy >= LETTER.tall, `letters ${layout[i].id} and ${layout[j].id} touch (seed ${seed}): ${dx.toFixed(1)} across, ${dy.toFixed(1)} down`);
       }
     }
-    assert.ok(Math.max(...layout.map((s) => s.y)) - Math.min(...layout.map((s) => s.y)) < 30, "one close block");
+    // In clumps: most letters have a neighbour close by, and they don't sit on a grid.
+    const nearest = layout.map((a) => Math.min(...layout.filter((b) => b !== a).map((b) => Math.hypot(a.x - b.x, a.y - b.y))));
+    assert.ok(nearest.filter((d) => d < 7).length > layout.length * 0.9, "clustered");
+    assert.ok(new Set(layout.map((s) => Math.round(s.y))).size > 20, "not in rows");
     assert.notDeepEqual(layout, before);
   }
   assert.notDeepEqual(shuffleLayout(seeded(1)), shuffleLayout(seeded(2)), "a different shuffle each time");

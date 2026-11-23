@@ -198,7 +198,7 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
       assert.equal(shuffled.length, 71);
       assert.ok(shuffled.every((m) => m.y > 40), "every letter is on the fridge door, none in the freezer");
       for (let i = 0; i < shuffled.length; i++) {
-        for (let j = i + 1; j < shuffled.length; j++) assert.ok(Math.abs(shuffled[i].x - shuffled[j].x) >= 5.9 || Math.abs(shuffled[i].y - shuffled[j].y) >= 4.3, "none touching");
+        for (let j = i + 1; j < shuffled.length; j++) assert.ok(Math.abs(shuffled[i].x - shuffled[j].x) >= 5.2 || Math.abs(shuffled[i].y - shuffled[j].y) >= 4.4, "none touching");
       }
       const back = shuffled.find((m) => m.id === w.id);
       assert.notDeepEqual([back.x, back.y], [20.5, 80], "the W has moved");

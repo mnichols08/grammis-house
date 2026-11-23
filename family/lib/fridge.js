@@ -104,12 +104,59 @@ export function starterLayout() {
 }
 
 /**
- * Every letter somewhere new, in one close block in the middle of the fridge door (below the seam), none
- * touching another. `random` is any function giving a number from 0 up to (not including) 1; the tests
- * hand it a seeded one.
+ * Every letter somewhere new on the fridge door (below the seam), in a few tight clumps with bare door
+ * between them, the way letters end up after a lot of hands, none touching another. Two to four clump
+ * centres are picked at random, apart from each other; each letter goes to one of them and is tried in a
+ * few random spots near it, keeping the closest one that touches nothing, so a clump grows outward from
+ * its middle with ragged edges. `random` is any function giving a number from 0 up to (not including) 1;
+ * the tests hand it a seeded one.
  */
+export const SHUFFLE_AREA = Object.freeze({ left: 7, right: 88, top: SEAM + 6, bottom: 86 });
+/** How much door one letter takes, turned a little, as a percent across and down: closer than this, two touch. */
+export const LETTER = Object.freeze({ wide: 5.2, tall: 4.4 });
 export function shuffleLayout(random = Math.random) {
-  return packed(MAGNETS.map((magnet) => magnet.id), random, { columns: 12, top: 54 });
+  const { left, right, top, bottom } = SHUFFLE_AREA;
+  const clear = (a, b) => Math.abs(a.x - b.x) >= LETTER.wide || Math.abs(a.y - b.y) >= LETTER.tall;
+  const inside = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+  const count = 2 + Math.floor(random() * 3);
+  const clumps = [];
+  for (let tries = 0; clumps.length < count && tries < 400; tries++) {
+    const at = { x: left + 10 + random() * (right - left - 20), y: top + 7 + random() * (bottom - top - 14), weight: 0.6 + random() };
+    if (clumps.every((c) => Math.hypot(c.x - at.x, (c.y - at.y) * 1.4) > 34 - tries / 20)) clumps.push(at);
+  }
+  const total = clumps.reduce((sum, clump) => sum + clump.weight, 0);
+  const pick = () => {
+    let at = random() * total;
+    for (const clump of clumps) if ((at -= clump.weight) <= 0) return clump;
+    return clumps[clumps.length - 1];
+  };
+  const ids = MAGNETS.map((magnet) => magnet.id);
+  for (let i = ids.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+  }
+  const placed = [];
+  for (const id of ids) {
+    const clump = pick();
+    let best = null;
+    // Rings outward from the clump's middle: the first ring with any free spot wins, and among a few free
+    // spots in it the nearest. Each ring tries spots at random angles, so the clump's edge stays ragged.
+    for (let reach = 0; !best && reach < 200; reach += 0.8) {
+      for (let k = 0; k < 14; k++) {
+        const turn = random() * Math.PI * 2;
+        const far = reach + random() * 1.2;
+        const at = {
+          x: round(inside(clump.x + Math.cos(turn) * far * 1.2, left, right)),
+          y: round(inside(clump.y + Math.sin(turn) * far, top, bottom)),
+        };
+        if (!placed.every((other) => clear(at, other))) continue;
+        const d = Math.hypot((at.x - clump.x) / 1.2, at.y - clump.y);
+        if (!best || d < best.d) best = { ...at, d };
+      }
+    }
+    placed.push({ id, x: best.x, y: best.y, r: round((random() - 0.5) * 34) });
+  }
+  return placed;
 }
 
 /** How the door looks: one of FINISHES. */
