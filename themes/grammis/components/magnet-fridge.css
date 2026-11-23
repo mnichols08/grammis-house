@@ -16,7 +16,7 @@
   /* The cabinet: the doors face you; its right side and top are sheared away from you (an oblique drawing: 7 across
      and 5 up for the cabinet's depth), so it is a box, while the doors stay flat (a tilted door would throw off where
      a dragged letter is). Sizes are in the cabinet's width. The light comes from --lx/--ly (0 to 1 across and down the
-     door); shadows fall away from it by --sx/--sy. The pointer moves the light a little; it rests upper left. */
+     door), upper left, and stays put; shadows fall away from it by --sx/--sy. */
   .fridge { --lx: 0.22; --ly: 0.08; --sx: 0.56; --sy: 0.84; }
   .cabinet { container-type: inline-size; max-width: 38rem; margin: 0 auto; }
   .frame { position: relative; margin: 5cqw 7cqw 6.5cqw 0; }
