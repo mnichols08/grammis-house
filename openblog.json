@@ -1,7 +1,7 @@
 {
   "title": "Grammi's House",
   "description": "Grammi's kitchen, open all year: her famous holiday recipes and family stories, decorated for every season.",
-  "url": "https://grammis-house-production.up.railway.app",
+  "url": "https://grammishouse.com",
   "language": "en",
   "author": {
     "name": "Grammi",
@@ -61,7 +61,7 @@
     "analytics": true,
     "comments": true,
     "enabled": true,
-    "endpoint": "https://grammis-house.up.railway.app/api",
+    "endpoint": "https://grammishouse.com/api",
     "feedback": false,
     "feedbackContact": ""
   },

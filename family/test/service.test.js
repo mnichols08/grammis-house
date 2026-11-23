@@ -273,6 +273,17 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
       const stale = await owner("/api/admin/moderation", KEYS.notes, { method: "PATCH", body: JSON.stringify({ source: "comment", id: item.id, expectedVersion: 1, from: "pending", action: "approve" }) });
       assert.equal(stale.status, 409);
       assert.equal((await owner("/api/admin/moderation", "x".repeat(40))).status, 401);
+
+      // Who may write: the site's own address, or a page on whatever host is serving it (her domain in
+      // front of Railway's); never another site.
+      const ask = (origin, host) => siteNotes({ method: "OPTIONS", path: "comments", query: new URLSearchParams(), headers: { origin, host }, body: null, address: "203.0.113.9" });
+      assert.equal((await ask("https://grammi.example", "family.up.railway.app")).headers["access-control-allow-origin"], "https://grammi.example");
+      assert.equal((await ask("https://grammishouse.com", "grammishouse.com")).headers["access-control-allow-origin"], "https://grammishouse.com");
+      assert.equal((await ask("https://grammishouse.com", "grammishouse.com:443")).status, 403, "the port is part of the host");
+      assert.equal((await ask("https://evil.example", "grammishouse.com")).status, 403);
+      assert.equal((await ask("http://grammishouse.com", "grammishouse.com")).status, 403, "https only");
+      const post = await siteNotes({ method: "POST", path: "comments", query: new URLSearchParams(), headers: { origin: "https://evil.example", host: "grammishouse.com" }, body: { path: "/posts/stuffing/", authorName: "X", body: "hi" }, address: "203.0.113.9" });
+      assert.equal(post.status, 403);
     });
   } finally {
     family.server.close();
