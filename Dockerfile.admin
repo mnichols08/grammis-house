@@ -8,6 +8,7 @@ COPY docker/openblog-cover.patch /tmp/openblog-cover.patch
 COPY docker/openblog-family-recipes.patch /tmp/openblog-family-recipes.patch
 COPY docker/openblog-wallpapers.patch /tmp/openblog-wallpapers.patch
 COPY docker/openblog-studio-fridge.patch /tmp/openblog-studio-fridge.patch
+COPY docker/openblog-search-placeholder.patch /tmp/openblog-search-placeholder.patch
 RUN git init /tmp/openblog \
     && cd /tmp/openblog \
     && git fetch --depth 1 https://github.com/journey-to-code-org/open.blog 718c91393a72a2e282c2585a3ba7cfa763f7c410 \
@@ -18,6 +19,7 @@ RUN git init /tmp/openblog \
     && git apply /tmp/openblog-family-recipes.patch \
     && git apply /tmp/openblog-wallpapers.patch \
     && git apply /tmp/openblog-studio-fridge.patch \
+    && git apply /tmp/openblog-search-placeholder.patch \
     && cargo install --path crates/openblog-cli
 
 FROM debian:bookworm-slim
