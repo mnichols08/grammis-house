@@ -108,8 +108,13 @@ export function createNotes({ db, settings, now = () => new Date(), siteFetch = 
 
   /** One request: `path` is after /api/, `query` its parameters, `body` the parsed JSON (or null). */
   return async function notes({ method, path, query, headers, body, address }) {
+    // A page may write from the site's own address (OPENBLOG_SITE_ORIGIN) or from whatever address this
+    // service is being reached at (her own domain, say, in front of the Railway one): this service serves
+    // the site itself, so a page on the same host as the request is one of hers.
     const requestOrigin = String(headers.origin || "").replace(/\/$/, "");
-    const cors = requestOrigin === origin ? requestOrigin : "";
+    const host = String(headers.host || "").trim().toLowerCase();
+    const sameHost = Boolean(host) && /^[a-z0-9.-]+(:\d+)?$/.test(host) && requestOrigin.toLowerCase() === `https://${host}`;
+    const cors = requestOrigin && (requestOrigin === origin || sameHost) ? requestOrigin : "";
     if (method === "OPTIONS") {
       if (!cors) return json(403, { error: "Origin is not allowed." });
       return {
