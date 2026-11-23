@@ -1,5 +1,5 @@
 diff --git a/crates/openblog-cli/src/admin.rs b/crates/openblog-cli/src/admin.rs
-index 81461e1..4b0472d 100644
+index 81461e1e..4b0472dc 100644
 --- a/crates/openblog-cli/src/admin.rs
 +++ b/crates/openblog-cli/src/admin.rs
 @@ -92,6 +92,7 @@ mod capture_assistant;
@@ -40,12 +40,12 @@ index 81461e1..4b0472d 100644
              "engagement": engagement_ready,
 diff --git a/crates/openblog-cli/src/admin/fridge.rs b/crates/openblog-cli/src/admin/fridge.rs
 new file mode 100644
-index 0000000..449e19d
+index 00000000..d6e1cceb
 --- /dev/null
 +++ b/crates/openblog-cli/src/admin/fridge.rs
-@@ -0,0 +1,365 @@
+@@ -0,0 +1,389 @@
 +//! Admin routes for the fridge: the drawings the family makes for the fridge on her site wait here
-+//! until she puts them up, and she tidies the letter magnets from here.
++//! until she puts them up, and she shuffles the letter magnets and chooses how the door looks from here.
 +//!
 +//! Like gifts, the fridge is optional and off by default. It lives in the site's family service,
 +//! which Admin reaches only from this server, with the endpoint and key from the environment of the
@@ -253,7 +253,16 @@ index 0000000..449e19d
 +        "waiting": list("waiting")?,
 +        "up": list("up")?,
 +        "most": reply.get("most").and_then(Json::as_u64).filter(|n| (1..=60).contains(n)).unwrap_or(8),
++        "finish": project_finish(reply.get("finish")),
 +    }))
++}
++
++/// How the door looks: one of the two the fridge has, else the classic one.
++fn project_finish(value: Option<&Json>) -> &'static str {
++    match value.and_then(Json::as_str) {
++        Some("stainless") => "stainless",
++        _ => "classic",
++    }
 +}
 +
 +fn empty_body(req: &Request) -> Result<(), Response> {
@@ -306,6 +315,9 @@ index 0000000..449e19d
 +        ("POST", ["tidy"]) => empty_body(req)
 +            .and_then(|_| hosted(&config, "POST", "tidy"))
 +            .map(|_| json!({ "ok": true })),
++        ("POST", ["finish", name @ ("classic" | "stainless")]) => empty_body(req)
++            .and_then(|_| hosted(&config, "POST", &format!("finish/{name}")))
++            .map(|reply| json!({ "finish": project_finish(reply.get("finish")) })),
 +        ("POST", [id, action @ ("up" | "down")]) if is_uuid(id) => empty_body(req)
 +            .and_then(|_| hosted(&config, "POST", &format!("{id}/{action}")))
 +            .and_then(|reply| shelves(&reply)),
@@ -390,6 +402,18 @@ index 0000000..449e19d
 +    }
 +
 +    #[test]
++    fn the_door_is_one_of_the_two_the_fridge_has() {
++        assert_eq!(project_finish(Some(&json!("stainless"))), "stainless");
++        assert_eq!(project_finish(Some(&json!("classic"))), "classic");
++        for odd in [json!("gold"), json!(3), json!(null), json!("<script>")] {
++            assert_eq!(project_finish(Some(&odd)), "classic", "{odd}");
++        }
++        assert_eq!(project_finish(None), "classic");
++        let shelves = shelves(&json!({ "waiting": [], "up": [], "most": 8, "finish": "stainless" })).unwrap();
++        assert_eq!(shelves["finish"], "stainless");
++    }
++
++    #[test]
 +    fn nothing_is_sent_anywhere_when_the_fridge_is_not_set_up() {
 +        let req = Request {
 +            method: "GET".into(),
@@ -410,7 +434,7 @@ index 0000000..449e19d
 +    }
 +}
 diff --git a/crates/openblog-cli/src/admin/together_owner_routes.in b/crates/openblog-cli/src/admin/together_owner_routes.in
-index 405692d..26ab1ff 100644
+index 405692d9..26ab1ff9 100644
 --- a/crates/openblog-cli/src/admin/together_owner_routes.in
 +++ b/crates/openblog-cli/src/admin/together_owner_routes.in
 @@ -4,6 +4,7 @@
@@ -422,7 +446,7 @@ index 405692d..26ab1ff 100644
      ("*", "greetings/*"),
      ("*", "social/*"),
 diff --git a/crates/openblog-cli/src/studio_files.rs b/crates/openblog-cli/src/studio_files.rs
-index 167db82..1d83a8b 100644
+index 167db823..1d83a8b5 100644
 --- a/crates/openblog-cli/src/studio_files.rs
 +++ b/crates/openblog-cli/src/studio_files.rs
 @@ -314,6 +314,7 @@ pub const STUDIO_FILES: &[(&str, &[u8])] = &[
@@ -434,7 +458,7 @@ index 167db82..1d83a8b 100644
      ("screens/helper.js", include_bytes!("../../../web/studio/screens/helper.js")),
      ("screens/home.js", include_bytes!("../../../web/studio/screens/home.js")),
 diff --git a/web/studio/parts/area-rules.js b/web/studio/parts/area-rules.js
-index 3996e74..2901523 100644
+index 3996e74c..2901523a 100644
 --- a/web/studio/parts/area-rules.js
 +++ b/web/studio/parts/area-rules.js
 @@ -65,7 +65,7 @@ export const SCREEN_AREAS = Object.freeze({
@@ -448,13 +472,13 @@ index 3996e74..2901523 100644
    research: "research",
 diff --git a/web/studio/screens/fridge.js b/web/studio/screens/fridge.js
 new file mode 100644
-index 0000000..26286b4
+index 00000000..cce58365
 --- /dev/null
 +++ b/web/studio/screens/fridge.js
-@@ -0,0 +1,158 @@
+@@ -0,0 +1,187 @@
 +// Fridge: the drawings the family makes for the fridge on her site's fridge page wait here
-+// until she puts them up, and she can take one down again (it's kept, never deleted). She tidies the
-+// letter magnets back to how she started them from here too. Nothing on her site can do any of this.
++// until she puts them up, and she can take one down again (it's kept, never deleted). She shuffles the
++// letter magnets from here too, and chooses how the door looks. Nothing on her site can do any of this.
 +// A drawing is drawn from its strokes with createElementNS: lines in the pad's crayons, nothing else.
 +import { fill, h, toast } from "../parts/dom.js";
 +import { use } from "../zubra.js";
@@ -504,7 +528,15 @@ index 0000000..26286b4
 +  const waitingList = h("ul", { class: "studio-gift-list", "aria-labelledby": "studio-fridge-waiting-h", "aria-busy": "true" }, h("li", {}, h("skeleton-block", { lines: 3 })));
 +  const upList = h("ul", { class: "studio-gift-list", "aria-labelledby": "studio-fridge-up-h" });
 +  const upNote = h("p", { class: "studio-help" });
-+  const tidyButton = h("action-button", { variant: "secondary", onClick: () => tidy() }, "Tidy the fridge");
++  const tidyButton = h("action-button", { variant: "secondary", onClick: () => tidy() }, "Shuffle the letters");
++  const doors = [
++    { value: "classic", label: "Classic", note: "Cream in the daytime, steel at night." },
++    { value: "stainless", label: "Stainless steel", note: "Brushed steel, day and night." },
++  ];
++  const doorButtons = doors.map((door) => h("button", {
++    type: "button", class: `studio-fridge-door studio-fridge-door-${door.value}`, "aria-pressed": "false", "data-door": door.value, onClick: () => chooseDoor(door),
++  }, h("span", { class: "studio-fridge-door-swatch", "aria-hidden": "true" }), h("strong", { text: door.label }), h("small", { text: door.note })));
++  const doorGroup = h("div", { class: "studio-fridge-doors", role: "group", "aria-labelledby": "studio-fridge-door-h" }, ...doorButtons);
 +  const element = h("section", { class: "studio-page studio-gifts", "aria-labelledby": "studio-fridge-h" },
 +    h("div", { class: "studio-today" }, heading,
 +      h("p", { class: "studio-lede", text: "The family draws these for the fridge on your site. Nobody sees one until you put it up." })),
@@ -515,8 +547,12 @@ index 0000000..26286b4
 +      h("h3", { id: "studio-fridge-up-h", text: "On your fridge now" }), upNote, upList),
 +    h("section", { class: "studio-section", "aria-labelledby": "studio-fridge-letters-h" },
 +      h("h3", { id: "studio-fridge-letters-h", text: "The letters" }),
-+      h("p", { class: "studio-help", text: "Anyone can move the letter magnets. If someone spells something you'd rather not see, tidy the fridge: every letter goes back where it started." }),
-+      tidyButton));
++      h("p", { class: "studio-help", text: "Anyone can move the letter magnets. If someone spells something you'd rather not see, shuffle the letters: every one goes somewhere new on the fridge door, with none touching." }),
++      tidyButton),
++    h("section", { class: "studio-section", "aria-labelledby": "studio-fridge-door-h" },
++      h("h3", { id: "studio-fridge-door-h", text: "The door" }),
++      h("p", { class: "studio-help", text: "How the fridge looks on your site. It changes as soon as you pick." }),
++      doorGroup));
 +
 +  const trouble = (title, error) => banner.replaceChildren(h("alert-banner", { variant: "danger", heading: title },
 +    error.status === 0 || !error.status ? "Check your connection and try again. Nothing is lost." : "Your fridge couldn't be reached just now. Nothing is lost; try again in a minute.",
@@ -540,6 +576,23 @@ index 0000000..26286b4
 +    upNote.textContent = `Up to ${state.most} hang at once. Putting up another takes down the one that's been up longest.`;
 +    if (state.up.length) fill(upList, ...state.up.map((d) => row(d, [["Take it down", takeDown, "secondary"]])));
 +    else fill(upList, h("li", { class: "studio-help", text: "None yet." }));
++    for (const button of doorButtons) button.setAttribute("aria-pressed", button.dataset.door === (state.finish || "classic") ? "true" : "false");
++  }
++
++  async function chooseDoor(door) {
++    if (busy.has("door") || (state?.finish || "classic") === door.value) return;
++    busy.add("door");
++    try {
++      const reply = await api.post(`fridge/finish/${door.value}`, {});
++      state = { ...state, finish: reply.finish };
++      banner.replaceChildren();
++      draw();
++      toast(`Your fridge now has the ${door.label.toLowerCase()} door.`);
++    } catch (error) {
++      trouble("The door didn't change", error);
++    } finally {
++      busy.delete("door");
++    }
 +  }
 +
 +  async function act(drawing, action, words) {
@@ -570,16 +623,16 @@ index 0000000..26286b4
 +
 +  async function tidy() {
 +    const choice = await ask({
-+      heading: "Tidy the fridge?",
-+      text: "Every letter goes back where it started. The drawings stay where they are.",
-+      choices: [{ label: "Tidy it", value: "tidy" }, { label: "Leave it", value: "keep", variant: "secondary" }],
++      heading: "Shuffle the letters?",
++      text: "Every letter goes somewhere new on the fridge door. The drawings stay where they are, and so does whatever was spelled; it just gets mixed up.",
++      choices: [{ label: "Shuffle them", value: "tidy" }, { label: "Leave them", value: "keep", variant: "secondary" }],
 +    });
 +    if (choice !== "tidy") return;
 +    try {
 +      await api.post("fridge/tidy", {});
-+      toast("The letters are back where you started them.");
++      toast("The letters are shuffled.");
 +    } catch (error) {
-+      trouble("The fridge didn't tidy", error);
++      trouble("The letters didn't shuffle", error);
 +    }
 +  }
 +
@@ -603,7 +656,7 @@ index 0000000..26286b4
 +    reload: load,
 +    focus: () => heading.focus(),
 +    get palette() {
-+      return [{ id: "tidy", label: "Tidy the fridge", group: "Fridge" }];
++      return [{ id: "tidy", label: "Shuffle the fridge letters", group: "Fridge" }];
 +    },
 +    command(id) {
 +      if (id === "tidy") tidy();
@@ -611,7 +664,7 @@ index 0000000..26286b4
 +  };
 +}
 diff --git a/web/studio/screens/index.js b/web/studio/screens/index.js
-index e860258..d862b22 100644
+index e8602581..d862b222 100644
 --- a/web/studio/screens/index.js
 +++ b/web/studio/screens/index.js
 @@ -7,6 +7,7 @@ import { createWrite } from "./write.js";
@@ -632,10 +685,10 @@ index e860258..d862b22 100644
    // one; #/write/<path> opens a post.
    // #/write asks what she's writing (recipes on, or a trade site with jobs: R4); #/write/new/job
 diff --git a/web/studio/studio.css b/web/studio/studio.css
-index a49b9a7..4184345 100644
+index a49b9a70..c4b8be5e 100644
 --- a/web/studio/studio.css
 +++ b/web/studio/studio.css
-@@ -364,6 +364,10 @@ side-sheet.studio-add-sheet dialog, side-sheet.studio-add-sheet .sheet { width:
+@@ -364,6 +364,19 @@ side-sheet.studio-add-sheet dialog, side-sheet.studio-add-sheet .sheet { width:
  .studio-gift-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
  .studio-gift { display: grid; grid-template-columns: 3.5rem 1fr; gap: var(--space-3); align-items: start; padding: var(--space-4); border: 1px solid var(--studio-linen); border-radius: var(--radius); background: var(--studio-flour-lift); }
  .studio-gift-body { display: grid; gap: var(--space-2); justify-items: start; min-width: 0; }
@@ -643,6 +696,15 @@ index a49b9a7..4184345 100644
 +.studio-fridge-drawing { grid-template-columns: minmax(7rem, 11rem) 1fr; }
 +.studio-fridge-picture { display: block; width: 100%; height: auto; border-radius: var(--radius); box-shadow: 0 0 0 1px var(--studio-linen); }
 +@media (max-width: 30rem) { .studio-fridge-drawing { grid-template-columns: 1fr; } }
++/* Fridge: the two doors she can choose between, each a swatch of how it looks. */
++.studio-fridge-doors { display: flex; flex-wrap: wrap; gap: var(--space-3); }
++.studio-fridge-door { display: grid; grid-template-columns: 3.5rem 1fr; gap: 0 var(--space-3); align-items: center; text-align: left; min-height: 44px; padding: var(--space-3); font: inherit; color: inherit; cursor: pointer; border: 2px solid var(--studio-linen); border-radius: var(--radius); background: var(--studio-flour-lift); }
++.studio-fridge-door small { grid-column: 2; color: var(--studio-ink-soft, inherit); }
++.studio-fridge-door[aria-pressed="true"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
++.studio-fridge-door:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
++.studio-fridge-door-swatch { grid-row: span 2; width: 3.5rem; aspect-ratio: 4 / 5; border-radius: 4px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.2); }
++.studio-fridge-door-classic .studio-fridge-door-swatch { background: linear-gradient(180deg, #fbf6e8, #f1e7cf 40%, #e2d4b2); }
++.studio-fridge-door-stainless .studio-fridge-door-swatch { background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.14) 0 2px, transparent 2px 5px), linear-gradient(180deg, #eceff2, #cfd4d9 40%, #a9b0b7); }
  .studio-gift-from { margin: 0; font-size: var(--text-lg); }
  .studio-gift-box { width: 3.5rem; aspect-ratio: 1; border-radius: 6px; background: var(--studio-gift-paper, #c8243c); box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15); position: relative; }
  .studio-gift-box::before, .studio-gift-box::after { content: ""; position: absolute; background: #f2c14e; }

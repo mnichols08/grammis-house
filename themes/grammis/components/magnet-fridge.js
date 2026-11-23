@@ -16,48 +16,111 @@ const css = `@layer theme, base, components, utilities;
 @scope (magnet-fridge) to ([data-zb-slotted="magnet-fridge"]) {
   :scope { display: block; }
   .fridge {
-    --door-hi: #fbf6e8; --door: #f1e7cf; --door-lo: #e2d4b2; --door-edge: #cdbb92;
+    --door-hi: #fbf6e8; --door: #f1e7cf; --door-lo: #e2d4b2; --door-edge: #cdbb92; --gap: #3a3226;
     --handle-hi: #ffffff; --handle-lo: #9da3a9; --paper: #fffdf5; --paper-2: #fff4c6; --paper-3: #e6f1fb; --ink: #2b2b2b;
+    --side-a: #dccea9; --side-b: #bca982; --top-a: #f7eed6; --top-b: #eadcb9; --base: #4a4030; --vent: rgb(110 85 40 / 0.32);
     --shade: 40 25 5; --depth: 0.55; --tray: #f3e9d2; --brushed: transparent; --sheen: rgb(255 255 255 / 0.35);
-    display: none; margin: 1.5rem 0 2rem; color: var(--foreground, #1f2522);
+    --seam: 40%; --plate: #8b7b57;
+    display: none; margin: 1.5rem 0 2.5rem; color: var(--foreground, #1f2522);
   }
   .fridge[data-state="shown"] { display: block; }
   [hidden] { display: none !important; }
-  .door {
-    position: relative; container-type: inline-size; aspect-ratio: 4 / 5; max-height: 90vh; margin: 0 auto; border-radius: 26px; overflow: hidden; touch-action: none;
-    /* The dark door's colours (brushed steel) are set by the Family Wall theme's fridge.css. */
+  /* The cabinet: the doors face you; its right side and top are sheared away from you (an oblique drawing: 7 across
+     and 5 up for the cabinet's depth), so it is a box, while the doors stay flat (a tilted door would throw off where
+     a dragged letter is). Sizes are in the cabinet's width. The light comes from --lx/--ly (0 to 1 across and down the
+     door); shadows fall away from it by --sx/--sy. The pointer moves the light a little; it rests upper left. */
+  .fridge { --lx: 0.22; --ly: 0.08; --sx: 0.56; --sy: 0.84; }
+  .cabinet { container-type: inline-size; max-width: 38rem; margin: 0 auto; }
+  .frame { position: relative; margin: 5cqw 7cqw 6.5cqw 0; }
+  .top, .side { position: absolute; pointer-events: none; }
+  .top { bottom: 100%; left: 0; width: 100%; height: 5cqw; transform-origin: 0 100%; transform: skewX(-54.46deg);
+    background: linear-gradient(180deg, var(--top-b), var(--top-a) 78%, color-mix(in srgb, var(--top-a) 70%, white));
+    box-shadow: inset 0 -1.1cqw 0 color-mix(in srgb, var(--door-hi) 82%, black), inset 0 -1.25cqw 0 var(--gap); }
+  /* The side: first the edge of the two doors (they stand proud of the box, with the seam between), a dark gasket
+     line, then the cabinet's flank, darker toward the back and the floor. */
+  .side { left: 100%; top: 0; width: 7cqw; height: 100%; transform-origin: 0 0; transform: skewY(-35.54deg); overflow: hidden;
     background:
-      repeating-linear-gradient(90deg, var(--brushed) 0 2px, transparent 2px 5px),
-      linear-gradient(100deg, transparent 0 8%, var(--sheen) 12%, transparent 22%),
-      linear-gradient(180deg, var(--door-hi), var(--door) 35%, var(--door-lo));
-    box-shadow: inset 0 0 0 2px var(--door-edge), inset 0 -10px 24px rgb(var(--shade) / 0.12), 0 24px 40px -22px rgb(var(--shade) / 0.55);
+      linear-gradient(180deg, transparent 55%, rgb(var(--shade) / 0.3)),
+      linear-gradient(90deg, color-mix(in srgb, var(--door-lo) 90%, black) 0 16%, var(--gap) 16% 19%, var(--side-a) 19%, var(--side-b)); }
+  .side::before { content: ""; position: absolute; left: 0; width: 16%; top: calc(var(--seam) - 0.55%); height: 1.1%; background: #08090a; }
+  .side::after { content: ""; position: absolute; left: 19%; right: 0; bottom: 0; height: 2.2%; background: var(--base); }
+  .plinth { position: absolute; left: 1.2%; right: 0; top: 100%; height: 2.2cqw; background: linear-gradient(180deg, #000 0 18%, var(--base) 60%); pointer-events: none; }
+  .plinth::before, .plinth::after { content: ""; position: absolute; top: 100%; width: 5cqw; height: 0.9cqw; border-radius: 0 0 0.5cqw 0.5cqw; background: #17181a; }
+  .plinth::before { left: 4%; }
+  .plinth::after { right: 4%; }
+  .floor { position: absolute; left: -3%; right: -12cqw; top: 100%; height: 9cqw; margin-top: -1cqw; z-index: -1; pointer-events: none;
+    background: radial-gradient(ellipse 50% 50% at calc(46% + var(--sx) * 6%) 50%, rgb(var(--shade) / 0.62), rgb(var(--shade) / 0.22) 55%, transparent 72%); filter: blur(6px); }
+  .door {
+    position: relative; container-type: inline-size; aspect-ratio: 8 / 13; touch-action: none; border-radius: 1.3cqw 0.4cqw 0.3cqw 1.1cqw; overflow: hidden;
+    background: var(--gap);
+    box-shadow: 0 0 0 1px rgb(var(--shade) / 0.45);
   }
-  @media (max-width: 40rem) { .door { aspect-ratio: 3 / 5; } }
-  .handle { position: absolute; right: 3.2%; top: 6%; width: 2.2%; min-width: 10px; height: 26%; border-radius: 99px; pointer-events: none;
-    background: linear-gradient(90deg, var(--handle-lo), var(--handle-hi) 45%, var(--handle-lo)); box-shadow: -3px 4px 8px rgb(var(--shade) / 0.35); }
-  .badge { position: absolute; left: 50%; bottom: 2.5%; translate: -50% 0; pointer-events: none; font-family: var(--ob-font-hand, cursive); font-weight: 700; font-size: max(15px, 3.2cqw);
-    color: transparent; background: linear-gradient(180deg, var(--handle-hi), var(--handle-lo)); -webkit-background-clip: text; background-clip: text; }
+  @media (max-width: 40rem) { .door { aspect-ratio: 9 / 17; } }
+  /* Two doors, each a slab of the door's finish, rounded at its edges: lit along the top and the side the light is
+     on, shaded along the other and the bottom, with a soft glare where the light falls. The dark door behind them
+     shows through as the gap between (the seam) and the narrow rim all round. */
+  .face {
+    position: absolute; left: 1.3%; right: 1.3%; pointer-events: none; overflow: hidden;
+    background:
+      radial-gradient(70cqw 60cqw at calc(var(--lx) * 100%) calc(var(--ly) * 100% - 10%), var(--sheen), transparent 70%),
+      repeating-linear-gradient(90deg, var(--brushed) 0 2px, transparent 2px 5px),
+      linear-gradient(100deg, transparent 0 calc(var(--lx) * 40%), var(--sheen) calc(var(--lx) * 40% + 5%), transparent calc(var(--lx) * 40% + 17%)),
+      linear-gradient(90deg, transparent 62%, rgb(var(--shade) / 0.14)),
+      linear-gradient(180deg, var(--door-hi), var(--door) 40%, var(--door-lo));
+    box-shadow: inset 0 0 0 1px var(--door-edge), inset 0 0.35cqw 0 rgb(255 255 255 / 0.6), inset 1.5cqw 0 1.3cqw -1.1cqw rgb(255 255 255 / 0.55),
+      inset -2.2cqw 0 2cqw -1.5cqw rgb(var(--shade) / 0.34), inset 0 -2.6cqw 2.6cqw -1.7cqw rgb(var(--shade) / 0.3), 0 1px 2px rgb(0 0 0 / 0.3);
+  }
+  .freezer { top: 1.1%; height: calc(var(--seam) - 1.1% - 0.55%); border-radius: 1.4cqw 1.4cqw 0.9cqw 0.9cqw; }
+  .cooler { top: calc(var(--seam) + 0.55%); bottom: 1.1%; border-radius: 0.9cqw 0.9cqw 1.4cqw 1.4cqw; }
+  .seam { position: absolute; left: 0; right: 0; top: calc(var(--seam) - 0.55%); height: 1.1%; pointer-events: none; background: linear-gradient(180deg, #050506, #2b2e31 50%, #050506);
+    box-shadow: 0 0.5cqw 1.4cqw rgb(var(--shade) / 0.42), 0 -0.3cqw 0.9cqw rgb(var(--shade) / 0.22); }
+  .hinge { position: absolute; left: 0; top: calc(var(--seam) - 3.2%); height: 6.4%; width: 1.7cqw; pointer-events: none; border-radius: 0 0.5cqw 0.5cqw 0;
+    background: linear-gradient(90deg, var(--handle-lo), var(--handle-hi) 55%, var(--handle-lo)); box-shadow: calc(var(--sx) * 0.5cqw) 0.4cqw 0.7cqw rgb(0 0 0 / 0.5); }
+  /* Handles: a round chrome bar standing off the door on two mounts, with the shadow it throws on the door behind
+     it. The freezer's is short; the fridge's is long. */
+  .handle { position: absolute; right: 5%; width: 2.7%; min-width: 11px; border-radius: 99px; pointer-events: none;
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.5), transparent 6% 92%, rgb(0 0 0 / 0.28)),
+      linear-gradient(90deg, var(--handle-lo), var(--handle-hi) 30%, color-mix(in srgb, var(--handle-hi) 70%, var(--handle-lo)) 52%, color-mix(in srgb, var(--handle-lo) 78%, black) 88%, var(--handle-lo));
+    box-shadow: calc(0.3cqw + var(--sx) * 2.4cqw) calc(0.4cqw + var(--sy) * 1.8cqw) 1.5cqw rgb(var(--shade) / 0.42), 0 0 0 1px rgb(0 0 0 / 0.18); }
+  .handle::before, .handle::after { content: ""; position: absolute; left: -22%; right: -22%; height: 1.9cqw; border-radius: 0.6cqw; z-index: -1;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--handle-lo) 70%, black), var(--handle-lo) 40%, color-mix(in srgb, var(--handle-lo) 60%, black));
+    box-shadow: calc(var(--sx) * 0.8cqw) calc(var(--sy) * 0.8cqw) 0.8cqw rgb(var(--shade) / 0.5); }
+  .handle::before { top: 7%; }
+  .handle::after { bottom: 7%; }
+  .freezer .handle { bottom: 10%; height: 46%; }
+  .cooler .handle { top: 4.5%; height: 31%; }
+  .vent { position: absolute; left: 7%; right: 7%; bottom: 1.6%; height: 4.2%; pointer-events: none; border-radius: 3px;
+    background: repeating-linear-gradient(180deg, var(--vent) 0 2px, rgb(255 255 255 / 0.25) 2px 3px, transparent 3px 6px); }
+  .badge { position: absolute; left: 50%; bottom: 7.4%; translate: -50% 0; pointer-events: none; font-family: var(--ob-font-hand, cursive); font-weight: 700; font-size: max(15px, 3.2cqw); letter-spacing: 0.02em;
+    color: var(--plate); text-shadow: 0 1px 0 rgb(255 255 255 / 0.55), 0 -1px 0 rgb(0 0 0 / 0.18); }
   .mag, .picture {
     position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); translate: -50% -50%; rotate: calc(var(--r) * 1deg);
     margin: 0; border: 0; background: none; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
   }
   .mag {
-    --c: #d7263d; padding: 0 0.04em; line-height: 1; font-family: "Baloo 2", "Arial Rounded MT Bold", "Arial Black", sans-serif; font-weight: 800; font-size: max(26px, 6.2cqw); color: var(--c);
-    text-shadow: 0 1px 0 color-mix(in srgb, var(--c) 72%, black), 0 2px 0 color-mix(in srgb, var(--c) 66%, black),
-      0 3px 0 color-mix(in srgb, var(--c) 60%, black), 0 7px 7px rgb(var(--shade) / var(--depth));
+    --c: #d7263d; padding: 0 0.04em; line-height: 1; font-family: "Baloo 2", "Arial Rounded MT Bold", "Arial Black", sans-serif; font-weight: 800; font-size: max(20px, 6.2cqw); color: var(--c);
+    /* Thick plastic: a lit top edge, the letter's own side going down in darker bands, then the shadow it throws on
+       the door, away from the light and further off when it's picked up (--h). */
+    --h: 1;
+    text-shadow: 0 -0.025em 0 color-mix(in srgb, var(--c) 55%, white), 0 0.02em 0 color-mix(in srgb, var(--c) 80%, black), 0 0.04em 0 color-mix(in srgb, var(--c) 74%, black),
+      0 0.06em 0 color-mix(in srgb, var(--c) 68%, black), 0 0.08em 0 color-mix(in srgb, var(--c) 62%, black), 0 0.1em 0 color-mix(in srgb, var(--c) 56%, black),
+      0 0.12em 0 color-mix(in srgb, var(--c) 50%, black), 0 0.14em 0.02em rgb(0 0 0 / 0.35),
+      calc(var(--sx) * 0.13em * var(--h)) calc(0.14em + var(--sy) * 0.15em * var(--h)) calc(0.12em * var(--h)) rgb(var(--shade) / var(--depth));
     transition: scale 0.12s ease;
   }
   .mag.heart { font-family: "Segoe UI Symbol", "Apple Symbols", sans-serif; }
-  .mag.lift, .picture.lift { scale: 1.12; cursor: grabbing; }
+  .mag.lift, .picture.lift { scale: 1.14; cursor: grabbing; --h: 2.6; }
+  .mag.glide, .picture.glide { transition: left 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), rotate 0.8s ease, scale 0.12s ease; }
   .mag:focus-visible, .picture:focus-visible { outline: 3px dashed var(--foreground, #1f2522); outline-offset: 4px; border-radius: 6px; }
-  .picture { width: 24%; padding: 5% 5% 3%; background: #fffdf8; box-shadow: 0 10px 16px -10px rgb(var(--shade) / 0.6); }
+  .picture { --h: 1; width: 24%; padding: 5% 5% 3%; background: #fffdf8; box-shadow: calc(var(--sx) * 0.9cqw * var(--h)) calc(var(--sy) * 1.5cqw * var(--h)) calc(1.6cqw * var(--h)) -0.5cqw rgb(var(--shade) / 0.6), 0 0 0 1px rgb(0 0 0 / 0.04); }
   .picture svg { display: block; width: 100%; height: auto; }
   .picture::before { content: ""; position: absolute; top: -0.5rem; left: 50%; width: 1.2rem; height: 1.2rem; translate: -50% 0; border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.7) 0 18%, transparent 32%), #8e44c9; box-shadow: 0 3px 4px rgb(0 0 0 / 0.35); }
   .picture-by { display: block; margin-top: 0.2rem; font-family: var(--ob-font-hand, cursive); font-size: max(13px, 2cqw); color: #3a342c; text-align: center; overflow-wrap: anywhere; }
-  .note { position: absolute; width: 36%; padding: 1rem 0.9rem 0.7rem; background: var(--paper); color: var(--ink); pointer-events: none;
+  .note { position: absolute; box-sizing: border-box; width: 36%; padding: 1rem 0.9rem 0.7rem; background: var(--paper); color: var(--ink); pointer-events: none;
     font-family: var(--ob-font-hand, cursive); font-weight: 700; font-size: max(16px, 2.6cqw); line-height: 1.2; rotate: var(--turn, -2deg);
-    box-shadow: 0 10px 16px -10px rgb(var(--shade) / 0.6); }
+    box-shadow: calc(var(--sx) * 0.9cqw) calc(var(--sy) * 1.5cqw) 1.6cqw -0.5cqw rgb(var(--shade) / 0.6), 0 0 0 1px rgb(0 0 0 / 0.04); }
   .note small { display: block; margin-top: 0.4rem; font: 0.8rem/1.3 Georgia, serif; color: #5a5348; text-align: right; }
   .note::before { content: ""; position: absolute; top: -0.55rem; left: 50%; width: 1.3rem; height: 1.3rem; translate: -50% 0; border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.7) 0 18%, transparent 32%), var(--pin, #d7263d); box-shadow: 0 3px 4px rgb(0 0 0 / 0.35); }
@@ -75,7 +138,6 @@ const css = `@layer theme, base, components, utilities;
     min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
     border: 2px solid var(--primary, #b3262f); background: var(--primary, #b3262f); color: var(--primary-foreground, #ffffff); }
   .tool { background: var(--card, #fbfcfa); color: var(--foreground, #1f2522); border-color: var(--border, #cfd5d0); }
-  .quiet { min-height: 36px; padding: 0.3rem 0.8rem; font-size: 0.9rem; }
   .tool[aria-pressed="true"] { border-color: var(--foreground, #1f2522); box-shadow: inset 0 0 0 2px var(--foreground, #1f2522); }
   button:focus-visible, input:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
   button:disabled { opacity: 0.6; cursor: default; }
@@ -87,9 +149,9 @@ const css = `@layer theme, base, components, utilities;
   .crayon[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--foreground, #1f2522); }
   .field { display: grid; gap: 0.3rem; }
   label { font-weight: 600; }
-  input[type="text"], input[type="password"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
+  input[type="text"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
   .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
-  @media (prefers-reduced-motion: reduce) { .mag { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .mag, .picture { transition: none !important; } }
 }
 }
 `;
@@ -194,8 +256,9 @@ export class MagnetFridge extends HTMLElement {
     const PAPER = 300
     const NS = 'http://www.w3.org/2000/svg'
     // Where Grammi's notes hang: left, top (percent of the door), turn.
-    const NOTE_SPOTS = [[6, 4, -2], [53, 6, 2.5], [9, 18, 1.2], [55, 20, -1.5]]
+    const NOTE_SPOTS = [[6, 4, -2], [53, 5, 2.5], [9, 19, 1.2], [53, 21, -1.5]]
     const REFRESH = 30000
+    const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     const WHY = {
       'slow-down': 'That’s a lot of moving for one hour. Give the fridge a rest and come back later.',
@@ -241,6 +304,7 @@ export class MagnetFridge extends HTMLElement {
     }
 
     const state = state2('hidden')
+    const finish = state2('classic')
     const said = state2('')
     const problem = state2('')
     const token = state2('')
@@ -275,6 +339,7 @@ export class MagnetFridge extends HTMLElement {
         e.preventDefault()
         el.focus({ preventScroll: true })
         el.setPointerCapture(e.pointerId)
+        el.classList.remove('glide')
         const box = door.value.getBoundingClientRect()
         const dx = e.clientX - (box.left + (item.x / 100) * box.width)
         const dy = e.clientY - (box.top + (item.y / 100) * box.height)
@@ -282,12 +347,27 @@ export class MagnetFridge extends HTMLElement {
         el.style.zIndex = String(raised.value)
         el.classList.add('lift')
         dragging.value += 1
+        // A shaky hand: while it's held, the piece rocks very slowly back and forth, just a few degrees, and
+        // wherever it is when let go is how it stays. So no two ever settle quite the same way.
+        const base = clamp((item.r || 0) * 0.6 + (Math.random() - 0.5) * 6, -30, 30)
+        const reach = 4 + Math.random() * 2.5
+        const speed = 1.1 + Math.random() * 0.7
+        const phase = Math.random() * Math.PI * 2
+        const began = performance.now()
+        let frame = 0
+        const rock = (now) => {
+          item.r = clamp(base + Math.sin(phase + ((now - began) / 1000) * speed) * reach, -45, 45)
+          place(item)
+          frame = requestAnimationFrame(rock)
+        }
+        if (calm()) { item.r = base; place(item) } else frame = requestAnimationFrame(rock)
         const follow = (ev) => {
           item.x = clamp(((ev.clientX - dx - box.left) / box.width) * 100, 3, 97)
           item.y = clamp(((ev.clientY - dy - box.top) / box.height) * 100, 3, 97)
           place(item)
         }
         const drop = () => {
+          cancelAnimationFrame(frame)
           el.classList.remove('lift')
           el.removeEventListener('pointermove', follow)
           el.removeEventListener('pointerup', drop)
@@ -384,6 +464,12 @@ export class MagnetFridge extends HTMLElement {
           items.value.set(key, made)
           door.value.append(made.el)
         } else if (!item.el.classList.contains('lift') && document.activeElement !== item.el) {
+          // What moved since last time (a shuffle, say) glides to its new place instead of jumping.
+          if (!calm() && (Math.abs(item.x - data.x) > 0.4 || Math.abs(item.y - data.y) > 0.4)) {
+            item.el.classList.add('glide')
+            clearTimeout(item.gliding)
+            item.gliding = setTimeout(() => item.el.classList.remove('glide'), 1000)
+          }
           item.x = data.x
           item.y = data.y
           item.r = data.r
@@ -397,7 +483,7 @@ export class MagnetFridge extends HTMLElement {
       if (dragging.value || document.hidden) return
       try {
         const answer = await call(look)
-        if (!answer.error) { show(answer); token.value = answer.token || token.value }
+        if (!answer.error) { show(answer); token.value = answer.token || token.value; finish.value = answer.finish === 'stainless' ? 'stainless' : 'classic' }
       } catch (_) {}
     }
 
@@ -471,6 +557,7 @@ export class MagnetFridge extends HTMLElement {
         const answer = await call(look)
         if (answer.error) return
         token.value = answer.token || ''
+        finish.value = answer.finish === 'stainless' ? 'stainless' : 'classic'
         state.value = 'shown'
         requestAnimationFrame(() => {
           door.value = document.querySelector('magnet-fridge .door')
@@ -478,6 +565,23 @@ export class MagnetFridge extends HTMLElement {
           hangNotes(door.value)
           show(answer)
         })
+        // The light leans toward the pointer, so the glare on the doors and every shadow shift a little as it moves.
+        const whole = document.querySelector('magnet-fridge .fridge')
+        let lit = 0
+        const light = (e) => {
+          if (calm() || !door.value || lit) return
+          lit = requestAnimationFrame(() => {
+            lit = 0
+            const box = door.value.getBoundingClientRect()
+            const lx = 0.22 + (clamp((e.clientX - box.left) / box.width, 0, 1) - 0.5) * 0.5
+            const ly = 0.08 + (clamp((e.clientY - box.top) / box.height, 0, 1) - 0.5) * 0.3
+            whole.style.setProperty('--lx', lx.toFixed(3))
+            whole.style.setProperty('--ly', ly.toFixed(3))
+            whole.style.setProperty('--sx', (1 - 2 * lx).toFixed(3))
+            whole.style.setProperty('--sy', clamp(1 - 2 * ly, 0.4, 1.1).toFixed(3))
+          })
+        }
+        if (whole) whole.addEventListener('pointermove', light)
         setInterval(refresh, REFRESH)
         document.addEventListener('visibilitychange', refresh)
       } catch (_) {}
@@ -486,9 +590,19 @@ export class MagnetFridge extends HTMLElement {
     // ---- the template: its nodes, and how each changing spot is kept up to date
     const content = clone(`
   <section class="fridge" aria-label="The fridge">
-    <div class="door" aria-label="The fridge door. Drag the letters to spell something; arrow keys move the one you picked up.">
-      <div class="handle"></div>
-      <div class="badge" aria-hidden="true">Grammi's</div>
+    <div class="cabinet">
+      <div class="frame">
+        <div class="top" aria-hidden="true"></div>
+        <div class="side" aria-hidden="true"></div>
+        <div class="plinth" aria-hidden="true"></div>
+        <div class="floor" aria-hidden="true"></div>
+        <div class="door" aria-label="The fridge door, with the freezer above. Drag the letters to spell something; arrow keys move the one you picked up.">
+          <div class="face freezer" aria-hidden="true"><i class="handle"></i></div>
+          <div class="face cooler" aria-hidden="true"><i class="handle"></i><div class="vent"></div><div class="badge">Grammi's</div></div>
+          <div class="seam" aria-hidden="true"></div>
+          <div class="hinge" aria-hidden="true"></div>
+        </div>
+      </div>
     </div>
     <p class="help">Everybody shares the same letters, so leave a few E's for the next person.</p>
     <p class="said" role="status"></p>
@@ -568,6 +682,7 @@ export class MagnetFridge extends HTMLElement {
     });
     this.#updates = [
       bind(() => state.value, (value) => attribute(fridge, "data-state", value)),
+      bind(() => finish.value, (value) => attribute(fridge, "data-finish", value)),
       bind(() => said.value ?? "", (value) => (said2.textContent = value)),
       bind(() => drawing.value, (value) => actions.toggleAttribute("hidden", Boolean(value))),
       bind(() => !(drawing.value), (value) => drawing2.toggleAttribute("hidden", Boolean(value))),

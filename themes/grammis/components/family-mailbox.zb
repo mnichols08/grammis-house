@@ -7,7 +7,7 @@
   prompt   what the card asks ("Made one of my recipes? Tell me how it went!")
   button   the button's words
 
-  The Family Wall theme puts this under the fridge (themes/family-wall/fridge-loader.js); it can go on
+  The Fridge page theme puts this under the fridge (themes/family-wall/fridge-loader.js); it can go on
   the front page too (Add a section). It talks to the service through its own server functions,
   `look` and `write`; anywhere the service isn't, it stays hidden.
 -->

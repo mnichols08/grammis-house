@@ -1,13 +1,14 @@
-// The fridge on The Family Wall. Everybody shares one box of letter magnets and moves them around the
+// The fridge on The Fridge page. Everybody shares one box of letter magnets and moves them around the
 // door; nobody adds letters. The family can also draw Grammi a picture: it waits until she puts it up,
 // and then it hangs on the door and moves like a magnet.
 //
 // The page reaches this through the fridge's own Zubra server functions
 // (themes/grammis/components/magnet-fridge.zb):
-//   look     the magnets and the drawings that are up, and a form token for drawing
+//   look     the magnets, the drawings that are up, how the door looks, and a form token for drawing
 //   move     one magnet or drawing set down somewhere else
 //   draw     one drawing, waiting for Grammi
-// Grammi puts drawings up, takes them down and tidies the letters in Studio's Fridge screen, which
+// Grammi puts drawings up, takes them down, shuffles the letters and chooses how the door looks in
+// Studio's Fridge screen, which
 // reaches the owner's side below with the fridge key (OPENBLOG_FRIDGE_ADMIN_KEY), as Gifts does.
 // Nothing on the page can do any of that.
 //
@@ -16,7 +17,7 @@
 import { createHash } from "node:crypto";
 import { checkFormToken, makeFormToken } from "./vendor/openblog/lib/gift-card.mjs";
 import { isUuid } from "./vendor/openblog/lib/greeting-card.mjs";
-import { FridgeError, LIMITS, MAGNETS, checkBy, checkDrawing, checkMagnet, checkSpot, starterLayout } from "./lib/fridge.js";
+import { FINISHES, FridgeError, LIMITS, MAGNETS, checkBy, checkDrawing, checkFinish, checkMagnet, checkSpot, shuffleLayout, starterLayout } from "./lib/fridge.js";
 import { withinLimit } from "./lib/db.js";
 import { bearer, hourOf, reply, sameSecret } from "./lib/http.js";
 
@@ -72,6 +73,16 @@ function createStore(db, settings) {
        where site_id = $1 and id = $2 returning id`,
       [site, id, status, at, spot?.x ?? null, spot?.y ?? null, spot?.r ?? null],
     ),
+    /** How the door looks: the one Grammi chose, else the first of FINISHES. */
+    finish: async () => {
+      const row = await db.one("select finish from public.grammis_fridge_settings where site_id = $1", [site]);
+      return FINISHES.includes(row?.finish) ? row.finish : FINISHES[0];
+    },
+    setFinish: (finish, at) => db.rows(
+      `insert into public.grammis_fridge_settings (site_id, finish, updated_at) values ($1, $2, $3)
+       on conflict (site_id) do update set finish = excluded.finish, updated_at = excluded.updated_at`,
+      [site, finish, at],
+    ),
     /** Past the most that hang at once, the ones up longest come down. */
     makeRoom: (keep) => db.rows(
       `update public.grammis_fridge_drawings set status = 'down' where site_id = $1 and status = 'up' and id not in (
@@ -103,6 +114,7 @@ export function createFridge({ db, settings, now = () => Date.now() }) {
     return {
       magnets: placed.map((row) => ({ id: row.id, ch: MAGNETS[row.id].ch, color: MAGNETS[row.id].color, x: row.x, y: row.y, r: row.r })),
       drawings: (await store.up()).map(drawingOut),
+      finish: await store.finish(),
       token: makeFormToken(secret, now()),
     };
   }
@@ -154,13 +166,15 @@ export function createFridge({ db, settings, now = () => Date.now() }) {
     waiting: (await store.waiting()).map((row) => ({ id: row.id, by: row.by_name || "", drawing: row.drawing, createdAt: row.created_at })),
     up: (await store.up()).map((row) => ({ id: row.id, by: row.by_name || "", drawing: row.drawing })),
     most: LIMITS.drawingsUp,
+    finish: await store.finish(),
   });
 
   /**
    * Studio's side, with the fridge key: `parts` are the path after /api/fridge/admin/.
    *   GET  list            the drawings waiting and the ones up
    *   POST <id>/up | down  put a drawing on the fridge, or take it off (kept, never deleted)
-   *   POST tidy            every letter back to "WE ♥ GRAMMI" and the pile
+   *   POST tidy            every letter shuffled to somewhere new on the door, none touching another
+   *   POST finish/<name>   how the door looks (one of FINISHES)
    */
   async function owner({ method, parts, headers }) {
     if (!sameSecret(bearer(headers), adminKey)) return reply(401, { error: "unauthorized" });
@@ -168,12 +182,22 @@ export function createFridge({ db, settings, now = () => Date.now() }) {
       const [first, second] = parts;
       if (method === "GET" && first === "list" && parts.length === 1) return reply(200, await shelves());
       if (method === "POST" && first === "tidy" && parts.length === 1) {
-        await store.lay(starterLayout());
+        await store.lay(shuffleLayout());
         return reply(200, { ok: true });
       }
+      if (method === "POST" && first === "finish" && parts.length === 2) {
+        let finish;
+        try {
+          finish = checkFinish(second);
+        } catch {
+          return reply(422, { error: "finish" });
+        }
+        await store.setFinish(finish, new Date(now()).toISOString());
+        return reply(200, { finish });
+      }
       if (method === "POST" && parts.length === 2 && isUuid(first) && (second === "up" || second === "down")) {
-        // A drawing she puts up goes just under her notes, somewhere across the middle; anyone can move it.
-        const spot = second === "up" ? { x: 25 + Math.round(Math.random() * 50), y: 33 + Math.round(Math.random() * 6), r: Math.round((Math.random() - 0.5) * 8) } : null;
+        // A drawing she puts up goes just under the seam, on the fridge door below her notes; anyone can move it.
+        const spot = second === "up" ? { x: 25 + Math.round(Math.random() * 50), y: 46 + Math.round(Math.random() * 6), r: Math.round((Math.random() - 0.5) * 8) } : null;
         if (!(await store.decide(first, second, spot, new Date(now()).toISOString()))) return reply(404, { error: "not-found" });
         if (second === "up") await store.makeRoom(LIMITS.drawingsUp);
         return reply(200, await shelves());

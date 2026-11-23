@@ -157,7 +157,8 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
     await t.test("the fridge: letters anyone moves, drawings Grammi puts up and tidying from Studio, with its key", async () => {
       const fridge = (fn, fields = {}) => call(fn, fields, "magnet-fridge");
       const first = await fridge("look");
-      assert.equal(first.magnets.length, 57, "the box is set out the first time anyone looks");
+      assert.equal(first.magnets.length, 71, "the box is set out the first time anyone looks");
+      assert.equal(first.finish, "classic", "a new fridge starts with the classic door");
       assert.deepEqual(first.drawings, []);
       const w = first.magnets.find((m) => m.ch === "W");
 
@@ -185,10 +186,22 @@ test("the family service, end to end", { skip: !admin && "set FAMILY_TEST_DATABA
       assert.deepEqual(up.map((d) => [d.by, d.drawing]), [["Jimmy", JSON.parse(strokes)]]);
       assert.deepEqual(await fridge("move", { kind: "drawing", id: up[0].id, x: "70", y: "30", r: "-3" }), { ok: true }, "a drawing that's up moves like a magnet");
 
+      assert.equal((await owner("/api/fridge/admin/finish/stainless", KEYS.gifts, { method: "POST", body: "{}" })).status, 401);
+      assert.equal((await owner("/api/fridge/admin/finish/gold", KEYS.fridge, { method: "POST", body: "{}" })).status, 422, "only the doors there are");
+      assert.deepEqual((await owner("/api/fridge/admin/finish/stainless", KEYS.fridge, { method: "POST", body: "{}" })).body, { finish: "stainless" });
+      assert.equal((await fridge("look")).finish, "stainless", "the page shows what she chose");
+      assert.equal((await owner("/api/fridge/admin/list", KEYS.fridge)).body.finish, "stainless");
+
       const tidied = (await owner("/api/fridge/admin/tidy", KEYS.fridge, { method: "POST", body: "{}" })).body;
       assert.equal(tidied.ok, true);
-      const back = (await fridge("look")).magnets.find((m) => m.id === w.id);
-      assert.ok(back.y > 40 && back.y < 50, "the W is back in WE ♥ GRAMMI");
+      const shuffled = (await fridge("look")).magnets;
+      assert.equal(shuffled.length, 71);
+      assert.ok(shuffled.every((m) => m.y > 40), "every letter is on the fridge door, none in the freezer");
+      for (let i = 0; i < shuffled.length; i++) {
+        for (let j = i + 1; j < shuffled.length; j++) assert.ok(Math.abs(shuffled[i].x - shuffled[j].x) >= 5.2 || Math.abs(shuffled[i].y - shuffled[j].y) >= 3.6, "none touching");
+      }
+      const back = shuffled.find((m) => m.id === w.id);
+      assert.notDeepEqual([back.x, back.y], [20.5, 80], "the W has moved");
       const down = (await owner(`/api/fridge/admin/${up[0].id}/down`, KEYS.fridge, { method: "POST", body: "{}" })).body;
       assert.equal(down.up.length, 0);
       assert.deepEqual(await fridge("move", { kind: "drawing", id: up[0].id, x: "70", y: "30" }), { error: "gone", field: "id" }, "one taken down can't be moved");

@@ -1,4 +1,4 @@
-/* The family wall: each note the family sends is a quote held up with a magnet. Grammi writes a
+/* The Fridge page: each note the family sends is a quote held up with a magnet. Grammi writes a
    note as a quote (> in the editor) with a line under it naming who sent it. Where the magnet fridge
    loads (fridge-loader.js), her first four notes hang on its door instead, and are hidden here. */
 
@@ -17,12 +17,22 @@
     --door-hi: #4a5058; --door: #383d44; --door-lo: #2a2e34; --door-edge: #1c1f23; --brushed: rgb(255 255 255 / 0.018); --sheen: rgb(255 255 255 / 0.07);
     --handle-hi: #c9ced4; --handle-lo: #4a5057; --paper: #ebe5d3; --paper-2: #e6d9a8; --paper-3: #c9d9e6; --ink: #24211c;
     --shade: 0 0 0; --depth: 0.45; --tray: #2a2e34; --warn: #ff9c94;
+    --gap: #0f1113; --side-a: #353a41; --side-b: #23262b; --top-a: #5a616a; --top-b: #4a5058; --base: #0f1113; --vent: rgb(0 0 0 / 0.4); --plate: #b4bac1;
   }
 }
 :root[data-theme="dark"] magnet-fridge .fridge {
   --door-hi: #4a5058; --door: #383d44; --door-lo: #2a2e34; --door-edge: #1c1f23; --brushed: rgb(255 255 255 / 0.018); --sheen: rgb(255 255 255 / 0.07);
   --handle-hi: #c9ced4; --handle-lo: #4a5057; --paper: #ebe5d3; --paper-2: #e6d9a8; --paper-3: #c9d9e6; --ink: #24211c;
   --shade: 0 0 0; --depth: 0.45; --tray: #2a2e34; --warn: #ff9c94;
+  --gap: #0f1113; --side-a: #353a41; --side-b: #23262b; --top-a: #5a616a; --top-b: #4a5058; --base: #0f1113; --vent: rgb(0 0 0 / 0.4); --plate: #b4bac1;
+}
+/* The stainless door, if Grammi picks it in Studio (Fridge): brushed steel, light or dark. It comes after the
+   night rules above at the same weight, so it wins in either, and takes the paper back to bright. */
+:root magnet-fridge .fridge[data-finish="stainless"] {
+  --door-hi: #eceff2; --door: #cfd4d9; --door-lo: #a9b0b7; --door-edge: #868e96; --brushed: rgb(255 255 255 / 0.14); --sheen: rgb(255 255 255 / 0.6);
+  --handle-hi: #ffffff; --handle-lo: #6a727a; --paper: #fffdf5; --paper-2: #fff4c6; --paper-3: #e6f1fb; --ink: #2b2b2b;
+  --shade: 18 26 36; --depth: 0.5; --tray: #cfd4d9; --warn: #b3262f;
+  --gap: #16181b; --side-a: #9aa1a8; --side-b: #747b83; --top-a: #eef1f4; --top-b: #d4d9de; --base: #1c1f23; --vent: rgb(40 50 60 / 0.35); --plate: #565e67;
 }
 .ob-page .ob-prose blockquote {
   position: relative;

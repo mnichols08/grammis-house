@@ -1,20 +1,27 @@
-// The fridge on The Family Wall: the box of letters, where things may be set down, what a drawing may hold.
+// The fridge on The Fridge page: the box of letters, where things may be set down, what a drawing may hold.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { BOX, FridgeError, INKS, LIMITS, MAGNETS, STARTER, checkBy, checkDrawing, checkMagnet, checkSpot, starterLayout } from "../lib/fridge.js";
+import { BOX, FINISHES, LETTER, FridgeError, INKS, LIMITS, MAGNETS, SEAM, STARTER, checkBy, checkDrawing, checkFinish, checkMagnet, checkSpot, shuffleLayout, starterLayout } from "../lib/fridge.js";
 import { readSettings } from "../lib/settings.js";
 
 test("one box of letters, laid out the same way every time Grammi tidies", () => {
   assert.equal(MAGNETS.length, [...BOX].length);
-  assert.equal(MAGNETS.filter((m) => m.ch === "E").length, 5);
+  const count = (ch) => MAGNETS.filter((m) => m.ch === ch).length;
+  assert.deepEqual(["A", "E", "I", "O", "U"].map(count), [5, 8, 5, 6, 3], "more of the popular vowels");
+  assert.equal(MAGNETS.length, 71);
+  // New letters only ever go on the end, so every magnet already on a door keeps its id.
+  assert.ok(BOX.startsWith("AAABCCDDEEEEEFGGHHIIIJKLLMMNNNOOOOPQRRRSSSTTTUUVWXYYZ♥♥!?"));
   const layout = starterLayout();
   assert.deepEqual(layout, starterLayout(), "the same every time");
   assert.equal(layout.length, MAGNETS.length);
   // The starter phrase reads across the middle, left to right.
-  const middle = layout.filter((spot) => spot.y > 40 && spot.y < 50).sort((a, b) => a.x - b.x).map((spot) => MAGNETS[spot.id].ch).join("");
+  const middle = layout.filter((spot) => spot.y > 52 && spot.y < 58).sort((a, b) => a.x - b.x).map((spot) => MAGNETS[spot.id].ch).join("");
   assert.equal(middle, STARTER.replace(/ /g, ""));
-  // The rest lie in the pile along the bottom, clear of Grammi's notes at the top.
-  assert.ok(layout.every((spot) => spot.y > 40 && spot.x >= 2 && spot.x <= 98 && spot.y <= 98 && Math.abs(spot.r) <= 45));
+  // The rest sit close together in a block under it, none touching, below the seam and Grammi's notes.
+  for (let i = 0; i < layout.length; i++) for (let j = i + 1; j < layout.length; j++) assert.ok(Math.abs(layout[i].x - layout[j].x) >= 5.9 || Math.abs(layout[i].y - layout[j].y) >= 3.6, `${i} and ${j} touch`);
+  const pile = layout.filter((spot) => spot.y > 60);
+  assert.ok(Math.max(...pile.map((s) => s.x)) - Math.min(...pile.map((s) => s.x)) < 72 && Math.max(...pile.map((s) => s.y)) < 92, "pushed together");
+  assert.ok(layout.every((spot) => spot.y > SEAM && spot.x >= 2 && spot.x <= 98 && spot.y <= 98 && Math.abs(spot.r) <= 45));
 });
 
 test("a magnet is set down on the door, turned a little at most", () => {
@@ -54,4 +61,47 @@ test("the fridge is on only with Studio's key for it", () => {
   const on = readSettings({ ...base, OPENBLOG_FRIDGE_ENABLED: "true", OPENBLOG_FRIDGE_ADMIN_KEY: "f".repeat(32) });
   assert.equal(on.fridge.enabled, true);
   assert.equal(on.fridge.adminKey, "f".repeat(32));
+});
+
+function seeded(seed) {
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+test("shuffling puts every letter somewhere new on the fridge door, none on top of another", () => {
+  const before = starterLayout();
+  for (const seed of [1, 2, 3, 42, 2026]) {
+    const layout = shuffleLayout(seeded(seed));
+    assert.equal(layout.length, MAGNETS.length);
+    assert.deepEqual(layout.map((spot) => spot.id).sort((a, b) => a - b), MAGNETS.map((m) => m.id), "every letter once");
+    for (const spot of layout) {
+      assert.ok(spot.x >= 3 && spot.x <= 97 && spot.y > SEAM && spot.y <= 97 && Math.abs(spot.r) <= 45, JSON.stringify(spot));
+      assert.doesNotThrow(() => checkSpot({ x: String(spot.x), y: String(spot.y), r: String(spot.r) }), "a spot the service itself would accept");
+    }
+    // Two letters are clear of each other when either gap is at least a letter's size (LETTER).
+    for (let i = 0; i < layout.length; i++) {
+      for (let j = i + 1; j < layout.length; j++) {
+        const dx = Math.abs(layout[i].x - layout[j].x);
+        const dy = Math.abs(layout[i].y - layout[j].y);
+        assert.ok(dx >= LETTER.wide || dy >= LETTER.tall, `letters ${layout[i].id} and ${layout[j].id} touch (seed ${seed}): ${dx.toFixed(1)} across, ${dy.toFixed(1)} down`);
+      }
+    }
+    // In clumps: most letters have a neighbour close by, and they don't sit on a grid.
+    const nearest = layout.map((a) => Math.min(...layout.filter((b) => b !== a).map((b) => Math.hypot(a.x - b.x, a.y - b.y))));
+    assert.ok(nearest.filter((d) => d < 7).length > layout.length * 0.9, "clustered");
+    assert.ok(new Set(layout.map((s) => Math.round(s.y))).size > 20, "not in rows");
+    assert.notDeepEqual(layout, before);
+  }
+  assert.notDeepEqual(shuffleLayout(seeded(1)), shuffleLayout(seeded(2)), "a different shuffle each time");
+  assert.deepEqual(shuffleLayout(seeded(5)), shuffleLayout(seeded(5)));
+});
+
+test("the door's finish is one Grammi can choose, and a new fridge starts classic", () => {
+  assert.deepEqual([...FINISHES], ["classic", "stainless"]);
+  assert.equal(checkFinish("stainless"), "stainless");
+  for (const bad of ["", "gold", "Classic", undefined, "classic;"]) assert.throws(() => checkFinish(bad), FridgeError, String(bad));
 });

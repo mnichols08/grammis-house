@@ -1,4 +1,4 @@
-// The fridge on The Family Wall: one box of letter magnets everybody shares, and drawings the family
+// The fridge on The Fridge page: one box of letter magnets everybody shares, and drawings the family
 // makes for Grammi. Pure: no database. The family service (family/fridge.js) stores where everything
 // is; the page (themes/grammis/components/magnet-fridge.zb) draws it.
 //
@@ -6,10 +6,21 @@
 // desk. A drawing is pen strokes on a square of paper, never a picture file: it can only ever show
 // lines in the colors below.
 
-/** The one box of letters. A magnet's id is its place in this string. */
-export const BOX = "AAABCCDDEEEEEFGGHHIIIJKLLMMNNNOOOOPQRRRSSSTTTUUVWXYYZ♥♥!?";
+/**
+ * The one box of letters. A magnet's id is its place in this string, so new letters only ever go on the
+ * end (the second part: two more A, three E, two I, two O, a U, and an R, S, T and N to spell with them).
+ */
+export const BOX = "AAABCCDDEEEEEFGGHHIIIJKLLMMNNNOOOOPQRRRSSSTTTUUVWXYYZ♥♥!?" + "AAEEEIIOOURSTN";
 export const MAGNET_COLORS = Object.freeze(["#d7263d", "#1b6fd1", "#f2b600", "#1f9d55", "#f47b20", "#8e44c9"]);
 export const STARTER = "WE ♥ GRAMMI";
+
+/**
+ * The fridge is two doors: the freezer on top (Grammi's notes hang there) and the fridge below it. The
+ * seam is this far down, as a percent of the whole door; the page draws it at the same place.
+ */
+export const SEAM = 40;
+/** How the door looks, as Grammi chooses it in Studio. The first is what a new fridge starts with. */
+export const FINISHES = Object.freeze(["classic", "stainless"]);
 
 /** The crayons and pen sizes the drawing pad offers; a stroke in anything else is refused. */
 export const INKS = Object.freeze(["#1f2633", "#d7263d", "#1b6fd1", "#1f9d55", "#f2b600", "#f47b20", "#8e44c9", "#8b5a2b"]);
@@ -42,8 +53,39 @@ function seeded(seed) {
 const round = (value) => Math.round(value * 10) / 10;
 
 /**
- * The fridge as Grammi starts it, and as tidying puts it back: "WE ♥ GRAMMI" across the middle, the
- * rest tipped out in a pile along the bottom. The top third is left for her notes. The same every time.
+ * Letters set close together in a block, like a box of them tipped out and squared up: a grid whose
+ * cells are just bigger than a letter, the letters dealt into cells at random, each nudged a hair and
+ * turned a little. Close, but none touching. `random` gives a number from 0 up to (not including) 1.
+ */
+export const CELL = Object.freeze({ wide: 6.4, tall: 3.9, nudge: 0.06, turn: 20 });
+function packed(ids, random, { columns, top }) {
+  const rows = Math.ceil(ids.length / columns);
+  const left = 50 - (columns * CELL.wide) / 2;
+  const cells = [];
+  for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) cells.push([column, row]);
+  const deal = (list) => {
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list;
+  };
+  deal(cells);
+  return deal(ids.slice()).map((id, n) => {
+    const [column, row] = cells[n];
+    return {
+      id,
+      x: round(left + (column + 0.5) * CELL.wide + (random() - 0.5) * CELL.wide * CELL.nudge),
+      y: round(top + (row + 0.5) * CELL.tall + (random() - 0.5) * CELL.tall * CELL.nudge),
+      r: round((random() - 0.5) * CELL.turn),
+    };
+  });
+}
+
+/**
+ * The fridge as Grammi starts it: "WE ♥ GRAMMI" across the fridge door, and the rest of the box set close
+ * together in a block under it, none touching. The freezer door above the seam is left for her notes.
+ * The same every time.
  */
 export function starterLayout() {
   const rand = seeded(7);
@@ -54,13 +96,74 @@ export function starterLayout() {
   letters.forEach((ch, i) => {
     if (ch === " ") return;
     const magnet = MAGNETS.find((m) => m.ch === ch && !spots.has(m.id));
-    if (magnet) spots.set(magnet.id, { x: round(start + i * gap), y: round(46 + (rand() - 0.5) * 1.5), r: round((rand() - 0.5) * 10) });
+    if (magnet) spots.set(magnet.id, { x: round(start + i * gap), y: round(55 + (rand() - 0.5) * 1.5), r: round((rand() - 0.5) * 10) });
   });
-  for (const magnet of MAGNETS) {
-    if (spots.has(magnet.id)) continue;
-    spots.set(magnet.id, { x: round(8 + rand() * 84), y: round(64 + rand() * 28), r: round((rand() - 0.5) * 40) });
-  }
+  const rest = MAGNETS.filter((magnet) => !spots.has(magnet.id)).map((magnet) => magnet.id);
+  for (const spot of packed(rest, rand, { columns: 11, top: 62 })) spots.set(spot.id, { x: spot.x, y: spot.y, r: spot.r });
   return MAGNETS.map((magnet) => ({ id: magnet.id, ...spots.get(magnet.id) }));
+}
+
+/**
+ * Every letter somewhere new on the fridge door (below the seam), in a few tight clumps with bare door
+ * between them, the way letters end up after a lot of hands, none touching another. Two to four clump
+ * centres are picked at random, apart from each other; each letter goes to one of them and is tried in a
+ * few random spots near it, keeping the closest one that touches nothing, so a clump grows outward from
+ * its middle with ragged edges. `random` is any function giving a number from 0 up to (not including) 1;
+ * the tests hand it a seeded one.
+ */
+export const SHUFFLE_AREA = Object.freeze({ left: 7, right: 88, top: SEAM + 6, bottom: 86 });
+/** How much door one letter takes, turned a little, as a percent across and down: closer than this, two touch. */
+export const LETTER = Object.freeze({ wide: 5.2, tall: 3.6 });
+export function shuffleLayout(random = Math.random) {
+  const { left, right, top, bottom } = SHUFFLE_AREA;
+  const clear = (a, b) => Math.abs(a.x - b.x) >= LETTER.wide || Math.abs(a.y - b.y) >= LETTER.tall;
+  const inside = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
+  const count = 2 + Math.floor(random() * 3);
+  const clumps = [];
+  for (let tries = 0; clumps.length < count && tries < 400; tries++) {
+    const at = { x: left + 10 + random() * (right - left - 20), y: top + 7 + random() * (bottom - top - 14), weight: 0.6 + random() };
+    if (clumps.every((c) => Math.hypot(c.x - at.x, (c.y - at.y) * 1.4) > 34 - tries / 20)) clumps.push(at);
+  }
+  const total = clumps.reduce((sum, clump) => sum + clump.weight, 0);
+  const pick = () => {
+    let at = random() * total;
+    for (const clump of clumps) if ((at -= clump.weight) <= 0) return clump;
+    return clumps[clumps.length - 1];
+  };
+  const ids = MAGNETS.map((magnet) => magnet.id);
+  for (let i = ids.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+  }
+  const placed = [];
+  for (const id of ids) {
+    const clump = pick();
+    let best = null;
+    // Rings outward from the clump's middle: the first ring with any free spot wins, and among a few free
+    // spots in it the nearest. Each ring tries spots at random angles, so the clump's edge stays ragged.
+    for (let reach = 0; !best && reach < 200; reach += 0.8) {
+      for (let k = 0; k < 14; k++) {
+        const turn = random() * Math.PI * 2;
+        const far = reach + random() * 1.2;
+        const at = {
+          x: round(inside(clump.x + Math.cos(turn) * far * 1.2, left, right)),
+          y: round(inside(clump.y + Math.sin(turn) * far, top, bottom)),
+        };
+        if (!placed.every((other) => clear(at, other))) continue;
+        const d = Math.hypot((at.x - clump.x) / 1.2, at.y - clump.y);
+        if (!best || d < best.d) best = { ...at, d };
+      }
+    }
+    placed.push({ id, x: best.x, y: best.y, r: round((random() - 0.5) * 34) });
+  }
+  return placed;
+}
+
+/** How the door looks: one of FINISHES. */
+export function checkFinish(value) {
+  const finish = String(value ?? "");
+  if (!FINISHES.includes(finish)) throw new FridgeError("finish", "finish");
+  return finish;
 }
 
 const number = (value) => (typeof value === "string" && /^-?\d{1,3}(\.\d{1,3})?$/.test(value.trim()) ? Number(value) : NaN);

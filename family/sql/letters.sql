@@ -1,4 +1,4 @@
--- Notes to Grammi ("Write to Grammi" on the Family Wall), kept after they are emailed to her, and when
+-- Notes to Grammi ("Write to Grammi" on The Fridge), kept after they are emailed to her, and when
 -- she was last told what had come in. Private the way open.blog's own tables are: row level security
 -- on with no policies, nothing granted to anon or authenticated. Running it twice changes nothing.
 

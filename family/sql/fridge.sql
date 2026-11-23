@@ -1,4 +1,4 @@
--- The fridge on The Family Wall: where each letter magnet is, and the drawings the family makes.
+-- The fridge on The Fridge page: where each letter magnet is, and the drawings the family makes.
 -- A drawing waits until Grammi puts it up (with her word, on the page); she can take it down again.
 -- Private the way open.blog's own tables are: row level security on with no policies, nothing
 -- granted to anon or authenticated; the family service reaches it as the database's owner.
@@ -33,6 +33,14 @@ create table if not exists public.grammis_fridge_drawings (
 create index if not exists grammis_fridge_drawings_status
   on public.grammis_fridge_drawings (site_id, status, created_at);
 
+-- How the door looks, one row for the site: Grammi chooses it in Studio's Fridge.
+create table if not exists public.grammis_fridge_settings (
+  site_id text primary key,
+  finish text not null default 'classic' check (finish in ('classic', 'stainless')),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.grammis_fridge_settings enable row level security;
 alter table public.grammis_fridge_magnets enable row level security;
 alter table public.grammis_fridge_drawings enable row level security;
-revoke all on public.grammis_fridge_magnets, public.grammis_fridge_drawings from public, anon, authenticated;
+revoke all on public.grammis_fridge_magnets, public.grammis_fridge_drawings, public.grammis_fridge_settings from public, anon, authenticated;

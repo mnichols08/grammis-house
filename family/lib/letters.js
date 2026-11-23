@@ -1,6 +1,6 @@
 // Notes to Grammi, and the emails the family service sends her. Pure: no database, no network.
 //
-// A note is what someone writes in "Write to Grammi" on the Family Wall: their name, the note, and,
+// A note is what someone writes in "Write to Grammi" on The Fridge: their name, the note, and,
 // if they'd like her to write back, their email address. It goes to her by email; her own address is
 // never on the site. A ping is one short email saying what has come in since the last one (recipes,
 // requests, drawings, notes on recipes), with links into her editor.
