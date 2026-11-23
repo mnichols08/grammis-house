@@ -18,7 +18,7 @@ test("one box of letters, laid out the same way every time Grammi tidies", () =>
   const middle = layout.filter((spot) => spot.y > 52 && spot.y < 58).sort((a, b) => a.x - b.x).map((spot) => MAGNETS[spot.id].ch).join("");
   assert.equal(middle, STARTER.replace(/ /g, ""));
   // The rest sit close together in a block under it, none touching, below the seam and Grammi's notes.
-  for (let i = 0; i < layout.length; i++) for (let j = i + 1; j < layout.length; j++) assert.ok(Math.abs(layout[i].x - layout[j].x) >= 5.9 || Math.abs(layout[i].y - layout[j].y) >= 4.3, `${i} and ${j} touch`);
+  for (let i = 0; i < layout.length; i++) for (let j = i + 1; j < layout.length; j++) assert.ok(Math.abs(layout[i].x - layout[j].x) >= 5.9 || Math.abs(layout[i].y - layout[j].y) >= 3.6, `${i} and ${j} touch`);
   const pile = layout.filter((spot) => spot.y > 60);
   assert.ok(Math.max(...pile.map((s) => s.x)) - Math.min(...pile.map((s) => s.x)) < 72 && Math.max(...pile.map((s) => s.y)) < 92, "pushed together");
   assert.ok(layout.every((spot) => spot.y > SEAM && spot.x >= 2 && spot.x <= 98 && spot.y <= 98 && Math.abs(spot.r) <= 45));

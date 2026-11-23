@@ -18,7 +18,7 @@
      a dragged letter is). Sizes are in the cabinet's width. The light comes from --lx/--ly (0 to 1 across and down the
      door); shadows fall away from it by --sx/--sy. The pointer moves the light a little; it rests upper left. */
   .fridge { --lx: 0.22; --ly: 0.08; --sx: 0.56; --sy: 0.84; }
-  .cabinet { container-type: inline-size; max-width: 40rem; margin: 0 auto; }
+  .cabinet { container-type: inline-size; max-width: 38rem; margin: 0 auto; }
   .frame { position: relative; margin: 5cqw 7cqw 6.5cqw 0; }
   .top, .side { position: absolute; pointer-events: none; }
   .top { bottom: 100%; left: 0; width: 100%; height: 5cqw; transform-origin: 0 100%; transform: skewX(-54.46deg);
@@ -39,11 +39,11 @@
   .floor { position: absolute; left: -3%; right: -12cqw; top: 100%; height: 9cqw; margin-top: -1cqw; z-index: -1; pointer-events: none;
     background: radial-gradient(ellipse 50% 50% at calc(46% + var(--sx) * 6%) 50%, rgb(var(--shade) / 0.62), rgb(var(--shade) / 0.22) 55%, transparent 72%); filter: blur(6px); }
   .door {
-    position: relative; container-type: inline-size; aspect-ratio: 4 / 5; touch-action: none; border-radius: 1.3cqw 0.4cqw 0.3cqw 1.1cqw; overflow: hidden;
+    position: relative; container-type: inline-size; aspect-ratio: 8 / 13; touch-action: none; border-radius: 1.3cqw 0.4cqw 0.3cqw 1.1cqw; overflow: hidden;
     background: var(--gap);
     box-shadow: 0 0 0 1px rgb(var(--shade) / 0.45);
   }
-  @media (max-width: 40rem) { .door { aspect-ratio: 3 / 5; } }
+  @media (max-width: 40rem) { .door { aspect-ratio: 9 / 17; } }
   /* Two doors, each a slab of the door's finish, rounded at its edges: lit along the top and the side the light is
      on, shaded along the other and the bottom, with a soft glare where the light falls. The dark door behind them
      shows through as the gap between (the seam) and the narrow rim all round. */
@@ -87,7 +87,7 @@
     margin: 0; border: 0; background: none; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
   }
   .mag {
-    --c: #d7263d; padding: 0 0.04em; line-height: 1; font-family: "Baloo 2", "Arial Rounded MT Bold", "Arial Black", sans-serif; font-weight: 800; font-size: max(26px, 6.2cqw); color: var(--c);
+    --c: #d7263d; padding: 0 0.04em; line-height: 1; font-family: "Baloo 2", "Arial Rounded MT Bold", "Arial Black", sans-serif; font-weight: 800; font-size: max(20px, 6.2cqw); color: var(--c);
     /* Thick plastic: a lit top edge, the letter's own side going down in darker bands, then the shadow it throws on
        the door, away from the light and further off when it's picked up (--h). */
     --h: 1;

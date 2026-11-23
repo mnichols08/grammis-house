@@ -57,7 +57,7 @@ const round = (value) => Math.round(value * 10) / 10;
  * cells are just bigger than a letter, the letters dealt into cells at random, each nudged a hair and
  * turned a little. Close, but none touching. `random` gives a number from 0 up to (not including) 1.
  */
-export const CELL = Object.freeze({ wide: 6.4, tall: 4.7, nudge: 0.06, turn: 20 });
+export const CELL = Object.freeze({ wide: 6.4, tall: 3.9, nudge: 0.06, turn: 20 });
 function packed(ids, random, { columns, top }) {
   const rows = Math.ceil(ids.length / columns);
   const left = 50 - (columns * CELL.wide) / 2;
@@ -113,7 +113,7 @@ export function starterLayout() {
  */
 export const SHUFFLE_AREA = Object.freeze({ left: 7, right: 88, top: SEAM + 6, bottom: 86 });
 /** How much door one letter takes, turned a little, as a percent across and down: closer than this, two touch. */
-export const LETTER = Object.freeze({ wide: 5.2, tall: 4.4 });
+export const LETTER = Object.freeze({ wide: 5.2, tall: 3.6 });
 export function shuffleLayout(random = Math.random) {
   const { left, right, top, bottom } = SHUFFLE_AREA;
   const clear = (a, b) => Math.abs(a.x - b.x) >= LETTER.wide || Math.abs(a.y - b.y) >= LETTER.tall;
