@@ -1,4 +1,4 @@
-// Notes to Grammi, and her pings. "Write to Grammi" on the Family Wall sends a note here; it is kept
+// Notes to Grammi, and her pings. "Write to Grammi" on The Fridge sends a note here; it is kept
 // and emailed to her, with "reply" going to whoever wrote it when they left an address. Her own
 // address (OPENBLOG_NOTIFY_EMAIL) is only ever here, never on the site.
 //

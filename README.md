@@ -85,7 +85,7 @@ by itself. Open **Front page**, then the sign, to change it:
   password unless you switch on **Let anyone leave you a gift**. Nothing shows, and nobody can leave a gift, until you turn on **My tree is ready for gifts** in
   **Gifts**: decorate first, then open up. Gifts work on the site's Railway address, where the family
   service (below) serves the pages; on any other copy of the site the section stays hidden.
-- **Write to Grammi.** A postcard on **The Family Wall** page, under the fridge. Its button opens a
+- **Write to Grammi.** A postcard on **The Fridge** page, under the fridge. Its button opens a
   short form: their note, their name, and their email address if they'd like you to write back. The
   note comes to your email; to answer, just reply. Your own address is never on the site: it's kept
   in the family service's settings (`OPENBLOG_NOTIFY_EMAIL`). Put your favorite notes on the same
@@ -95,13 +95,15 @@ by itself. Open **Front page**, then the sign, to change it:
   recipes and requests from the family, drawings for the fridge, notes on your recipes waiting to be
   approved. When there is, you get one short email saying what, with a link to each place in your
   editor. Nothing new, no email.
-- **The fridge.** The Family Wall has a real fridge door: a box of plastic letter magnets that
-  everybody shares and drags around to spell things (nobody can add letters, so the E's get shared),
-  with your first four notes hanging at the top. The family can also **Draw Grammi a picture**; it
-  waits for you in **Fridge** (under Family, beside Gifts): **Put it on the fridge** or **Not this
-  one**, **Take it down** for one that's up, and **Tidy the fridge**, which puts every letter back to
-  "WE ♥ GRAMMI". Eight drawings hang at most; putting up another takes down the oldest. It works on the Railway address; elsewhere the page
-  shows your notes as before.
+- **The fridge.** The Fridge page (`/the-fridge/`) has a real two-door fridge, freezer above and fridge below,
+  with a box of 71 plastic letter magnets that everybody shares and drags around to spell things (nobody
+  can add letters, so the vowels get shared). Your first four notes hang on the freezer door. A letter
+  rocks very slowly while it's held, and stays at whatever angle it's let go at. The family can also **Draw
+  Grammi a picture**; it waits for you in **Fridge** (under Family, beside Gifts): **Put it on the fridge**
+  or **Not this one**, **Take it down** for one that's up, **Shuffle the letters**, which sends every letter
+  somewhere new on the fridge door without any touching, and **The door**, where you choose **Classic**
+  (cream, or steel at night) or **Stainless steel**. Eight drawings hang at most; putting up another takes
+  down the oldest. It works on the Railway address; elsewhere the page shows your notes as before.
 - **Share a recipe with Grammi.** A recipe card on the front page (Front page → Add a section → Share a
   recipe with Grammi) opens a form with the same parts as Grammi's own recipes: a line about it, the
   story, course, servings and times, the ingredients and steps one at a time (a whole list can be
@@ -158,7 +160,7 @@ themes/
                   bottom, and snowfall; a pine-night version in dark mode
   january/ ... october/   one for each month (below)
   christmas-toyshelf/     another Christmas: felt, stitches and old-fashioned toys on the shelf
-  family-wall/    the fridge door, for the Family Wall page
+  family-wall/    the fridge, for The Fridge page
   recipe-box/ family-stories/ garden-journal/ baking-day/ letters/ sunday-dinner/
                   looks for recipe collections (below)
 ```
@@ -376,11 +378,11 @@ project: no Netlify, no Supabase. `Dockerfile` builds the site with open.blog an
   Every ten minutes it counts what came in since the last email across recipes, requests, drawings
   and pending notes on recipes, and sends one when there's anything; a note that didn't go out goes
   then. It uses the greeting cards' `BREVO_API_KEY` and `OPENBLOG_GREETINGS_FROM`.
-- **The fridge** on The Family Wall. `themes/family-wall/fridge-loader.js` puts
+- **The fridge** on The Fridge page (`/the-fridge/`). `themes/family-wall/fridge-loader.js` puts
   `themes/grammis/components/magnet-fridge.zb` on that page only; its `'use server'` functions (`look`,
-  `move`, `draw`) call `family/fridge.js`. Where each magnet and drawing sits is kept in
+  `move`, `draw`) call `family/fridge.js`. Where each magnet and drawing sits, and which door she chose, is kept in
   Postgres as percents of the door; a drawing is pen strokes checked by `family/lib/fridge.js`, never
-  a picture file. Putting drawings up or down and tidying happen only in Studio's **Fridge** screen
+  a picture file. Putting drawings up or down, shuffling and choosing the door happen only in Studio's **Fridge** screen
   (`docker/openblog-studio-fridge.patch`), through `/api/fridge/admin/…` with the fridge key, as Gifts does.
 - **Recipes from the family.** The recipe form (`themes/grammis/components/recipe-share.zb`) has two
   `'use server'` functions, `look` and `share` (photos as files; a form post may be up to 4 MB). They call

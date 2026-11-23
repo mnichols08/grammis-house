@@ -1,5 +1,5 @@
 ---
-title: The Family Wall
+title: The Fridge
 nav: true
 theme: family-wall
 description: Notes, pictures and stories the family sends Grammi, stuck on the fridge.

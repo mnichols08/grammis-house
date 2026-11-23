@@ -4,46 +4,77 @@
 @scope (magnet-fridge) to ([data-zb-slotted="magnet-fridge"]) {
   :scope { display: block; }
   .fridge {
-    --door-hi: #fbf6e8; --door: #f1e7cf; --door-lo: #e2d4b2; --door-edge: #cdbb92;
+    --door-hi: #fbf6e8; --door: #f1e7cf; --door-lo: #e2d4b2; --door-edge: #cdbb92; --gap: #3a3226;
     --handle-hi: #ffffff; --handle-lo: #9da3a9; --paper: #fffdf5; --paper-2: #fff4c6; --paper-3: #e6f1fb; --ink: #2b2b2b;
+    --side-a: #dccea9; --side-b: #bca982; --top-a: #f7eed6; --top-b: #eadcb9; --base: #4a4030; --vent: rgb(110 85 40 / 0.32);
     --shade: 40 25 5; --depth: 0.55; --tray: #f3e9d2; --brushed: transparent; --sheen: rgb(255 255 255 / 0.35);
-    display: none; margin: 1.5rem 0 2rem; color: var(--foreground, #1f2522);
+    --seam: 40%; --plate: #8b7b57;
+    display: none; margin: 1.5rem 0 2.5rem; color: var(--foreground, #1f2522);
   }
   .fridge[data-state="shown"] { display: block; }
   [hidden] { display: none !important; }
+  /* The cabinet: the doors face you; its right side and top are drawn leaning away, so it has depth while the
+     doors stay flat (a tilted door would throw off where a dragged letter is). Sizes are in the cabinet's width. */
+  .cabinet { container-type: inline-size; max-width: 40rem; margin: 0 auto; }
+  .frame { position: relative; margin: 3.2cqw 4.4cqw 1.8cqw 0; }
+  .top, .side { position: absolute; pointer-events: none; }
+  .top { bottom: 100%; left: 0; width: calc(100% + 4.4cqw); height: 3.2cqw; clip-path: polygon(0 100%, calc(100% - 4.4cqw) 100%, 100% 0, 4.4cqw 0);
+    background: linear-gradient(180deg, var(--top-b), var(--top-a)); }
+  .side { left: 100%; top: -3.2cqw; width: 4.4cqw; height: calc(100% + 3.2cqw); clip-path: polygon(0 3.2cqw, 100% 0, 100% calc(100% - 3.2cqw), 0 100%);
+    background: linear-gradient(90deg, var(--side-a), var(--side-b)); }
+  .plinth { position: absolute; left: 1.4%; right: 1.4%; top: 100%; height: 1.8cqw; border-radius: 0 0 1cqw 1cqw; background: var(--base); pointer-events: none; }
+  .floor { position: absolute; left: -1%; right: -5cqw; top: 100%; height: 5cqw; margin-top: 0.6cqw; z-index: -1; pointer-events: none;
+    background: radial-gradient(ellipse at 45% 30%, rgb(var(--shade) / 0.5), transparent 68%); filter: blur(5px); }
   .door {
-    position: relative; container-type: inline-size; aspect-ratio: 4 / 5; max-height: 90vh; margin: 0 auto; border-radius: 26px; overflow: hidden; touch-action: none;
-    /* The dark door's colours (brushed steel) are set by the Family Wall theme's fridge.css. */
-    background:
-      repeating-linear-gradient(90deg, var(--brushed) 0 2px, transparent 2px 5px),
-      linear-gradient(100deg, transparent 0 8%, var(--sheen) 12%, transparent 22%),
-      linear-gradient(180deg, var(--door-hi), var(--door) 35%, var(--door-lo));
-    box-shadow: inset 0 0 0 2px var(--door-edge), inset 0 -10px 24px rgb(var(--shade) / 0.12), 0 24px 40px -22px rgb(var(--shade) / 0.55);
+    position: relative; container-type: inline-size; aspect-ratio: 4 / 5; touch-action: none; border-radius: 1.6cqw; overflow: hidden;
+    background: var(--gap);
+    box-shadow: 0 1.4cqw 2.4cqw -1.2cqw rgb(var(--shade) / 0.6), 0 0 0 1px rgb(var(--shade) / 0.35);
   }
   @media (max-width: 40rem) { .door { aspect-ratio: 3 / 5; } }
-  .handle { position: absolute; right: 3.2%; top: 6%; width: 2.2%; min-width: 10px; height: 26%; border-radius: 99px; pointer-events: none;
-    background: linear-gradient(90deg, var(--handle-lo), var(--handle-hi) 45%, var(--handle-lo)); box-shadow: -3px 4px 8px rgb(var(--shade) / 0.35); }
-  .badge { position: absolute; left: 50%; bottom: 2.5%; translate: -50% 0; pointer-events: none; font-family: var(--ob-font-hand, cursive); font-weight: 700; font-size: max(15px, 3.2cqw);
-    color: transparent; background: linear-gradient(180deg, var(--handle-hi), var(--handle-lo)); -webkit-background-clip: text; background-clip: text; }
+  /* Two doors, each a slab of the door's finish with a lit top edge and a shaded bottom one. The dark door
+     behind them shows through as the gap between (the seam) and the narrow rim all round. */
+  .face {
+    position: absolute; left: 1.3%; right: 1.3%; pointer-events: none; overflow: hidden;
+    background:
+      repeating-linear-gradient(90deg, var(--brushed) 0 2px, transparent 2px 5px),
+      linear-gradient(100deg, transparent 0 8%, var(--sheen) 12%, transparent 24%),
+      linear-gradient(180deg, var(--door-hi), var(--door) 40%, var(--door-lo));
+    box-shadow: inset 0 0 0 1px var(--door-edge), inset 0 2px 0 rgb(255 255 255 / 0.55), inset 0 -2.2cqw 2.4cqw -1.6cqw rgb(var(--shade) / 0.22), 0 1px 2px rgb(0 0 0 / 0.3);
+  }
+  .freezer { top: 1.1%; height: calc(var(--seam) - 1.1% - 0.55%); border-radius: 1.4cqw 1.4cqw 0.5cqw 0.5cqw; }
+  .cooler { top: calc(var(--seam) + 0.55%); bottom: 1.1%; border-radius: 0.5cqw 0.5cqw 1.4cqw 1.4cqw; }
+  .seam { position: absolute; left: 0; right: 0; top: calc(var(--seam) - 0.55%); height: 1.1%; pointer-events: none; background: linear-gradient(180deg, #08090a, #26292c 50%, #08090a); }
+  .hinge { position: absolute; left: 0; top: calc(var(--seam) - 3.2%); height: 6.4%; width: 1.5cqw; pointer-events: none; border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, var(--handle-hi), var(--handle-lo)); box-shadow: 1px 1px 3px rgb(0 0 0 / 0.45); }
+  /* Handles: a chrome bar on two standoffs, throwing a little shadow on the door. The freezer's is short; the fridge's is long. */
+  .handle { position: absolute; right: 2.6%; width: 2.2%; min-width: 10px; border-radius: 99px; pointer-events: none;
+    background: linear-gradient(90deg, var(--handle-lo), var(--handle-hi) 42%, var(--handle-lo)); box-shadow: -4px 5px 8px rgb(var(--shade) / 0.38), inset 0 0 0 1px rgb(0 0 0 / 0.12); }
+  .freezer .handle { bottom: 12%; height: 44%; }
+  .cooler .handle { top: 4.5%; height: 30%; }
+  .vent { position: absolute; left: 7%; right: 7%; bottom: 1.6%; height: 4.2%; pointer-events: none; border-radius: 3px;
+    background: repeating-linear-gradient(180deg, var(--vent) 0 2px, transparent 2px 6px); }
+  .badge { position: absolute; left: 50%; bottom: 7.4%; translate: -50% 0; pointer-events: none; font-family: var(--ob-font-hand, cursive); font-weight: 700; font-size: max(15px, 3.2cqw); letter-spacing: 0.02em;
+    color: var(--plate); text-shadow: 0 1px 0 rgb(255 255 255 / 0.55), 0 -1px 0 rgb(0 0 0 / 0.18); }
   .mag, .picture {
     position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); translate: -50% -50%; rotate: calc(var(--r) * 1deg);
     margin: 0; border: 0; background: none; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none;
   }
   .mag {
     --c: #d7263d; padding: 0 0.04em; line-height: 1; font-family: "Baloo 2", "Arial Rounded MT Bold", "Arial Black", sans-serif; font-weight: 800; font-size: max(26px, 6.2cqw); color: var(--c);
-    text-shadow: 0 1px 0 color-mix(in srgb, var(--c) 72%, black), 0 2px 0 color-mix(in srgb, var(--c) 66%, black),
-      0 3px 0 color-mix(in srgb, var(--c) 60%, black), 0 7px 7px rgb(var(--shade) / var(--depth));
+    text-shadow: 0 -1px 0 rgb(255 255 255 / 0.45), 0 1px 0 color-mix(in srgb, var(--c) 74%, black), 0 2px 0 color-mix(in srgb, var(--c) 68%, black),
+      0 3px 0 color-mix(in srgb, var(--c) 62%, black), 0 4px 0 color-mix(in srgb, var(--c) 56%, black), 0 9px 8px rgb(var(--shade) / var(--depth));
     transition: scale 0.12s ease;
   }
   .mag.heart { font-family: "Segoe UI Symbol", "Apple Symbols", sans-serif; }
-  .mag.lift, .picture.lift { scale: 1.12; cursor: grabbing; }
+  .mag.lift, .picture.lift { scale: 1.14; cursor: grabbing; }
+  .mag.glide, .picture.glide { transition: left 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), rotate 0.8s ease, scale 0.12s ease; }
   .mag:focus-visible, .picture:focus-visible { outline: 3px dashed var(--foreground, #1f2522); outline-offset: 4px; border-radius: 6px; }
   .picture { width: 24%; padding: 5% 5% 3%; background: #fffdf8; box-shadow: 0 10px 16px -10px rgb(var(--shade) / 0.6); }
   .picture svg { display: block; width: 100%; height: auto; }
   .picture::before { content: ""; position: absolute; top: -0.5rem; left: 50%; width: 1.2rem; height: 1.2rem; translate: -50% 0; border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, rgb(255 255 255 / 0.7) 0 18%, transparent 32%), #8e44c9; box-shadow: 0 3px 4px rgb(0 0 0 / 0.35); }
   .picture-by { display: block; margin-top: 0.2rem; font-family: var(--ob-font-hand, cursive); font-size: max(13px, 2cqw); color: #3a342c; text-align: center; overflow-wrap: anywhere; }
-  .note { position: absolute; width: 36%; padding: 1rem 0.9rem 0.7rem; background: var(--paper); color: var(--ink); pointer-events: none;
+  .note { position: absolute; box-sizing: border-box; width: 36%; padding: 1rem 0.9rem 0.7rem; background: var(--paper); color: var(--ink); pointer-events: none;
     font-family: var(--ob-font-hand, cursive); font-weight: 700; font-size: max(16px, 2.6cqw); line-height: 1.2; rotate: var(--turn, -2deg);
     box-shadow: 0 10px 16px -10px rgb(var(--shade) / 0.6); }
   .note small { display: block; margin-top: 0.4rem; font: 0.8rem/1.3 Georgia, serif; color: #5a5348; text-align: right; }
@@ -63,7 +94,6 @@
     min-height: 44px; padding: 0.5rem 1.1rem; font: inherit; border-radius: 8px; cursor: pointer;
     border: 2px solid var(--primary, #b3262f); background: var(--primary, #b3262f); color: var(--primary-foreground, #ffffff); }
   .tool { background: var(--card, #fbfcfa); color: var(--foreground, #1f2522); border-color: var(--border, #cfd5d0); }
-  .quiet { min-height: 36px; padding: 0.3rem 0.8rem; font-size: 0.9rem; }
   .tool[aria-pressed="true"] { border-color: var(--foreground, #1f2522); box-shadow: inset 0 0 0 2px var(--foreground, #1f2522); }
   button:focus-visible, input:focus-visible { outline: 3px solid var(--ring, #1f5fbf); outline-offset: 2px; }
   button:disabled { opacity: 0.6; cursor: default; }
@@ -75,8 +105,8 @@
   .crayon[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--foreground, #1f2522); }
   .field { display: grid; gap: 0.3rem; }
   label { font-weight: 600; }
-  input[type="text"], input[type="password"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
+  input[type="text"] { font: inherit; min-height: 44px; padding: 0.5rem 0.6rem; border: 1px solid var(--border, #8d897c); border-radius: 6px; background: #ffffff; color: #1f2633; width: 100%; box-sizing: border-box; }
   .trap { position: absolute; left: -200vw; width: 1px; height: 1px; overflow: hidden; }
-  @media (prefers-reduced-motion: reduce) { .mag { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .mag, .picture { transition: none !important; } }
 }
 }

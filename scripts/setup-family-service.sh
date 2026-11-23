@@ -7,7 +7,7 @@
 #   Gifts: anyone can leave Grammi a wrapped note or card under her tree, opened on Christmas morning.
 #   Recipes from the family: the family sends Grammi recipes of their own, which arrive in her editor's
 #   Posts as drafts with their name on them; nothing is on the site until she publishes one.
-#   The fridge: letter magnets anyone moves on The Family Wall, and drawings Grammi puts up in her editor (Fridge).
+#   The fridge: letter magnets anyone moves on The Fridge page, and drawings Grammi puts up in her editor (Fridge).
 #
 # They live in the family service (family/, on Zubra), which the site's own Railway service runs next
 # to her pages (Dockerfile), with Railway's Postgres. This walks you through the clicks only you can

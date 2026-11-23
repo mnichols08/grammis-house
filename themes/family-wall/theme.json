@@ -1,5 +1,5 @@
 {
-  "label": "Family wall (the fridge)",
+  "label": "The Fridge (the page)",
   "hidden": true,
   "extends": "grammis",
   "colorScheme": "light",
@@ -44,7 +44,7 @@
     }
   },
   "tokens": {
-    "season": "\"Family wall\"",
+    "season": "\"The Fridge\"",
     "weather": "none",
     "decorGarlandHeight": "56px",
     "decorPatternSize": "96px 96px",

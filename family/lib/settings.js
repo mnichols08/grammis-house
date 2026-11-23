@@ -72,7 +72,7 @@ export function readSettings(env = process.env) {
     recipes = problems.length ? { enabled: false, problems } : { enabled: true, problems: [], adminKey: text(env.OPENBLOG_RECIPES_ADMIN_KEY), code };
   }
 
-  // The fridge on The Family Wall: magnets anyone may move, drawings Grammi puts up in Studio's Fridge
+  // The fridge on The Fridge page: magnets anyone may move, drawings Grammi puts up in Studio's Fridge
   // screen, which reaches the service with this key (as Gifts does).
   let fridge = { enabled: false, problems: [] };
   if (on(env.OPENBLOG_FRIDGE_ENABLED)) {

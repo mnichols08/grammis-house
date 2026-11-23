@@ -1,4 +1,4 @@
-// Puts the magnet fridge and the "Write to Grammi" postcard on The Family Wall. The page's Markdown
+// Puts the magnet fridge and the "Write to Grammi" postcard on The Fridge page. The page's Markdown
 // stays as she writes it in the editor; where this can't run, the page shows as she wrote it.
 //
 // The fridge (themes/grammis/components/magnet-fridge.js) goes after the page's words and hangs
