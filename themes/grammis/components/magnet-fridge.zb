@@ -136,7 +136,7 @@
       // wherever it is when let go is how it stays. So no two ever settle quite the same way.
       const base = clamp((item.r || 0) * 0.6 + (Math.random() - 0.5) * 6, -30, 30)
       const reach = 4 + Math.random() * 2.5
-      const speed = 1.1 + Math.random() * 0.7
+      const speed = 2 + Math.random() * 0.8
       const phase = Math.random() * Math.PI * 2
       const began = performance.now()
       let frame = 0
@@ -350,23 +350,6 @@
         hangNotes(door)
         show(answer)
       })
-      // The light leans toward the pointer, so the glare on the doors and every shadow shift a little as it moves.
-      const whole = document.querySelector('magnet-fridge .fridge')
-      let lit = 0
-      const light = (e) => {
-        if (calm() || !door || lit) return
-        lit = requestAnimationFrame(() => {
-          lit = 0
-          const box = door.getBoundingClientRect()
-          const lx = 0.22 + (clamp((e.clientX - box.left) / box.width, 0, 1) - 0.5) * 0.5
-          const ly = 0.08 + (clamp((e.clientY - box.top) / box.height, 0, 1) - 0.5) * 0.3
-          whole.style.setProperty('--lx', lx.toFixed(3))
-          whole.style.setProperty('--ly', ly.toFixed(3))
-          whole.style.setProperty('--sx', (1 - 2 * lx).toFixed(3))
-          whole.style.setProperty('--sy', clamp(1 - 2 * ly, 0.4, 1.1).toFixed(3))
-        })
-      }
-      if (whole) whole.addEventListener('pointermove', light)
       setInterval(refresh, REFRESH)
       document.addEventListener('visibilitychange', refresh)
     } catch (_) {}
@@ -387,7 +370,7 @@
   /* The cabinet: the doors face you; its right side and top are sheared away from you (an oblique drawing: 7 across
      and 5 up for the cabinet's depth), so it is a box, while the doors stay flat (a tilted door would throw off where
      a dragged letter is). Sizes are in the cabinet's width. The light comes from --lx/--ly (0 to 1 across and down the
-     door); shadows fall away from it by --sx/--sy. The pointer moves the light a little; it rests upper left. */
+     door), upper left, and stays put; shadows fall away from it by --sx/--sy. */
   .fridge { --lx: 0.22; --ly: 0.08; --sx: 0.56; --sy: 0.84; }
   .cabinet { container-type: inline-size; max-width: 38rem; margin: 0 auto; }
   .frame { position: relative; margin: 5cqw 7cqw 6.5cqw 0; }
