@@ -50,7 +50,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cargo/bin/openblog
-          key: openblog-${{ runner.os }}-${{ env.OPENBLOG_REV }}-cover
+          key: openblog-${{ runner.os }}-${{ env.OPENBLOG_REV }}-cover-search
       - name: Install openblog
         run: |
           if ! command -v openblog >/dev/null; then
@@ -58,6 +58,7 @@ jobs:
             git -C /tmp/openblog fetch --depth 1 https://github.com/journey-to-code-org/open.blog "$OPENBLOG_REV"
             git -C /tmp/openblog checkout --detach FETCH_HEAD
             git -C /tmp/openblog apply "$GITHUB_WORKSPACE/docker/openblog-cover.patch"
+            git -C /tmp/openblog apply "$GITHUB_WORKSPACE/docker/openblog-search-placeholder.patch"
             cargo install --path /tmp/openblog/crates/openblog-cli
           fi
       - name: Restore view counts from the analytics branch, if there is one

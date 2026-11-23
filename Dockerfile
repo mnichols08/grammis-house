@@ -6,11 +6,15 @@ FROM rust:1-bookworm AS build
 RUN apt-get update && apt-get install -y --no-install-recommends nodejs npm && rm -rf /var/lib/apt/lists/*
 RUN npm install --global @zubra/compiler@5.8.0
 COPY docker/openblog-cover.patch /tmp/openblog-cover.patch
+# The search box's examples come from her own tags and titles, not open.blog's "Rust, web components"
+# (until open.blog ships it: journey-to-code-org/open.blog).
+COPY docker/openblog-search-placeholder.patch /tmp/openblog-search-placeholder.patch
 RUN git init /tmp/openblog \
     && cd /tmp/openblog \
     && git fetch --depth 1 https://github.com/journey-to-code-org/open.blog 718c91393a72a2e282c2585a3ba7cfa763f7c410 \
     && git checkout --detach FETCH_HEAD \
     && git apply /tmp/openblog-cover.patch \
+    && git apply /tmp/openblog-search-placeholder.patch \
     && cargo install --path crates/openblog-cli
 WORKDIR /site
 COPY . .
