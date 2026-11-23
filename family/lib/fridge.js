@@ -53,8 +53,39 @@ function seeded(seed) {
 const round = (value) => Math.round(value * 10) / 10;
 
 /**
- * The fridge as Grammi starts it, and as tidying puts it back: "WE ♥ GRAMMI" across the middle, the
- * rest tipped out in a pile along the bottom. The freezer door above the seam is left for her notes. The same every time.
+ * Letters set close together in a block, like a box of them tipped out and squared up: a grid whose
+ * cells are just bigger than a letter, the letters dealt into cells at random, each nudged a hair and
+ * turned a little. Close, but none touching. `random` gives a number from 0 up to (not including) 1.
+ */
+export const CELL = Object.freeze({ wide: 6.4, tall: 4.7, nudge: 0.06, turn: 20 });
+function packed(ids, random, { columns, top }) {
+  const rows = Math.ceil(ids.length / columns);
+  const left = 50 - (columns * CELL.wide) / 2;
+  const cells = [];
+  for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) cells.push([column, row]);
+  const deal = (list) => {
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list;
+  };
+  deal(cells);
+  return deal(ids.slice()).map((id, n) => {
+    const [column, row] = cells[n];
+    return {
+      id,
+      x: round(left + (column + 0.5) * CELL.wide + (random() - 0.5) * CELL.wide * CELL.nudge),
+      y: round(top + (row + 0.5) * CELL.tall + (random() - 0.5) * CELL.tall * CELL.nudge),
+      r: round((random() - 0.5) * CELL.turn),
+    };
+  });
+}
+
+/**
+ * The fridge as Grammi starts it: "WE ♥ GRAMMI" across the fridge door, and the rest of the box set close
+ * together in a block under it, none touching. The freezer door above the seam is left for her notes.
+ * The same every time.
  */
 export function starterLayout() {
   const rand = seeded(7);
@@ -65,47 +96,20 @@ export function starterLayout() {
   letters.forEach((ch, i) => {
     if (ch === " ") return;
     const magnet = MAGNETS.find((m) => m.ch === ch && !spots.has(m.id));
-    if (magnet) spots.set(magnet.id, { x: round(start + i * gap), y: round(60 + (rand() - 0.5) * 1.5), r: round((rand() - 0.5) * 10) });
+    if (magnet) spots.set(magnet.id, { x: round(start + i * gap), y: round(55 + (rand() - 0.5) * 1.5), r: round((rand() - 0.5) * 10) });
   });
-  for (const magnet of MAGNETS) {
-    if (spots.has(magnet.id)) continue;
-    spots.set(magnet.id, { x: round(8 + rand() * 84), y: round(70 + rand() * 22), r: round((rand() - 0.5) * 40) });
-  }
+  const rest = MAGNETS.filter((magnet) => !spots.has(magnet.id)).map((magnet) => magnet.id);
+  for (const spot of packed(rest, rand, { columns: 11, top: 62 })) spots.set(spot.id, { x: spot.x, y: spot.y, r: spot.r });
   return MAGNETS.map((magnet) => ({ id: magnet.id, ...spots.get(magnet.id) }));
 }
 
 /**
- * Every letter somewhere new on the fridge door, none touching another: the door below the seam is cut
- * into a grid with a cell for each letter's neighbours to stay out of, the letters are dealt into cells
- * at random, and each is nudged a little inside its own cell and turned a little. `random` is any
- * function giving a number from 0 up to (not including) 1; the tests hand it a seeded one.
+ * Every letter somewhere new, in one close block in the middle of the fridge door (below the seam), none
+ * touching another. `random` is any function giving a number from 0 up to (not including) 1; the tests
+ * hand it a seeded one.
  */
-export const SHUFFLE_AREA = Object.freeze({ left: 5, right: 95, top: SEAM + 3, bottom: 92, columns: 10 });
 export function shuffleLayout(random = Math.random) {
-  const { left, right, top, bottom, columns } = SHUFFLE_AREA;
-  const rows = Math.ceil(MAGNETS.length / columns);
-  const wide = (right - left) / columns;
-  const tall = (bottom - top) / rows;
-  const cells = [];
-  for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) cells.push([column, row]);
-  for (let i = cells.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [cells[i], cells[j]] = [cells[j], cells[i]];
-  }
-  const ids = MAGNETS.map((magnet) => magnet.id);
-  for (let i = ids.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [ids[i], ids[j]] = [ids[j], ids[i]];
-  }
-  return ids.map((id, n) => {
-    const [column, row] = cells[n];
-    return {
-      id,
-      x: round(left + (column + 0.5) * wide + (random() - 0.5) * wide * 0.14),
-      y: round(top + (row + 0.5) * tall + (random() - 0.5) * tall * 0.14),
-      r: round((random() - 0.5) * 36),
-    };
-  });
+  return packed(MAGNETS.map((magnet) => magnet.id), random, { columns: 12, top: 54 });
 }
 
 /** How the door looks: one of FINISHES. */

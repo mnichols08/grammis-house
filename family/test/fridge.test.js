@@ -15,9 +15,12 @@ test("one box of letters, laid out the same way every time Grammi tidies", () =>
   assert.deepEqual(layout, starterLayout(), "the same every time");
   assert.equal(layout.length, MAGNETS.length);
   // The starter phrase reads across the middle, left to right.
-  const middle = layout.filter((spot) => spot.y > 55 && spot.y < 65).sort((a, b) => a.x - b.x).map((spot) => MAGNETS[spot.id].ch).join("");
+  const middle = layout.filter((spot) => spot.y > 52 && spot.y < 58).sort((a, b) => a.x - b.x).map((spot) => MAGNETS[spot.id].ch).join("");
   assert.equal(middle, STARTER.replace(/ /g, ""));
-  // The rest lie in the pile along the bottom, on the fridge door below the seam and Grammi's notes.
+  // The rest sit close together in a block under it, none touching, below the seam and Grammi's notes.
+  for (let i = 0; i < layout.length; i++) for (let j = i + 1; j < layout.length; j++) assert.ok(Math.abs(layout[i].x - layout[j].x) >= 5.9 || Math.abs(layout[i].y - layout[j].y) >= 4.3, `${i} and ${j} touch`);
+  const pile = layout.filter((spot) => spot.y > 60);
+  assert.ok(Math.max(...pile.map((s) => s.x)) - Math.min(...pile.map((s) => s.x)) < 72 && Math.max(...pile.map((s) => s.y)) < 92, "pushed together");
   assert.ok(layout.every((spot) => spot.y > SEAM && spot.x >= 2 && spot.x <= 98 && spot.y <= 98 && Math.abs(spot.r) <= 45));
 });
 
@@ -79,14 +82,15 @@ test("shuffling puts every letter somewhere new on the fridge door, none on top 
       assert.ok(spot.x >= 3 && spot.x <= 97 && spot.y > SEAM && spot.y <= 97 && Math.abs(spot.r) <= 45, JSON.stringify(spot));
       assert.doesNotThrow(() => checkSpot({ x: String(spot.x), y: String(spot.y), r: String(spot.r) }), "a spot the service itself would accept");
     }
-    // A letter is about 6% of the door wide and 5% tall: two are clear of each other when either gap is bigger.
+    // A letter is under 6% of the door wide and 4.4% tall: two are clear of each other when either gap is bigger.
     for (let i = 0; i < layout.length; i++) {
       for (let j = i + 1; j < layout.length; j++) {
         const dx = Math.abs(layout[i].x - layout[j].x);
         const dy = Math.abs(layout[i].y - layout[j].y);
-        assert.ok(dx >= 7 || dy >= 5.2, `letters ${layout[i].id} and ${layout[j].id} touch (seed ${seed}): ${dx.toFixed(1)} across, ${dy.toFixed(1)} down`);
+        assert.ok(dx >= 5.9 || dy >= 4.3, `letters ${layout[i].id} and ${layout[j].id} touch (seed ${seed}): ${dx.toFixed(1)} across, ${dy.toFixed(1)} down`);
       }
     }
+    assert.ok(Math.max(...layout.map((s) => s.y)) - Math.min(...layout.map((s) => s.y)) < 30, "one close block");
     assert.notDeepEqual(layout, before);
   }
   assert.notDeepEqual(shuffleLayout(seeded(1)), shuffleLayout(seeded(2)), "a different shuffle each time");

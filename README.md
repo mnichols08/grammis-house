@@ -100,8 +100,8 @@ by itself. Open **Front page**, then the sign, to change it:
   can add letters, so the vowels get shared). Your first four notes hang on the freezer door. A letter
   rocks very slowly while it's held, and stays at whatever angle it's let go at. The family can also **Draw
   Grammi a picture**; it waits for you in **Fridge** (under Family, beside Gifts): **Put it on the fridge**
-  or **Not this one**, **Take it down** for one that's up, **Shuffle the letters**, which sends every letter
-  somewhere new on the fridge door without any touching, and **The door**, where you choose **Classic**
+  or **Not this one**, **Take it down** for one that's up, **Shuffle the letters**, which deals every letter
+  into a new place in one close block on the fridge door, none touching, and **The door**, where you choose **Classic**
   (cream, or steel at night) or **Stainless steel**. Eight drawings hang at most; putting up another takes
   down the oldest. It works on the Railway address; elsewhere the page shows your notes as before.
 - **Share a recipe with Grammi.** A recipe card on the front page (Front page → Add a section → Share a
