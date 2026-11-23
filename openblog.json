@@ -244,5 +244,10 @@
         "decorations.decorated": "Your house is decorated for {theme}."
       }
     }
+  },
+  "decorations": {
+    "thanksgiving": {
+      "garland": false
+    }
   }
 }
