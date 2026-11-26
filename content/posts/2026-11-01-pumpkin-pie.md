@@ -1,7 +1,6 @@
 ---
 title: Grammi's Pumpkin Pie
 date: 2026-11-06
-draft: true
 series: thanksgiving
 profile: recipe
 course: Dessert
@@ -15,7 +14,9 @@ cover: ""
 ---
 
 
-TODO(Grammi): the story. Who taught you this, the year it went wrong, who always asks for seconds.
+This is an old family recipe. Handed down by my mom and grandma.
+ Just open box and follow directions! Thanks 
+Marie
 
 ## Ingredients
 
